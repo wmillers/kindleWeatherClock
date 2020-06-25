@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
+  <title>tomatoClock</title>
+	<style>
+    body {
+      color: #000000;
+      background-color: #ffffff;
+      font-family: Arial,sans-serif;
+    }
+    .cleaner { 
+        background: black; 
+        position: fixed; 
+        left: 0px; 
+        top: 0px; 
+        width: 100%; 
+        height: 100%; 
+        display: none; 
+        z-index: 20;
+    }
+    .app {
+      position: fixed;
+      padding-top: 10rem;
+      padding-left: 2.5rem; 
+      overflow: hidden;
+      height: 43.5rem; 
+      width: 40.5rem;
+      transform:rotate(270deg);
+      -ms-transform:rotate(270deg); /* Internet Explorer 9*/
+      -moz-transform:rotate(270deg); /* Firefox */
+      -webkit-transform:rotate(270deg); /* Safari 和 Chrome */
+      -o-transform:rotate(270deg); /* Opera */
+    }
+    .time {
+      text-align: center;
+      font-size: 15.5rem;
+      font-family: 'Arial', sans-serif;/*'Lucida Console', 'Monaco', monospace;*/
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+    }
+    .tomato {
+      text-align: center;
+      overflow: hidden;
+      margin-top: 0rem;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    .date {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    .weath {
+      position: fixed;
+      margin-top: 3rem; 
+      padding-left: 7rem;
+      -ms-transform: scale(2.8);
+      -moz-transform: scale(2.8);
+      -o-transform: scale(2.8);
+      -webkit-transform: scale(2.8);
+      transform: scale(2.8);
+    }
+    .basket{
+      text-align: center;
+      font-size: 1rem; 
+      margin-top: 12rem; 
+      padding-bottom: 0.2rem;
+      overflow: hidden;
+      height: 2rem;
+    }
+    .tImg{
+      content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAjVBMVEVHcEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABHlAdGAAAALnRSTlMABd4y/W4R7fYg8kugJgL7Zq11e0PRCT7MGY3G48Ca6C3XDbRYFJRfUbqHpziBjswJ2QAAC15JREFUGBntwAeColoCBdALSEaSEXPO3v0vb6arq5oHgooRf3FQqVQqlUqlUqlUKpVKpVKpVCqVSqVSqVQqlcpzLdV+tzuy8VttdH4ZRviVfI/fBgp+H2nFmGXjt3H3FHkb/C5SwCRvg19lzzSviV9kx1OWgl/DZ5ZBhF9iYjDTUMKvMJOZY4dfwWGe2gG/QJP5pm3857VlnnHEf16DCfKIIiPCf9zSosiauAFFDv7jVkzYAO0pBbU6/gOiib1Y+OtNc6IhaWlQNAKAiUHBCAmzib1WG40wVBcdEx9hszUY07urdR3/NCiSZ/gjpMBY4tvMPs7HFE3XKD1pz1ODkS3hD2lMkY0vUouCEH+Y4dDjqRHKrsds+koBYFM0x7cOBVOg7Q+ZQ0W5mR5z9W0EFCn4MafAPurMpbdRaiHPmRoUBPhH4dVslJrD63UQG/JaPkpty6u1IFjwWguU2pRXCyFoW7xOzUSpjXk1E6I9rxOg3HReq4WEBa8yiFBuFq/VQ0LEawxNlJzFWDDaz6cWc2yQNGU2eTtqhL6vHlejXQelN2CsiT/qi9GYGUwkBTwl9zYRPsuUsQ2+uYeRwRTDRdKRKXpPwefpM6YipjV0JvSRsmGCrLbxiQLGehDNjgYFIVKiGmO6KuEz9RhzkFQf8p9aHWkO/xlp+FQqYz2khR6/rXBi2eJfYxufq8PYAicUmV8cCae0UY2k1Vvig7kyfwzaOOUuuqwFHWSLFr6t4bM1Pf5Vs/E72Tr/MBb4rTQ16PZ3ESqVyiyaKJ1ms6MopinhF5kd1rt9f+BRNO7OV2pTQxHasWUY42l/31Nt08UncBXVmfKMwfx4kHCdw5gCoztaT1yUWeQHOq9gzdUJLjN1ntADtY5yMhtdFiCvNkuc5zDbdKegbDS/z+JaPXuGXJLBXNOGiRJRRgZv5G3VCNnqPGu7cVEO9pD36YZLZJjwgkE4w/stWryfF9gu0mYeL7F2S7yX3eWDDI4RUua8zDrO8D6TIR/IcyZIqFu8gh5KeA9tVeODzTsQdXReY2rjHRZjPkF/4yK2PLYMXiGI8GpRwLPG8526aE6W+KMdTey1uhqOeYXuBAkzc2L7x33L4xm6j9fa6MylB6EdIdOyE84tXmBNkEVSfGfAXPMlXqc9Yp7WriPhLOnQ2Bo8p4VcSqNfY7ZBB69SbzHbVI1wlXanMR8zVxNnLNd9Zqo1XLyErTOL5RxQyMTfW8zUwHmTlc4s2wgvoNaYQfZnKE5qrgY81cMl7XWLGcYHPN2OGWRfwo3c5t5gSogrbKY8ZWzwXJLDU7Iv4VTdd1ryUJ3hIk1tMWGCa7iLKU+FeKbZlieMhoQ0Mwx0/iUruEJzy9gcV5J8nSd2eB6tyxPbOlLMsEuBbuIayt7jX9MlrhbteWKEZ9G6TBsvkDRT+0wJcB1zZZH0HA1F2AOmrfAcWpdpcw0J0U7niZqGK7U7C3uJgmYrpu3wDO0hU7yjC9FkZDBLB8+10ZnSwOO5AVPkA0RmwBwdPFm9xRQVD7diylaDYLYzmKMW4dnaDlPWeDCfKY6EmOuPmWuLF1CZ5HXwUE2PSTsIzD7zGQpeYe0xYWzigSKdCTUVAt9iPmOD17ANJrTaeBipz4TaGrFlwHyWU8erHHQmjPAwOyapiDXHzDEOVEXCC9lMWuNBOjUmNBBbe8zUDet4NWnMBKOOh5jJTOghtmOWaaOOd+gxqe/iEUZMcPBPO2CGoe3iPQ5MaeABOkzotvFD6/NEba/gfQZMMuq4mzSlSDfxQ+vyRP+Ad1oxZYi7NSiq2fihtZgmL/BeNtPWuFNkUdTAj3afKbVeG28285gynuE+DkV9F9+kOVMGTbxfn2k73GVSo8Co40ePKXsNJbBjmmHiHgFFDfxYMKkWohQ2POHgDgpFLQnfJgYTjA3KweSJWh23CyioKfimyUwYKCgLnSf2uFm9RoGDH3MmyCZKY8gTnolbjSjwTHxbMGFgojxGPNXDjZYGBSv82FI0rqNEQp6yNNwmpMCI8EOnQJ+gTBbMoOI2Uwp2+EdnrNZEqRyYYYqbdCjwIvzTZyxEuUTM0sEtRhQEiKn8J0DJtJnFwQ0knYImYu0Wv7VmKBuDGaw2irMpmEJkTvmlG6F0BsyyQXEOBSoS2v5Qt/qqhPKRmWWP4saMeRo+xZRZLAlFKRRs8TFazNREUQ0KVHyMFjP1UNSQAhMfY8pMLRQkGYy18DlkZqppKOZAwRGfY8BsNopRKWjic4yZbYdiHAo0fA6d2bYopsWYjA9iMJuOQiSPsT0+h1tjDhNF1CkI8W3Z2M97B5TZknmaKMKmoIm/Fjr/2JsorzrzqChCpcDEl5DfDBuldWCeFYrYUSDhD6XGH9YSZWUzzxxFOIzp+LJnrIGyWjNPF0VsGWvhy5ixOcoqZJ4BiugyNscXj7E+yqrHPB6KmDLm4MuUsRHKas5cbRQwYKyHLzvGbJRVi7kiFKAztsMXbcwffZSWwVwmCjAYa+Cvpse/xibKKmK+CQowGAvx7SDzj76J0uown4ICLMZC/Giv911ngxJbM5+CAizGGvgcPeaboACdsQY+x5D5JihAZqyHz2Exn4kCuoyN8DHqPGOJAoaMBfgYC54hoYCAsT4+Ro/5DBSxYkzGx+gzn4wiQsY8Fx9i5jHfEEUsKDDxITY8Y48iDhTY+BAjnrFDERoFKj7EgGesUciYMQefYcJzDihkyNgUnyHkORoKWTFWm+EjdHnGAMWsKbDxCSY8J0AxdQp2+AQ9nhOiIJ2xLj6ANOY5HRQUUBCh/GyeY7RRkEqBj/ILeM4QRdUp2KL0TI/nNFDYgDFvibJb8SwFha0oUFFyS4PnDFwU1qSgi5Lr8awVipN0ChSUWmTwrCZuMKLAQamNeNbYxQ0OFBgRSkyp8awdbjKl4IgS6/O8Om4SUmBpKC2f5/Vxm8ig4IiyMi2et8CNHAqsJcrJ3fK8gYQbTShaoZwavCDEzYYU1CYoo47H8ywNN2tSNEQJmWNecMQdhhT5KJ1ZixdYGu7QoUiPUDLtIS9p4C5biuYoF2nOSwYz3GXiUaSiTNpzXrTGnVYUGROUx2zIi/q411KnSNZQFmaLF9UU3G3NhK2LcuiMeVkPD7BlQg9l4IYeL5PbeADTYIKK9zOHvEKtiYfwmVBb4M0k1eI1dniQgAneBm/VafEqXQkPshwwwbPxKIdGL1RQhDLndaw6HqbjMcGw8RDKkH9Mwzau1Al4rQ0eSGWSt8b9lqMav41VCZfN/C6vdsRDOUxp4E6uqlMgr12c1bb3Bq8XuHiodp8pTht3cBdTprQWLvLU/bnBIrptPNhyypSuiZttWswgqxpORM0wGLMgOcLDmWOm6DZuIq27zGFsw2bUhqRp5qSz8Xf7vs4bjOt4gonONGeGwqJwwCfTFTzFRGea3EEhs8Xc47PpCp5kovOEE+Fay0Vg8Pl0BU9Tl3lCVyVcJNXXzpQvMZjgiaIWT8kLFzG3udvKOo1WsDqGvu+HR2c4qPFVpiaeStsyQ2vj4i/Jl/lOwyWeTFoxi6zOAEAb8q1GEp7PN5hFXylwh3wnT8VLKFNma434TvIBLzJzWEJzDa+z0Fkylo+XWjosla2JV9vILI3xGm/QPhoshZqzxHuY+xrfbz7B+0wCvlm/g/dS9jW+z7aJ9zNHFt/C2ysoh5nf5csNdhFKROkN+EL6qOmiZNxOb8qXGIxsCeVkqsGYl1mt+Sr0Nx2lbv5fXTnY67AXdMe8zNqGCsqtvl4NdeYwuk7YjJBD6/iroc4cRnekKi4+Q9RZH515fzrWLdLQdbm73e98u+7iMrPpH51tfzrWLdLQdbk/d3Z+03RRqVQqlUqlUqlUKpVKpVKpVCqVSqVSqVQqlcpt/gflLyIabDWsTgAAAABJRU5ErkJggg==');
+      height: 2rem;
+      width: auto;
+    }
+    .inform {
+      text-align: center;
+      margin-top: 0.5rem;
+      font-size: 1.5rem;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="cleaner" id="cleaner"></div>
+	<div class="app">
+    <div class="time" id="time"><span id="hour" onclick="switchTomato()">01:</span><span id="minute" onclick="pauseTomato()">23</span></div>
+    <div class="tomato"><span id="tom">TOMA</span><span id="ato">MATO</span></div>
+    <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">4月5日</span> <span id="week">星期六</span></div>
+    <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15"></iframe>
+    <div class='basket' id="basket"></div>
+    <div class="inform" id="inform" onclick="fridgeTomato()">同步时间：<span id="sync"> </span> <span id="net">初始化同步</span></div>
+  </div>
+
+    <script type="text/javascript">
+      var toStatus, ispaused, weeklyTomato;
+      var timerEntity;
+      var signalTired=0;
+      var toWorkTimer=25*60;//SECONDS
+      //var timerCount=0; //Deprecated because setTimout unreliable
+      var timerEnd, restWhenPaused;
+      var toRestTimer=5*60//150;
+      var expireTomato=30;//Day
+      var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
+      var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
+      var shinningSignal=[];
+        shinningSignal.push(document.getElementById('ato').style);
+        shinningSignal.push(document.getElementById('inform').style);
+        shinningSignal.push(document.getElementById('allDate').style);
+      var initialTitle=document.getElementsByTagName('title')[0].innerHTML;;
+      //document.getElementById('ato').innerHTML=navigator.userAgent;
+      prepareTomato();
+      //dumpTomato();gatherTomato(719);
+      function dumpTomato(){rottenTomato(-1);}
+      function gatherTomato(fakeTomatos){
+        if (!weeklyTomato.length) eatTomato();
+        if (fakeTomatos)
+          for (var i=0;i<fakeTomatos;i++)
+            weeklyTomato.push(-1);
+        else
+            weeklyTomato.push(Math.floor(new Date().getTime()/(24*3600*1000)));
+        canTomato();
+        showTomato("Gather");
+      }
+      function canTomato(){
+        document.cookie = "tomato="+compressTomato()+";expires="+ new Date(0x7fffffff * 1e3).toUTCString();
+      }
+      function compressTomato(){
+        var compressed="";
+        for (var i=0; i<weeklyTomato.length; i++){
+          if (i!=0) compressed+='.';
+          compressed+=Math.floor(weeklyTomato[i]).toString(36);
+        }
+        return compressed;
+      }
+      function showTomato(source){
+        var _doc=document.getElementById('basket');
+        _doc.textContent="";
+        var j=weeklyTomato.length;
+        var k=Math.floor(j%20/2); 
+        /*var l=Math.floor(j%40/20);*/
+        var m=Math.floor(j%60/20);
+        var n=Math.floor(j%180/60); 
+        var o=Math.floor(j/180);
+        for (var i=0; i<o; i++)
+          enchantTomato(_doc, 'border:0.1rem solid black; background-color: #c0c0c0');
+        for (var i=0; i<n; i++)
+          enchantTomato(_doc, 'border:0.1rem solid black;'); 
+        for (var i=0; i<m; i++)
+          enchantTomato(_doc, 'border:0.1rem dashed black;');
+        /*for (var i=0; i<l; i++)
+          enchantTomato(_doc, 'border:0.1rem dashed black;opacity: 0.7;'); */
+          //_doc.insertAdjacentHTML("beforeend", "✔");
+        for (var i=0; i<k; i++)
+          enchantTomato(_doc); 
+        for (var i=0; i<j%2; i++) 
+          enchantTomato(_doc, 'opacity: 0.5;');
+        if (j!=0)
+          _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
+        if (source) console.log("len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
+      }
+      function enchantTomato(_doc, magicType){
+          var script=document.createElement('img');
+          script.setAttribute('class','tImg');
+          if (magicType)
+            script.setAttribute('style',magicType);
+          _doc.appendChild(script);
+      }
+      function eatTomato(){
+        var offset=document.cookie.indexOf("tomato=");
+        var end = document.cookie.indexOf(";",offset);
+        if (offset!=-1){
+          offset+="tomato=".length
+          if (end==-1)
+            end=document.cookie.length;
+          var content=document.cookie.substring(offset, end);
+          if (content){
+            weeklyTomato=Array();
+            content=content.split(".");
+            for(var i in content)
+              if (parseInt(content[i], 36))
+                weeklyTomato.push(parseInt(content[i], 36));
+          }
+          console.log("len:"+weeklyTomato.length+" Read:"+weeklyTomato.slice(0,5));
+        }
+      }
+      function rottenTomato(expire){
+        if (!expire) expire=expireTomato;
+        var date=Math.floor(new Date().getTime()/(24*3600*1000))-expire;
+        weeklyTomato=weeklyTomato.sort(function(a, b){return b-a;});
+        for (var i=0;i<weeklyTomato.length;i++)
+          if (weeklyTomato[i]<date){
+            weeklyTomato=weeklyTomato.slice(0, i);
+            break;
+          }
+        canTomato();
+        setTimeout("rottenTomato()", expireTomato*24*3600*1000/3);
+        showTomato("Rotten");
+      }
+      function secondsUntilNow(future){
+        return Math.round((future-new Date().getTime())/1000);
+      }
+      function updateMsg(tom, sliceIndex){
+        if (tom) {
+          if (sliceIndex){
+            tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
+          }
+          if (tom.slice(-2)!=": ")
+            tom+=": "
+          tomatoMsg[0].innerHTML=tom;
+        }
+        timerCount=secondsUntilNow(timerEnd);
+        timeString=""+fZero(Math.floor(timerCount/60))+":"+fZero(timerCount%60);
+        tomatoMsg[1].innerHTML=timeString;
+        tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");   
+      }
+      function fridgeTomato(){
+        prepareTomato();
+        tomatoMsg[0].innerHTML="MATO"; 
+        tomatoMsg[1].innerHTML="TOMA";
+        tomatoMsg[2].innerHTML=initialTitle;
+        killShadow();
+      }
+      function prepareTomato(){
+        toStatus='stop';//work,rest,stop
+        ispaused=false;
+        weeklyTomato=Array();
+        eatTomato();
+        clearTimeout(timerEntity);
+        updateButton();
+      }
+      function switchTomato(){
+        switch (toStatus){
+          case 'stop':
+            toStatus='work';
+            setTimer();
+            timerEnd=new Date().getTime()+toWorkTimer*1000;
+            rottenTomato();
+            updateMsg("番茄开始");
+            updateButton();
+            break;
+          case 'work':
+            toStatus='rest';
+            restWhenPaused=toRestTimer*1000;
+            timerEnd=new Date().getTime()+restWhenPaused;
+            clearTimeout(timerEntity);
+            updateMsg("番茄中场");
+            pauseTomato();
+            break;
+          case 'rest':
+            toStatus='work';
+            restWhenPaused=toWorkTimer*1000;
+            timerEnd=new Date().getTime()+restWhenPaused;
+            clearTimeout(timerEntity);
+            updateMsg("番茄工作");
+            pauseTomato();
+            break;
+        }
+      }
+      function setTimer(){
+        clearTimeout(timerEntity);
+        timerEntity=setTimeout('tomatoTimer()',1000);
+      }
+      function tomatoTimer(){
+        if (timerEnd<new Date().getTime()){
+          if (toStatus=='work')
+            gatherTomato();
+          switchTomato();
+        } else {
+          updateMsg();
+          setTimer();
+        }
+      }
+      function updateButton(){
+        if (ispaused)
+          buttonStyle[1].color='#303030';
+        else
+          buttonStyle[1].color='#a9a9a9';
+        if (toStatus=='stop')
+          buttonStyle[1].color='#000000';
+        switch (toStatus){
+          case 'stop':
+            buttonStyle[0].color='#000000';
+            break;
+          case 'work':
+            buttonStyle[0].color='#303030';
+            break;
+          case 'rest':
+            buttonStyle[0].color='#a9a9a9';
+            break;
+        }
+      }
+      function updateSignal(){
+        if (ispaused && toStatus!='stop'){
+          if (signalTired>toWorkTimer){
+            tomatoMsg[2].innerHTML=initialTitle;
+            for (var i in shinningSignal)
+              shinningSignal[i].color='#000000';
+          } else {
+            if (signalTired%2==0){
+              tomatoMsg[2].innerHTML='✔ * * * ✔';
+              for (var i in shinningSignal)
+                shinningSignal[i].color='#ffffff';
+              if (signalTired%12==0 && signalTired<=8*12) killShadow(); 
+            } else {
+              tomatoMsg[2].innerHTML='* RELAX *';
+              for (var i in shinningSignal)
+                shinningSignal[i].color='#000000';
+            }
+            signalTired++;
+            setTimeout('updateSignal()', 800);
+          }
+        } else {
+          signalTired=0;
+          tomatoMsg[2].innerHTML=initialTitle;
+          for (var i in shinningSignal)
+            shinningSignal[i].color='#000000';
+        }
+      }
+      function pauseTomato(){
+        if (toStatus=="stop"){
+          return;
+        }
+        ispaused=!ispaused
+        if (ispaused){
+          clearTimeout(timerEntity);
+          restWhenPaused=timerEnd-new Date().getTime();
+          updateMsg("暂停", -4);
+        } else {
+          setTimer();
+          timerEnd=new Date().getTime()+restWhenPaused;
+          updateMsg("番茄", -4);
+        }
+        updateButton();
+        updateSignal();
+      }
+    </script>
+
+    <script>
+      var refreshRate=4*3600*1000;
+      var lastSyncTime;
+      var nextMinuteRefresh;
+      var timeOffset=0;
+      var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
+      var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week"), document.getElementById("tom")]
+      syncTime();
+      function killShadow(number){
+        if (number==undefined) number=0;
+        if (!(number>=0 && number<=2)) return;
+        clean=["block", "block", "none"];
+        color=["black", "white", "black"];
+        //color=["white", "white", "white"];
+        cleaner[0].display=clean[number];
+        cleaner[0].background=color[number];
+        setTimeout("killShadow("+(++number)+")", 600);
+      }
+      function reduceShadow(number){
+        if (number==undefined) nextMinuteRefresh=true;
+        if (!(number>=0 && number<=1)) return;
+        color=[0, 1];
+        cleaner[1].opacity=color[number];
+        setTimeout("reduceShadow("+(++number)+")", 600);
+      }
+      function fZero(a){
+        return ('0'+a).slice(-2);
+      }
+      function correctPrompt(){
+        timeCorrect(prompt('To Manually change kindle system time:\n;st 2012-07-22 17:59\nPlease ENTER number:\nformat: hhmmss(235959)\n* 123456 means reset *'));
+      }
+      function timeCorrect(correct){//000000~235959
+        if (correct.length!=5&&correct.length!=6) return false;
+        if (correct=="123456"){
+          timeOffset=0;
+          update();
+          return true;
+        }
+        var hms=[correct.slice(-6,-4), correct.slice(-4,-2), correct.slice(-2)];
+        var allow=[[0,23],[0,59],[0,59]];
+        for (var i=0;i<hms.length;i++){
+          hms[i]=Math.floor(parseInt(hms[i]));
+          if (!(hms[i]>=allow[i][0]&&hms[i]<=allow[i][1])) return false;
+        }
+        var date=new Date();
+        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+        timeOffset=(((hms[0]-date.getHours())*60+(hms[1]-date.getMinutes()))*60+(hms[2]-date.getSeconds()))*1000;
+        update();
+        return true;
+      }
+      function syncTime(){
+        var date=new Date();
+        //update();//included in updateInterval()
+        updateInterval();
+        //No need to update weather manualy at the first time.
+        weatherInterval();
+        nextMinuteRefresh=false;
+        lastSyncTime=date.getTime();
+        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+        date.setMilliseconds(date.getMilliseconds()+timeOffset);
+        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds())
+        killShadow();
+        setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
+        setInterval("reduceShadow()", 1700*1000);//prime number 0.5*3600=1800
+      }
+      function updateInterval(){
+        var mscs=new Date().getTime()+timeOffset;
+        setTimeout("updateInterval()", (59999-mscs%60000)+50);//60*1000
+        update();
+      }
+      function update(){
+        var date = new Date(new Date().getTime()+timeOffset);
+        //clock[4].innerHTML=date.getMinutes()+" "+date.getTimezoneOffset() + 480+" "+timeOffset;
+        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480 + (timeOffset==0?1:0));
+        var weekList = ['日', '一', '二', '三', '四', '五', '六'];
+        //clock[4].innerHTML=date.getTimezoneOffset()+" "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"."+date.getMilliseconds();
+        clock[0].innerHTML = fZero(date.getHours())+':'
+        clock[1].innerHTML = fZero(date.getMinutes())
+        clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
+        clock[3].innerHTML = '星期' + weekList[date.getDay()]
+        if (nextMinuteRefresh){
+          reduceShadow(0);
+          nextMinuteRefresh=false;
+        }
+      }
+      function weatherInterval(){
+        var date = new Date();
+        date.setMilliseconds(date.getMilliseconds()+timeOffset);
+        if (date.getTime()-lastSyncTime>refreshRate+100000)
+          setTimeout('weatherInterval()', 10*60*1000);
+        else
+          if ((date.getHours()+refreshRate/1000/3600<24)||date.getMinutes()+refreshRate/1000/60<=5)
+            setTimeout('weatherInterval()', refreshRate);
+          else
+            //if next sync is between 00:00~00:05//24*60*60*1000=86400000
+            setTimeout('weatherInterval()', ((24*3600*1000-1)-date.getTime()%(24*3600*1000))+50);
+        onlineWeather();
+      }
+      function onlineWeather(){
+        var _doc=document.getElementsByTagName('body')[0];
+        var script=document.createElement('img');
+        script.setAttribute('id','testConnection');
+        script.setAttribute('src','//www.163.com/favicon.ico?NoCache='+Math.random());
+        _doc.appendChild(script);
+        script.onload=script.onreadystatechange=function(){
+          if(!this.readyState||this.readyState=='loaded'||this.readyState=='complete'){
+            weather(true);
+          } else{
+            weather(false);
+          }
+          script.onload=script.onreadystatechange=null;
+        }
+        _doc.removeChild(script);
+      }
+      function weather(connected)
+      {
+        var date=new Date();
+        if (connected){
+          lastSyncTime=date.getTime();
+          date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+          date.setMilliseconds(date.getMilliseconds()+timeOffset);
+          document.getElementById('ifrmid').src=document.getElementById('ifrmid').src;
+          document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds())
+          document.getElementById('net').innerHTML='完成上一次同步';
+        } else {
+          document.getElementById('net').innerHTML='无网络连接';
+        }
+      }
+    </script>
+</body></html>
