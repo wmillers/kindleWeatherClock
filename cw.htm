@@ -4,13 +4,14 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <title>tomatoClock</title>
+  <link id='ico' href="" rel="icon" type="image/x-icon" />
 	<style>
     body {
       color: #000000;
       background-color: #ffffff;
       font-family: Arial,sans-serif;
     }
-    .cleaner { 
+    .cleaner {
         background: black; 
         position: fixed; 
         left: 0px; 
@@ -129,7 +130,7 @@
       }
       function compressTomato(){
         var compressed="";
-        for (var i=0; i<weeklyTomato.length; i++){
+        for (var i in weeklyTomato){
           if (i!=0) compressed+='.';
           compressed+=Math.floor(weeklyTomato[i]).toString(36);
         }
@@ -190,7 +191,7 @@
         if (!expire) expire=expireTomato;
         var date=Math.floor(new Date().getTime()/(24*3600*1000))-expire;
         weeklyTomato=weeklyTomato.sort(function(a, b){return b-a;});
-        for (var i=0;i<weeklyTomato.length;i++)
+        for (var i in weeklyTomato)
           if (weeklyTomato[i]<date){
             weeklyTomato=weeklyTomato.slice(0, i);
             break;
@@ -346,6 +347,31 @@
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
       var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week"), document.getElementById("tom")]
       syncTime();
+      function syncTime(){
+        var date=new Date();
+        setIcon();
+        //update();//included in updateInterval()
+        updateInterval();
+        //No need to update weather manualy at the first time.
+        weatherInterval();
+        nextMinuteRefresh=false;
+        lastSyncTime=date.getTime();
+        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+        date.setMilliseconds(date.getMilliseconds()+timeOffset);
+        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds())
+        killShadow();
+        setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
+        setInterval("reduceShadow()", 1700*1000);//prime number 0.5*3600=1800
+      }
+      function setIcon(){
+        for (var i in document.styleSheets)
+          for (var j in document.styleSheets[i].cssRules)
+            if (document.styleSheets[i].cssRules[j].selectorText=='.tImg'){
+              document.getElementById('ico').href=document.styleSheets[i].cssRules[j].style.content.slice(5,-2);
+              return true;
+            }
+        return false;
+      }
       function killShadow(number){
         if (number==undefined) number=0;
         if (!(number>=0 && number<=2)) return;
@@ -367,10 +393,10 @@
         return ('0'+a).slice(-2);
       }
       function correctPrompt(){
-        timeCorrect(prompt('To Manually change kindle system time:\n;st 2012-07-22 17:59\nPlease ENTER number:\nformat: hhmmss(235959)\n* 123456 means reset *'));
+        timeCorrect(prompt(new Date().toJSON().slice(11,-4)+'\nTo Manually change kindle system time:\n;st 2012-07-22 17:59\n\nPlease ENTER number:\nformat: hhmmss(235959)\n* 123456 means reset *'));
       }
       function timeCorrect(correct){//000000~235959
-        if (correct.length!=5&&correct.length!=6) return false;
+        if (!correct||correct.length!=5&&correct.length!=6) return false;
         if (correct=="123456"){
           timeOffset=0;
           update();
@@ -378,7 +404,7 @@
         }
         var hms=[correct.slice(-6,-4), correct.slice(-4,-2), correct.slice(-2)];
         var allow=[[0,23],[0,59],[0,59]];
-        for (var i=0;i<hms.length;i++){
+        for (var i in hms){
           hms[i]=Math.floor(parseInt(hms[i]));
           if (!(hms[i]>=allow[i][0]&&hms[i]<=allow[i][1])) return false;
         }
@@ -387,21 +413,6 @@
         timeOffset=(((hms[0]-date.getHours())*60+(hms[1]-date.getMinutes()))*60+(hms[2]-date.getSeconds()))*1000;
         update();
         return true;
-      }
-      function syncTime(){
-        var date=new Date();
-        //update();//included in updateInterval()
-        updateInterval();
-        //No need to update weather manualy at the first time.
-        weatherInterval();
-        nextMinuteRefresh=false;
-        lastSyncTime=date.getTime();
-        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
-        date.setMilliseconds(date.getMilliseconds()+timeOffset);
-        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds())
-        killShadow();
-        setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
-        setInterval("reduceShadow()", 1700*1000);//prime number 0.5*3600=1800
       }
       function updateInterval(){
         var mscs=new Date().getTime()+timeOffset;
