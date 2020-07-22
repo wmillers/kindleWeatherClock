@@ -3,7 +3,11 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
-  <!--version 1.3.1-->
+  <!--
+    version 1.3.1
+    author  wmillers@github
+    license LGPL2.1
+  -->
   <title>tomatoClock</title>
   <link id='ico' href="" rel="icon" type="image/x-icon" />
 	<style>
@@ -110,7 +114,7 @@
         shinningSignal.push(document.getElementById('ato').style);
         shinningSignal.push(document.getElementById('inform').style);
         shinningSignal.push(document.getElementById('allDate').style);
-      var initialTitle=document.getElementsByTagName('title')[0].innerHTML;;
+      var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
       //document.getElementById('ato').innerHTML=navigator.userAgent;
       prepareTomato();
       //dumpTomato();gatherTomato(719);
@@ -221,6 +225,9 @@
         killShadow();
       }
       function prepareTomato(){
+        //quit from tomato
+        preventDecreaseShadow=false;
+        lessDisturbUpdateWhenTomato=false;
         toStatus='stop';//work,rest,stop
         ispaused=false;
         weeklyTomato=Array();
@@ -233,6 +240,8 @@
           case 'stop':
             toStatus='work';
             setTimer();
+            preventDecreaseShadow=true;
+            lessDisturbUpdateWhenTomato=true;
             timerEnd=new Date().getTime()+toWorkTimer*1000;
             rottenTomato();
             updateMsg("番茄开始");
@@ -300,11 +309,15 @@
               tomatoMsg[2].innerHTML='✔ * * * ✔';
               for (var i in shinningSignal)
                 shinningSignal[i].color='#ffffff';
-              if (signalTired%12==0 && signalTired<=8*12) killShadow(); 
             } else {
               tomatoMsg[2].innerHTML='* RELAX *';
               for (var i in shinningSignal)
                 shinningSignal[i].color='#000000';
+            }
+            if (signalTired==0 || signalTired==toWorkTimer) {
+              preventDecreaseShadow=false;
+              killShadow();
+              preventDecreaseShadow=true;
             }
             signalTired++;
             setTimeout('updateSignal()', 800);
@@ -340,6 +353,8 @@
       var lastSyncTime;
       var nextMinuteRefresh;
       var timeOffset=0;
+      var preventDecreaseShadow=false;//Stop when tomato
+      var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
       var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week"), document.getElementById("tom")]
       syncTime();
@@ -359,7 +374,7 @@
         nextMinuteRefresh=false;
         killShadow();
         setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
-        setInterval("reduceShadow()", 1700*1000);//prime number 0.5*3600=1800
+        setInterval("reduceShadow()", 3100*1000);//prime number 60*60=3600
       }
       function setIcon(){
         for (var i in document.styleSheets)
@@ -371,6 +386,7 @@
         return false;
       }
       function killShadow(number){
+        if (preventDecreaseShadow) return;
         if (number==undefined) number=0;
         if (!(number>=0 && number<=2)) return;
         clean=["block", "block", "none"];
@@ -380,6 +396,7 @@
         setTimeout("killShadow("+(++number)+")", 600);
       }
       function reduceShadow(number){
+        if (preventDecreaseShadow) return;
         if (number==undefined) nextMinuteRefresh=true;
         if (!(number>=0 && number<=1)) return;
         color=[0, 1];
@@ -419,7 +436,10 @@
       }
       function updateInterval(){
         var mscs=getOffsetDate().getTime();
-        setTimeout("updateInterval()", (59999-mscs%60000)+50);//60*1000
+        if (lessDisturbUpdateWhenTomato)
+          setTimeout("updateInterval()", (599999-mscs%600000)+50);//(60*10)*1000+50
+        else
+          setTimeout("updateInterval()", (59999-mscs%60000)+50);//60*1000+50
         update();
       }
       function update(){
