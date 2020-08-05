@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <!--
-    version 1.3.1
+    version 1.4.1 (main, bug fix not included in version number)
     author  wmillers@github
     license LGPL2.1
   -->
@@ -357,8 +357,28 @@
       var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
       var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week"), document.getElementById("tom")]
-      syncTime();
-      function syncTime(){
+      var isClockInit=false;
+
+      initDateFromServer();
+      setTimeout("initClockWeather()",500);//if server not responsed in 0.5s, use local time instead
+
+      function initDateFromServer(){
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("HEAD", ".",true);
+        xmlhttp.onreadystatechange=function() {
+          if (xmlhttp.readyState==4) {
+            timeOffset=new Date(xmlhttp.getResponseHeader("Date")).getTime()-new Date().getTime()+500;//0.5s lag
+            initClockWeather();//immediately after date time got from server
+          }
+        }
+        xmlhttp.send(null);
+      }
+      function initClockWeather(){
+        if(isClockInit){
+          return;//avoid duplicated init clock;
+        }
+        isClockInit=true;
+
         var date=getOffsetDate();
         setIcon();
 
