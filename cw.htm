@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <!--
-    version 1.4.1 (main, bug fix not included in version number)
+    version 1.4 (bug-fix changes are in commit logs)
     author  wmillers@github
     license LGPL2.1
   -->
@@ -95,7 +95,7 @@
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">01:</span><span id="minute" onclick="pauseTomato()">23</span></div>
     <div class="tomato"><span id="tom">TOMA</span><span id="ato">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">4月5日</span> <span id="week">星期六</span></div>
-    <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15"></iframe>
+    <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato()">同步时间：<span id="sync"> </span> <span id="net">未同步</span></div>
   </div>
