@@ -92,9 +92,9 @@
 <body>
   <div class="cleaner" id="cleaner"></div>
 	<div class="app">
-    <div class="time" id="time"><span id="hour" onclick="switchTomato()">01:</span><span id="minute" onclick="pauseTomato()">23</span></div>
+    <div class="time" id="time"><span id="hour" onclick="switchTomato()">98:</span><span id="minute" onclick="pauseTomato()">76</span></div>
     <div class="tomato"><span id="tom">TOMA</span><span id="ato">MATO</span></div>
-    <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">4月5日</span> <span id="week">星期六</span></div>
+    <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">5月4日</span> <span id="week">星期三</span></div>
     <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato()">同步时间：<span id="sync"> </span> <span id="net">未同步</span></div>
@@ -357,30 +357,43 @@
       var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
       var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week"), document.getElementById("tom")]
-      var isClockInit=false;
+      var hasClockInit=false;
+
 
       initDateFromServer();
-      setTimeout("initClockWeather()",500);//if server not responsed in 0.5s, use local time instead
+      adjustAgainstHardwareTimeLag();//extra offset cycle
+      initBrowserPage();
+      setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
+      function adjustAgainstHardwareTimeLag(lag){
+        if (lag==undefined||lag<3*24*3600*1000) lag=3*24*3600*1000;//add 5s offset every 3d
+        if (hasClockInit) timeOffset+=5*1000;
+        setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
+      }
       function initDateFromServer(){
         xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("HEAD", ".",true);
+        xmlhttp.open("HEAD", "", true);
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
-            timeOffset=new Date(xmlhttp.getResponseHeader("Date")).getTime()-new Date().getTime()+500;//0.5s lag
+            timeOffset=new Date(xmlhttp.getResponseHeader("Date")).getTime()-new Date().getTime()+2000;//1.5s lag+0.5s screen lag
             initClockWeather();//immediately after date time got from server
           }
         }
         xmlhttp.send(null);
       }
+      function initBrowserPage(){
+        setIcon();
+        nextMinuteRefresh=false;
+        killShadow();
+        setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
+        setInterval("reduceShadow()", 3100*1000);//prime number 60*60=3600
+      }
       function initClockWeather(){
-        if(isClockInit){
+        if(hasClockInit){
           return;//avoid duplicated init clock;
         }
-        isClockInit=true;
-
+        hasClockInit=true;
         var date=getOffsetDate();
-        setIcon();
 
         //update();//included in updateInterval()
         updateInterval();
@@ -390,11 +403,6 @@
         document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds());
         document.getElementById('net').innerHTML='初始化同步';
         weatherInterval();
-
-        nextMinuteRefresh=false;
-        killShadow();
-        setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
-        setInterval("reduceShadow()", 3100*1000);//prime number 60*60=3600
       }
       function setIcon(){
         for (var i in document.styleSheets)
@@ -521,4 +529,5 @@
         }
       }
     </script>
-</body></html>
+</body>
+</html>
