@@ -219,7 +219,7 @@
           tomatoMsg[0].innerHTML=tom;
         }
         timerCount=secondsUntilNow(timerEnd);
-        timeString=""+fZero(Math.floor(timerCount/60))+":"+fZero(timerCount%60);
+        timeString=""+frontZero(Math.floor(timerCount/60))+":"+frontZero(timerCount%60);
         tomatoMsg[1].innerHTML=timeString;
         tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
       }
@@ -368,8 +368,9 @@
       setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
       function adjustAgainstHardwareTimeLag(lag){
-        if (lag==undefined||lag<24*3600*1000) lag=24*3600*1000;//add 5s offset every 1d
-        if (hasClockInit) timeOffset+=5*1000;
+        if (lag==undefined||lag<6*3600*1000) lag=6*3600*1000;//add 1s offset every 6h
+        if (hasClockInit)
+          timeOffset+=1000;
         setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
       }
       function initDateFromServer(){
@@ -378,8 +379,8 @@
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
             serverTime=new Date(xmlhttp.getResponseHeader("Date"))
-            timeOffset=serverTime.getTime()-new Date().getTime()+3000;//lag=1s(server date accuracy within one second)+2s(screen refresh time)
-            console.log("S"+(serverTime.getTime()/1000)+".000:C"+(new Date().getTime()/1000)+":"+(timeOffset>0?"+":"")+timeOffset/1000);
+            timeOffset=serverTime.getTime()-new Date().getTime()+2000;//lag=1s(server date accuracy within one second)+1s(screen refresh time)
+            console.log("S"+(serverTime.getTime()/1000)+".000:C"+(new Date().getTime()/1000)+":"+timeOffsetFormat());
             initClockWeather();//immediately after date time got from server
           }
         }
@@ -403,8 +404,7 @@
         updateInterval();
 
         //No need to update weather manually at the first time.
-        lastSyncTime=date.getTime();
-        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds());
+        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds())+" "+timeOffsetFormat();
         document.getElementById('net').innerHTML='初始化同步';
         weatherInterval();
       }
@@ -439,8 +439,35 @@
         cleaner[1].opacity=color[number];
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
-      function fZero(a){
+      function frontZero(a){
         return ('0'+a).slice(-2);
+      }
+      function timeFormat(s,n){
+        if (!n) n=2;
+        var str="";
+        var f=[[1,60,60,24,30,12,10,10],
+               ["s","m","h","d","M","Y","D","C"]];
+        var fsum=1;
+        for (var i in f[0])
+          fsum*=f[0][i];
+        for (var i=f[0].length-1;i>=0&&n>0;i--){
+          if (s>=fsum){
+            str+=Math.floor(s/fsum)+f[1][i];
+            s%=fsum;
+            n--;
+          }
+          fsum/=f[0][i]
+        }
+        return str;
+      }
+      function timeOffsetFormat(){
+        var s=timeOffset/1000;
+        var a=timeOffset>0?true:false;
+        var str=(timeOffset>0?"+":"");
+        if (!a) s=-s;
+        if (s<1) return str+(""+s).slice(1);
+        if (s<60) return str+(""+s).slice(0,5);
+        return str+timeFormat(s);
       }
       function correctPrompt(){
         timeCorrect(prompt(getOffsetDate().toLocaleTimeString()+'\nTo Manually change kindle system time:\n;st 2012-07-22 17:59\n\nPlease ENTER number:\nformat: hhmmss(235959)\n* 123456 means reset *'));
@@ -484,8 +511,8 @@
           date.setMinutes(date.getMinutes()+1);
         var weekList = ['日', '一', '二', '三', '四', '五', '六'];
         //clock[4].innerHTML=date.getMinutes()+" "+date.getTimezoneOffset() + 480+" "+timeOffset;
-        clock[0].innerHTML = fZero(date.getHours())+':'
-        clock[1].innerHTML = fZero(date.getMinutes())
+        clock[0].innerHTML = frontZero(date.getHours())+':'
+        clock[1].innerHTML = frontZero(date.getMinutes())
         clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
         clock[3].innerHTML = '星期' + weekList[date.getDay()]
         if (nextMinuteRefresh){
@@ -495,6 +522,7 @@
       }
       function weatherInterval(){
         var date = getOffsetDate();
+        if (!lastSyncTime) lastSyncTime=date.getTime();
         if (date.getTime()-lastSyncTime>refreshRate+100000)
           setTimeout('weatherInterval()', 10*60*1000);
         else
@@ -502,7 +530,7 @@
             setTimeout('weatherInterval()', refreshRate);
           else
             /*if next sync is between 00:00~00:05//24*60*60*1000=86400000
-            caculate time till 00:00
+            calculate time till 00:00
             setTimeout('weatherInterval()', (24*3600*1000-1)-date.getTime()%(24*3600*1000)+50);//have timezone bug*/
             setTimeout('weatherInterval()', (((23-date.getHours())*60+59-date.getMinutes())*60+59-date.getSeconds())*1000+999-date.getMilliseconds()+50);
         if (date.getTime()-lastSyncTime>10000)
@@ -530,7 +558,7 @@
         if (connected){
           lastSyncTime=date.getTime();
           document.getElementById('ifrmid').src=document.getElementById('ifrmid').src;//change iframe
-          document.getElementById('sync').innerHTML=date.getFullYear()+'-'+fZero(date.getMonth()+1)+'-'+fZero(date.getDate())+' '+fZero(date.getHours())+':'+fZero(date.getMinutes())+':'+fZero(date.getSeconds())
+          document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds())+" "+timeOffsetFormat();
           document.getElementById('net').innerHTML='完成上一次同步';
         } else {
           document.getElementById('net').innerHTML='无网络连接';
