@@ -93,7 +93,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app">
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
-    <div class="tomato" onclick="runTime()"><span id="tom">TOMA</span><span id="ato">MATO</span></div>
+    <div class="tomato"><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">0月0日</span> <span id="week">星期零</span></div>
     <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
@@ -381,13 +381,16 @@
       }
       function initDateFromServer(){
         xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("HEAD", "", true);
+        xmlhttp.open("HEAD", '?noCache='+Math.random(), true);
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
-            serverTime=new Date(xmlhttp.getResponseHeader("Date"))
-            timeOffset=serverTime.getTime()-new Date().getTime()+2000;//lag=1s(server date accuracy within one second)+1s(screen refresh time)
-            console.log("S"+(serverTime.getTime()/1000)+".000:C"+(new Date().getTime()/1000)+":"+timeOffsetFormat());
-            initClockWeather();//immediately after date time got from server
+            if (xmlhttp.status!=0) {
+              serverTime=new Date(xmlhttp.getResponseHeader("Date"))
+              timeOffset=serverTime.getTime()-new Date().getTime()+2000;//lag=1.5s(server:40(40.90)->41.50)+0.5s(screen refresh time)
+              console.log("S"+(serverTime.getTime()/1000)+".000:C"+(new Date().getTime()/1000)+":"+timeOffsetFormat());
+              comment(timeOffsetFormat());
+              initClockWeather();//immediately after date time got from server
+            } else comment("Failed:ServerTime");
           }
         }
         xmlhttp.send(null);
@@ -465,21 +468,22 @@
             s%=fsum;
             n--;
           }
-          fsum/=f[0][i]
+          fsum/=f[0][i];
         }
         return str;
       }
-      function timeOffsetFormat(){
+      function timeOffsetFormat(n){
+        if (timeOffset==0) return "";
+        if (!n) n=2;
         var s=timeOffset/1000;
-        var a=timeOffset>0?true:false;
-        var str=(timeOffset>0?"+":"");
-        if (!a) s=-s;
+        var str=timeOffset>0?"+":"-";
+        if (str=="-") s=-s;
         if (s<1) return str+(""+s).slice(1);
         if (s<60) return str+(""+s).slice(0,5);
-        return str+timeFormat(s,2);
+        return str+timeFormat(s,n);
       }
       function correctPrompt(){
-        timeCorrect(prompt(getOffsetDate().toLocaleTimeString()+'\nTo Manually change kindle system time:\n;st 2012-07-22 17:59\n\nPlease ENTER number:\nformat: hhmmss(235959)\n* 123456 means reset *'));
+        timeCorrect(prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *'));
       }
       function timeCorrect(correct){//000000~235959
         if (!correct||correct.length!=5&&correct.length!=6) return false;
@@ -535,12 +539,11 @@
         if (date.getTime()-lastSyncTime>refreshRate+100000)
           setTimeout('weatherInterval()', 10*60*1000);
         else
-          if (date.getHours()+refreshRate/1000/3600<24||date.getMinutes()+refreshRate/1000/60<=5)
+          if (date.getHours()+refreshRate/1000/3600<24)
             setTimeout('weatherInterval()', refreshRate);
           else
-            /*if next sync is between 00:00~00:05//24*60*60*1000=86400000
-            calculate time till 00:00
-            setTimeout('weatherInterval()', (24*3600*1000-1)-date.getTime()%(24*3600*1000)+50);//have timezone bug*/
+            //calculate time till 00:00
+            //setTimeout('weatherInterval()', (24*3600*1000-1)-date.getTime()%(24*3600*1000)+50);//have timezone bug
             setTimeout('weatherInterval()', (((23-date.getHours())*60+59-date.getMinutes())*60+59-date.getSeconds())*1000+999-date.getMilliseconds()+50);
         if (date.getTime()-lastSyncTime>10000)
           onlineWeather();
@@ -549,7 +552,7 @@
         var _doc=document.getElementsByTagName('body')[0];
         var script=document.createElement('img');
         script.setAttribute('id','testConnection');
-        script.setAttribute('src','//www.163.com/favicon.ico?NoCache='+Math.random());
+        script.setAttribute('src','//www.163.com/favicon.ico?noCache='+Math.random());
         _doc.appendChild(script);
         script.onload=script.onreadystatechange=function(){
           if(!this.readyState||this.readyState=='loaded'||this.readyState=='complete'){
