@@ -93,7 +93,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app">
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
-    <div class="tomato"><span id="tom">TOMA</span><span id="ato">MATO</span></div>
+    <div class="tomato" onclick="runTime()"><span id="tom">TOMA</span><span id="ato">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">0月0日</span> <span id="week">星期零</span></div>
     <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
@@ -101,6 +101,11 @@
   </div>
 
     <script type="text/javascript">
+      var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
+      function comment(s){
+        if (s!=initialTitle) setTimeout("comment('"+initialTitle+"')",10*1000);
+        document.getElementsByTagName('title')[0].innerHTML=String(s);
+      }
       var toStatus, ispaused, weeklyTomato;
       var timerEntity;
       var signalTired=0;
@@ -114,8 +119,7 @@
         shinningSignal.push(document.getElementById('ato').style);
         shinningSignal.push(document.getElementById('inform').style);
         shinningSignal.push(document.getElementById('allDate').style);
-      var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
-      //document.getElementById('ato').innerHTML=navigator.userAgent;
+      //comment(navigator.userAgent);
       prepareTomato();
       //dumpTomato();gatherTomato(719);
       function dumpTomato(){rottenTomato(-1);}
@@ -192,6 +196,7 @@
           console.log("Empty >ToMaMaTo< Store from "+source);
         else
           console.log("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
+        //comment("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
       }
       function rottenTomato(expire){
         if (!expire) expire=expireTomato;
@@ -359,7 +364,8 @@
       var preventDecreaseShadow=false;//Stop when tomato
       var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
-      var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week"), document.getElementById("tom")]
+      var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week")];
+      var uptime=new Date().getTime();
       var hasClockInit=false;
 
       initDateFromServer();
@@ -439,14 +445,17 @@
         cleaner[1].opacity=color[number];
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
+      function runTime(){
+        comment(timeFormat((new Date().getTime()-uptime)/1000));
+      }
       function frontZero(a){
         return ('0'+a).slice(-2);
       }
       function timeFormat(s,n){
-        if (!n) n=2;
+        if (!n) n=3;
         var str="";
-        var f=[[1,60,60,24,30,12,10,10],
-               ["s","m","h","d","M","Y","D","C"]];
+        var f=[[1,60,60,24,30,12,100,10],
+               ["s","m","h","d","M","Y","C","T"]];
         var fsum=1;
         for (var i in f[0])
           fsum*=f[0][i];
@@ -467,7 +476,7 @@
         if (!a) s=-s;
         if (s<1) return str+(""+s).slice(1);
         if (s<60) return str+(""+s).slice(0,5);
-        return str+timeFormat(s);
+        return str+timeFormat(s,2);
       }
       function correctPrompt(){
         timeCorrect(prompt(getOffsetDate().toLocaleTimeString()+'\nTo Manually change kindle system time:\n;st 2012-07-22 17:59\n\nPlease ENTER number:\nformat: hhmmss(235959)\n* 123456 means reset *'));
@@ -510,7 +519,7 @@
         if (timeOffset==0)//bug on kindle
           date.setMinutes(date.getMinutes()+1);
         var weekList = ['日', '一', '二', '三', '四', '五', '六'];
-        //clock[4].innerHTML=date.getMinutes()+" "+date.getTimezoneOffset() + 480+" "+timeOffset;
+        //comment(date.getMinutes()+" "+date.getTimezoneOffset() + 480+" "+timeOffset);
         clock[0].innerHTML = frontZero(date.getHours())+':'
         clock[1].innerHTML = frontZero(date.getMinutes())
         clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
