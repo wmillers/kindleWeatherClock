@@ -374,7 +374,7 @@
       setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
       function adjustAgainstHardwareTimeLag(lag){
-        if (lag==undefined||lag<6*3600*1000) lag=6*3600*1000;//add 1s offset every 6h
+        if (lag==undefined||lag<8.5*3600*1000) lag=8.5*3600*1000;//add 1s offset every 8.5h
         if (hasClockInit)
           timeOffset+=1000;
         setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
@@ -388,7 +388,7 @@
               serverTime=new Date(xmlhttp.getResponseHeader("Date"))
               timeOffset=serverTime.getTime()-new Date().getTime()+2000;//lag=1.5s(server:40(40.90)->41.50)+0.5s(screen refresh time)
               console.log("S"+(serverTime.getTime()/1000)+".000:C"+(new Date().getTime()/1000)+":"+timeOffsetFormat());
-              comment(timeOffsetFormat());
+              comment(timeOffsetFormat(3));
               initClockWeather();//immediately after date time got from server
             } else comment("Failed:ServerTime");
           }
@@ -449,7 +449,7 @@
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
       function runTime(){
-        comment(timeFormat((new Date().getTime()-uptime)/1000));
+        comment(timeFormat(new Date().getTime()-uptime),2);
       }
       function frontZero(a){
         return ('0'+a).slice(-2);
@@ -457,8 +457,8 @@
       function timeFormat(s,n){
         if (!n) n=3;
         var str="";
-        var f=[[1,60,60,24,30,12,100,10],
-               ["s","m","h","d","M","Y","C","T"]];
+        var f=[[10,100,60,60,24,30,12,100,10],
+               ["","s","m","h","d","M","Y","C","T"]];
         var fsum=1;
         for (var i in f[0])
           fsum*=f[0][i];
@@ -475,11 +475,11 @@
       function timeOffsetFormat(n){
         if (timeOffset==0) return "";
         if (!n) n=2;
-        var s=timeOffset/1000;
+        var s=timeOffset;
         var str=timeOffset>0?"+":"-";
         if (str=="-") s=-s;
-        if (s<1) return str+(""+s).slice(1);
-        if (s<60) return str+(""+s).slice(0,5);
+        if (s<1000) return str+(""+s).slice(1);
+        if (s<60*1000) return str+(""+s).slice(0,5);
         return str+timeFormat(s,n);
       }
       function correctPrompt(){
