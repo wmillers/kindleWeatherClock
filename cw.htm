@@ -94,24 +94,30 @@
 	<div class="app">
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
-    <div class="date" id="allDate" onclick="correctPrompt();onlineWeather();"><span id="date">0月0日</span> <span id="week">星期零</span></div>
+    <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
     <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
-    <div class="inform" id="inform" onclick="fridgeTomato()">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="net">未同步零</span></div>
+    <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="net">未同步零</span></div>
   </div>
 
     <script type="text/javascript">
       var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
+      var clearCommentTime=0;
       function comment(s){
-        if (s!=initialTitle) setTimeout("comment('"+initialTitle+"')",10*1000);
+        if (s!=initialTitle) {
+          clearCommentTime=new Date().getTime()+20*1000;
+          setTimeout("comment('"+initialTitle+"')",20*1000);
+        } else if (new Date().getTime()<clearCommentTime)
+          return;
         document.getElementsByTagName('title')[0].innerHTML=String(s);
+        return s;
       }
       var toStatus, ispaused, weeklyTomato;
       var timerEntity;
       var signalTired=0;
-      var toWorkTimer=25*60;//SECONDS
+      var toWorkTimer=25*60;//Second
       var timerEnd, restWhenPaused;
-      var toRestTimer=5*60//150;
+      var toRestTimer=5*60
       var expireTomato=30;//Day
       var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
       var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
@@ -365,7 +371,7 @@
       var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
       var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week")];
-      var uptime=new Date().getTime();
+      var initTime=new Date().getTime();
       var hasClockInit=false;
 
       initDateFromServer();
@@ -374,23 +380,33 @@
       setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
       function adjustAgainstHardwareTimeLag(lag){
-        if (lag==undefined||lag<8.5*3600*1000) lag=8.5*3600*1000;//add 1s offset every 8.5h
+        if (lag==undefined||lag<9.75*3600*1000) lag=9.75*3600*1000;//add 1s offset every 9.75h
         if (hasClockInit)
           timeOffset+=1000;
         setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
       }
       function initDateFromServer(){
         xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("HEAD", '?noCache='+Math.random(), true);
+        xmlhttp.open("HEAD", noCache(), true);
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
             if (xmlhttp.status!=0) {
-              serverTime=new Date(xmlhttp.getResponseHeader("Date"))
-              timeOffset=serverTime.getTime()-new Date().getTime()+2000;//lag=1.5s(server:40(40.90)->41.50)+0.5s(screen refresh time)
-              console.log("S"+(serverTime.getTime()/1000)+".000:C"+(new Date().getTime()/1000)+":"+timeOffsetFormat());
-              comment(timeOffsetFormat(3));
+              var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
+              var clientTime=new Date().getTime();
+              var deltaOffset=timeOffset?timeOffset:"";
+              var dOffsetPerHour="";
+              timeOffset=serverTime-clientTime+2000;//lag=1.5s(server:40(40.90)->41.50)+0.5s(screen refresh time)
+              if (deltaOffset) {
+                deltaOffset=timeOffset-deltaOffset;
+                var uptime=new Date().getTime()-initTime;
+                if (uptime>3600*1000)
+                  dOffsetPerHour=timeFormat(deltaOffset/(uptime/1000/3600/24), 2)+"/d";
+              }
+              console.log(Math.floor(serverTime/1e6)+":S"+serverTime%1e6/1000+".000:C"+clientTime%1e6/1000+":"+timeOffsetFormat());
+              comment(timeFormat(deltaOffset)+"#"+timeOffsetFormat(3)+"#"+dOffsetPerHour);
               initClockWeather();//immediately after date time got from server
-            } else comment("Failed:ServerTime");
+            } else
+              comment("Failed:ServerTime");
           }
         }
         xmlhttp.send(null);
@@ -449,41 +465,64 @@
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
       function runTime(){
-        comment(timeFormat(new Date().getTime()-uptime),2);
+        comment(timeFormat(new Date().getTime()-initTime),2);
       }
-      function frontZero(a){
-        return ('0'+a).slice(-2);
+      function noCache(){
+        return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);
+      }
+      function frontZero(a, n){
+        if (!n) n=2;
+        a=a.toString();
+        if (a.length>=n) return a;
+        for (var i=0;i<n;i++)
+          a='0'+a;
+        return a.slice(-n);
       }
       function timeFormat(s,n){
+        s=Math.floor(s);
+        if (s==0) return "";
         if (!n) n=3;
         var str="";
-        var f=[[10,100,60,60,24,30,12,100,10],
-               ["","s","m","h","d","M","Y","C","T"]];
-        var fsum=1;
-        for (var i in f[0])
-          fsum*=f[0][i];
-        for (var i=f[0].length-1;i>=0&&n>0;i--){
-          if (s>=fsum){
-            str+=Math.floor(s/fsum)+f[1][i];
-            s%=fsum;
-            n--;
-          }
-          fsum/=f[0][i];
+        var a="";
+        if (s>0)
+          a="+";
+        else {
+          a='-';
+          s=-s;
         }
-        return str;
+        if (s<1000) 
+          str="."+frontZero(s,3)+"s";
+        else{
+          var f=[[10,100,60,60,24,30,12,100,10],
+                 ["","s","m","h","d","M","Y","C","T"]];
+          var fsum=1;
+          for (var i in f[0])
+            fsum*=f[0][i];
+          for (var i=f[0].length-1;i>0&&n>0;i--){
+            if (s>=fsum){
+              str+=Math.floor(s/fsum)+f[1][i];
+              s%=fsum;
+              n--;
+            }
+            fsum/=f[0][i];
+          }
+          if (s!=0)
+            str+=frontZero(Math.floor(s/fsum), 2)+f[1][0];
+        }
+        return a+str;
       }
       function timeOffsetFormat(n){
-        if (timeOffset==0) return "";
         if (!n) n=2;
-        var s=timeOffset;
-        var str=timeOffset>0?"+":"-";
-        if (str=="-") s=-s;
-        if (s<1000) return str+(""+s).slice(1);
-        if (s<60*1000) return str+(""+s).slice(0,5);
-        return str+timeFormat(s,n);
+        return timeFormat(timeOffset,n);
       }
       function correctPrompt(){
-        timeCorrect(prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *'));
+        var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *');
+        if (!timeCorrect(userIuput))
+          try{
+            comment(eval(userIuput));
+          } catch (e){
+            comment(e);
+          }
       }
       function timeCorrect(correct){//000000~235959
         if (!correct||correct.length!=5&&correct.length!=6) return false;
@@ -552,7 +591,7 @@
         var _doc=document.getElementsByTagName('body')[0];
         var script=document.createElement('img');
         script.setAttribute('id','testConnection');
-        script.setAttribute('src','//www.163.com/favicon.ico?noCache='+Math.random());
+        script.setAttribute('src','//www.163.com/favicon.ico'+noCache());
         _doc.appendChild(script);
         script.onload=script.onreadystatechange=function(){
           if(!this.readyState||this.readyState=='loaded'||this.readyState=='complete'){
