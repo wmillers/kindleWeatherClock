@@ -97,18 +97,21 @@
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
     <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
-    <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="net">未同步零</span></div>
+    <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
   </div>
 
     <script type="text/javascript">
       var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
       var clearCommentTime=0;
       function comment(s){
-        if (s!=initialTitle) {
+        if (s!=undefined) {
           clearCommentTime=new Date().getTime()+20*1000;
-          setTimeout("comment('"+initialTitle+"')",20*1000);
-        } else if (new Date().getTime()<clearCommentTime)
-          return;
+          setTimeout("comment()",20*1000);
+        } else 
+          if (new Date().getTime()<clearCommentTime)
+            return;
+          else
+            s=initialTitle;
         document.getElementsByTagName('title')[0].innerHTML=String(s);
         return s;
       }
@@ -396,6 +399,7 @@
           for (var i in averageTimeOffset)
             sum+=averageTimeOffset[i];
           timeOffset=Math.floor(sum/averageTimeOffset.length);
+          averageTimeOffset=[];
           if (!initTimeOffset && timeOffset) initTimeOffset=timeOffset;
           if (initTimeOffset) {
             var uptime=new Date().getTime()-initTime;
@@ -406,10 +410,10 @@
             }
           }
           console.log(comment(timeFormat(dTimeOffset)+"#"+timeOffsetFormat(3)+"#"+dOffsetPerSecond));
-          averageTimeOffset=[];
+          document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
           return true;
         } else
-          singleDateFromServer(10);
+          singleDateFromServer(20);
       }
       function singleDateFromServer(n){
         xmlhttp = new XMLHttpRequest();
@@ -417,7 +421,7 @@
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
             if (n>0)
-              setTimeout('singleDateFromServer('+(--n)+')', Math.floor(Math.random()*1000));
+              setTimeout('singleDateFromServer('+(--n)+')', 100);
             else {
               initDateFromServer(true);
               return;
@@ -425,7 +429,7 @@
             if (xmlhttp.status!=0) {
               var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
               var clientTime=new Date().getTime();
-              timeOffset=serverTime-clientTime+1400;//preset lag==>+0.5s(screen refresh time)
+              timeOffset=serverTime-clientTime+1900;//preset lag==>+1s(screen refresh time)
               averageTimeOffset.push(timeOffset);
               console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e6)+":S"+serverTime%1e6/1000+".000:C"+clientTime%1e6/1000+":"+timeOffsetFormat());
               comment("#"+timeOffsetFormat(3));
@@ -454,7 +458,8 @@
         updateInterval();
 
         //No need to update weather manually at the first time.
-        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds())+" "+timeOffsetFormat();
+        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
+        document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
         document.getElementById('net').innerHTML='初始化同步';
         weatherInterval();
       }
@@ -634,7 +639,8 @@
         if (connected){
           lastSyncTime=date.getTime();
           document.getElementById('ifrmid').src=document.getElementById('ifrmid').src;//change iframe
-          document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds())+" "+timeOffsetFormat();
+          document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
+          document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
           document.getElementById('net').innerHTML='完成上一次同步';
         } else {
           document.getElementById('net').innerHTML='无网络连接';
