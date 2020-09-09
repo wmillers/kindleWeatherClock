@@ -378,6 +378,7 @@
       var initTimeOffset=0;
       var averageTimeOffset=[];
       var hasClockInit=false;
+      var networkFaliure=false;
 
       initDateFromServer();
       adjustAgainstHardwareTimeLag();//extra offset cycle
@@ -399,7 +400,6 @@
           for (var i in averageTimeOffset)
             sum+=averageTimeOffset[i];
           timeOffset=Math.floor(sum/averageTimeOffset.length);
-          averageTimeOffset=[];
           if (!initTimeOffset && timeOffset) initTimeOffset=timeOffset;
           if (initTimeOffset) {
             var uptime=new Date().getTime()-initTime;
@@ -412,14 +412,20 @@
           console.log(comment(timeFormat(dTimeOffset)+"#"+timeOffsetFormat(3)+"#"+dOffsetPerSecond));
           document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
           return true;
-        } else
+        } else {
+          averageTimeOffset=[];
           singleDateFromServer(20);
+        }
       }
       function singleDateFromServer(n){
         xmlhttp = new XMLHttpRequest();
         xmlhttp.open("HEAD", noCache(), true);
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
+            if (networkFaliure) {
+              networkFaliure=false;
+              return;
+            }
             if (n>0)
               setTimeout('singleDateFromServer('+(--n)+')', 100);
             else {
@@ -434,8 +440,10 @@
               console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e6)+":S"+serverTime%1e6/1000+".000:C"+clientTime%1e6/1000+":"+timeOffsetFormat());
               comment("#"+timeOffsetFormat(3));
               //initClockWeather();//immediately after date time got from server
-            } else
+            } else {
+              networkFaliure=true;
               comment("Failed:ServerTime");
+            }
           }
         }
         xmlhttp.send(null);
