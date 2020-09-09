@@ -372,6 +372,8 @@
       var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
       var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week")];
       var initTime=new Date().getTime();
+      var initTimeOffset=0;
+      var averageTimeOffset=[];
       var hasClockInit=false;
 
       initDateFromServer();
@@ -385,26 +387,49 @@
           timeOffset+=1000;
         setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
       }
-      function initDateFromServer(){
+      function initDateFromServer(calculate){
+        if (calculate){
+          if (!averageTimeOffset) return false;
+          var dOffsetPerSecond="";
+          var dTimeOffset=0;
+          var sum=0;
+          for (var i in averageTimeOffset)
+            sum+=averageTimeOffset[i];
+          timeOffset=Math.floor(sum/averageTimeOffset.length);
+          if (!initTimeOffset && timeOffset) initTimeOffset=timeOffset;
+          if (initTimeOffset) {
+            var uptime=new Date().getTime()-initTime;
+            if (Math.abs(timeOffset-initTimeOffset)>200) {
+              dTimeOffset=timeOffset-initTimeOffset;
+              if (uptime>3600*1000)
+                dOffsetPerSecond="1s/"+Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100+"h";
+            }
+          }
+          console.log(comment(timeFormat(dTimeOffset)+"#"+timeOffsetFormat(3)+"#"+dOffsetPerSecond));
+          averageTimeOffset=[];
+          return true;
+        } else
+          singleDateFromServer(10);
+      }
+      function singleDateFromServer(n){
         xmlhttp = new XMLHttpRequest();
         xmlhttp.open("HEAD", noCache(), true);
         xmlhttp.onreadystatechange=function() {
           if (xmlhttp.readyState==4) {
+            if (n>0)
+              setTimeout('singleDateFromServer('+(--n)+')', Math.floor(Math.random()*1000));
+            else {
+              initDateFromServer(true);
+              return;
+            }
             if (xmlhttp.status!=0) {
               var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
               var clientTime=new Date().getTime();
-              var deltaOffset=timeOffset?timeOffset:"";
-              var dOffsetPerHour="";
-              timeOffset=serverTime-clientTime+2000;//lag=1.5s(server:40(40.90)->41.50)+0.5s(screen refresh time)
-              if (deltaOffset) {
-                deltaOffset=timeOffset-deltaOffset;
-                var uptime=new Date().getTime()-initTime;
-                if (uptime>3600*1000)
-                  dOffsetPerHour=timeFormat(deltaOffset/(uptime/1000/3600/24), 2)+"/d";
-              }
-              console.log(Math.floor(serverTime/1e6)+":S"+serverTime%1e6/1000+".000:C"+clientTime%1e6/1000+":"+timeOffsetFormat());
-              comment(timeFormat(deltaOffset)+"#"+timeOffsetFormat(3)+"#"+dOffsetPerHour);
-              initClockWeather();//immediately after date time got from server
+              timeOffset=serverTime-clientTime+1400;//preset lag==>+0.5s(screen refresh time)
+              averageTimeOffset.push(timeOffset);
+              console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e6)+":S"+serverTime%1e6/1000+".000:C"+clientTime%1e6/1000+":"+timeOffsetFormat());
+              comment("#"+timeOffsetFormat(3));
+              //initClockWeather();//immediately after date time got from server
             } else
               comment("Failed:ServerTime");
           }
@@ -506,7 +531,7 @@
             }
             fsum/=f[0][i];
           }
-          if (s!=0)
+          if (s!=0&&n>0)
             str+=frontZero(Math.floor(s/fsum), 2)+f[1][0];
         }
         return a+str;
