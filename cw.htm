@@ -156,22 +156,17 @@
       function showTomato(source){
         var _doc=document.getElementById('basket');
         _doc.textContent="";
-        var j=weeklyTomato.length;
-        var k=Math.floor(j%20/2);
-        var l=Math.floor(j%60/20);
-        var m=Math.floor(j%180/60);
-        var n=Math.floor(j/180);
-        for (var i=0; i<n; i++)
-          enchantTomato(_doc, 'border:0.1rem solid black; background-color: #c0c0c0');
-        for (var i=0; i<m; i++)
-          enchantTomato(_doc, 'border:0.1rem solid black;');
-        for (var i=0; i<l; i++)
-          enchantTomato(_doc, 'border:0.1rem dashed black;');
-        for (var i=0; i<k; i++)
-          enchantTomato(_doc);
-        for (var i=0; i<j%2; i++)
-          enchantTomato(_doc, 'opacity: 0.5;');
-        if (j!=0)
+        var f=[1,2,20,60,180];
+        var css=['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'];
+        var res=0;
+        var tomatos=weeklyTomato.length;
+        for (var i=f.length-1;i>=0&&tomatos!=0;i--){
+          res=Math.floor(tomatos/f[i]);
+          tomatos%=f[i];
+          for (var j=0;j<res;j++)
+            enchantTomato(_doc, css[i]);
+        }
+        if (weeklyTomato.length!=0)
           _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
         logTomato(source);
       }
@@ -367,6 +362,7 @@
 
     <script>
       var refreshRate=8*3600*1000;
+      var hardwareLagRate=6.8;//+1s/xx hour
       var lastSyncTime;
       var nextMinuteRefresh;
       var timeOffset=0;
@@ -386,7 +382,7 @@
       setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
       function adjustAgainstHardwareTimeLag(lag){
-        if (lag==undefined||lag<9.75*3600*1000) lag=9.75*3600*1000;//add 1s offset every 9.75h
+        if (lag==undefined||lag<hardwareLagRate*3600*1000) lag=hardwareLagRate*3600*1000;//add 1s offset every xxx hour
         if (hasClockInit)
           timeOffset+=1000;
         setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
@@ -394,6 +390,7 @@
       function initDateFromServer(calculate){
         if (calculate){
           if (!averageTimeOffset) return false;
+          var oldHardwareLagRate=hardwareLagRate;
           var dOffsetPerSecond="";
           var dTimeOffset=0;
           var sum=0;
@@ -405,11 +402,15 @@
             var uptime=new Date().getTime()-initTime;
             if (Math.abs(timeOffset-initTimeOffset)>200) {
               dTimeOffset=timeOffset-initTimeOffset;
-              if (uptime>3600*1000)
-                dOffsetPerSecond="1s/"+Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100+"h";
+              if (uptime>3600*1000) {
+                var newHardwareLagRate=Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100;
+                dOffsetPerSecond="1s/"+newHardwareLagRate+"h"+"("+oldHardwareLagRate+")";
+                if (uptime>24*3600*1000 && Math.abs(newHardwareLagRate-oldHardwareLagRate)>0.5)
+                  hardwareLagRate=newHardwareLagRate;
+              }
             }
           }
-          console.log(comment(timeFormat(dTimeOffset)+"#"+timeOffsetFormat(3)+"#"+dOffsetPerSecond));
+          console.log(comment(timeFormat(dTimeOffset)+"#"+timeOffsetFormat(3)+"#"+(dOffsetPerSecond?dOffsetPerSecond:"")+(uptime<6*3600*1000?"#("+timeFormat(uptime, 2, true)+")":"")));
           document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
           return true;
         } else {
@@ -503,7 +504,7 @@
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
       function runTime(){
-        comment(timeFormat(new Date().getTime()-initTime),2);
+        console.log(comment(timeFormat(new Date().getTime()-initTime, 2, true)));
       }
       function noCache(){
         return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);
@@ -516,7 +517,7 @@
           a='0'+a;
         return a.slice(-n);
       }
-      function timeFormat(s,n){
+      function timeFormat(s,n,noPlus){
         s=Math.floor(s);
         if (s==0) return "";
         if (!n) n=3;
@@ -547,7 +548,7 @@
           if (s!=0&&n>0)
             str+=frontZero(Math.floor(s/fsum), 2)+f[1][0];
         }
-        return a+str;
+        return (!noPlus||a=='-'?a:"")+str;
       }
       function timeOffsetFormat(n){
         if (!n) n=2;
