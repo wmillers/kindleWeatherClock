@@ -105,8 +105,8 @@
       var clearCommentTime=0;
       function comment(s){
         if (s!=undefined) {
-          clearCommentTime=new Date().getTime()+20*1000;
-          setTimeout("comment()",20*1000);
+          clearCommentTime=new Date().getTime()+30*1000;
+          setTimeout("comment()",30*1000);
         } else 
           if (new Date().getTime()<clearCommentTime)
             return;
@@ -362,7 +362,7 @@
 
     <script>
       var refreshRate=8*3600*1000;
-      var hardwareLagRate=6.8;//+1s/xx hour
+      var hardwareLagRate=6.66;//+1s/xx hour
       var lastSyncTime;
       var nextMinuteRefresh;
       var timeOffset=0;
@@ -405,12 +405,12 @@
               if (uptime>3600*1000) {
                 var newHardwareLagRate=Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100;
                 dOffsetPerSecond="1s/"+newHardwareLagRate+"h"+"("+oldHardwareLagRate+")";
-                if (uptime>24*3600*1000 && Math.abs(newHardwareLagRate-oldHardwareLagRate)>0.5)
+                if (uptime>24*3600*1000)
                   hardwareLagRate=newHardwareLagRate;
               }
             }
           }
-          console.log(comment(timeFormat(dTimeOffset)+"#"+timeOffsetFormat(3)+"#"+(dOffsetPerSecond?dOffsetPerSecond:"")+(uptime<6*3600*1000?"#("+timeFormat(uptime, 2, true)+")":"")));
+          console.log(comment(timeOffsetFormat(2)+(dTimeOffset?"("+timeFormat(dTimeOffset)+")":"")+"#"+dOffsetPerSecond+"#"+timeFormat(uptime, 3, true)+""));
           document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
           return true;
         } else {
@@ -504,7 +504,7 @@
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
       function runTime(){
-        console.log(comment(timeFormat(new Date().getTime()-initTime, 2, true)));
+        console.log(comment(timeFormat(new Date().getTime()-initTime, 3, true)));
       }
       function noCache(){
         return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);
@@ -532,8 +532,8 @@
         if (s<1000) 
           str="."+frontZero(s,3)+"s";
         else{
-          var f=[[10,100,60,60,24,30,12,100,10],
-                 ["","s","m","h","d","M","Y","C","T"]];
+          var f=[[10,100,60,60,24,365,100,10],
+                 ["","s","m","h","d","Y","C","T"]];
           var fsum=1;
           for (var i in f[0])
             fsum*=f[0][i];
@@ -610,6 +610,7 @@
           reduceShadow(0);
           nextMinuteRefresh=false;
         }
+        return date;
       }
       function weatherInterval(){
         var date = getOffsetDate();
