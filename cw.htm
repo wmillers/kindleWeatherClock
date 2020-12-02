@@ -62,11 +62,13 @@
       position: fixed;
       margin-top: 3rem;
       padding-left: 7rem;
-      -ms-transform: scale(2.8);
-      -moz-transform: scale(2.8);
-      -o-transform: scale(2.8);
-      -webkit-transform: scale(2.8);
-      transform: scale(2.8);
+      width: 500px;
+      height: 70px;
+      -ms-transform: scale(2.75);
+      -moz-transform: scale(2.75);
+      -o-transform: scale(2.75);
+      -webkit-transform: scale(2.75);
+      transform: scale(2.75);
     }
     .basket{
       text-align: center;
@@ -95,7 +97,7 @@
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
-    <iframe width="500" id="ifrmid" class='weath' scrolling="no" height="50" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
+    <iframe class='weath' id="ifrmid" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
   </div>
@@ -115,6 +117,12 @@
         document.getElementsByTagName('title')[0].innerHTML=String(s);
         return s;
       }
+      window.onbeforeunload = function(e) {
+        var dialogText = 'Prevent RELOAD';
+        e.returnValue = dialogText;
+        return dialogText;
+      };
+      
       var toStatus, ispaused, weeklyTomato;
       var timerEntity;
       var signalTired=0;
@@ -364,7 +372,7 @@
       var refreshRate=8*3600*1000;
       var hardwareLagRate=6.66;//+1s/xx hour
       var lastSyncTime;
-      var nextMinuteRefresh;
+      //var nextMinuteRefresh;
       var timeOffset=0;
       var preventDecreaseShadow=false;//Stop when tomato
       var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
@@ -375,6 +383,7 @@
       var averageTimeOffset=[];
       var hasClockInit=false;
       var networkFaliure=false;
+      var cmdList=[0];
 
       initDateFromServer();
       adjustAgainstHardwareTimeLag();//extra offset cycle
@@ -405,12 +414,13 @@
               if (uptime>3600*1000) {
                 var newHardwareLagRate=Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100;
                 dOffsetPerSecond="1s/"+newHardwareLagRate+"h"+"("+oldHardwareLagRate+")";
-                if (uptime>24*3600*1000)
+                if (uptime>3*24*3600*1000)
                   hardwareLagRate=newHardwareLagRate;
               }
             }
           }
-          console.log(comment(timeOffsetFormat(2)+(dTimeOffset?"("+timeFormat(dTimeOffset)+")":"")+"#"+dOffsetPerSecond+"#"+timeFormat(uptime, 3, true)+""));
+          dTimeOffset=dTimeOffset?"("+timeFormat(dTimeOffset)+")":"";
+          console.log(comment(timeOffsetFormat(2)+dTimeOffset+"#"+dOffsetPerSecond+"#"+timeFormat(uptime, 3, true)+""));
           document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
           return true;
         } else {
@@ -443,18 +453,46 @@
               //initClockWeather();//immediately after date time got from server
             } else {
               networkFaliure=true;
-              comment("Failed:ServerTime");
+              comment("Failed(ServerTime)#1s/"+hardwareLagRate+"h("+timeOffsetFormat(3)+")");
             }
           }
         }
         xmlhttp.send(null);
       }
+      function addTaskOnPageChange(cmd, s){
+        var interval=s*1000;
+        var t=getOffsetDate(interval).getTime();
+        var task=[cmd, interval, t];
+        if (cmdList[0]==0||t<cmdList[0])
+          cmdList[0]=t;
+        cmdList.push(task);
+      }
+      function runTaskOnPageChange(){
+        //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
+        var t=getOffsetDate().getTime();
+        var count=0;
+        if (cmdList[0]!=0&&cmdList[0]-10*1000<t){
+          var interval=0;
+          for (var i in cmdList){
+            if (cmdList[i][2]-10*1000<t){
+              var next=getOffsetDate(cmdList[i][1]).getTime();
+              if (interval==0||next<interval)
+                interval=next;
+              cmdList[i][2]=next;
+              count++;
+              eval(cmdList[i][0]);
+            }
+          }
+          cmdList[0]=interval;
+        }
+        return count;
+      }
       function initBrowserPage(){
         setIcon();
-        nextMinuteRefresh=false;
+        //nextMinuteRefresh=false;
         killShadow();
-        setInterval("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
-        setInterval("reduceShadow()", 3100*1000);//prime number 60*60=3600
+        addTaskOnPageChange("killShadow()", 86300);//24*3600=86400 & 1700 --> 17*24*3600
+        addTaskOnPageChange("reduceShadow()", 3100);//prime number 60*60=3600
       }
       function initClockWeather(){
         if(hasClockInit){
@@ -482,7 +520,7 @@
         return false;
       }
       function killShadow(number){
-        if (number==undefined) 
+        if (number==undefined)
           if (preventDecreaseShadow)
             return;
           else
@@ -497,7 +535,7 @@
       }
       function reduceShadow(number){
         if (preventDecreaseShadow) return;
-        if (number==undefined) nextMinuteRefresh=true;
+        if (number==undefined) number=0;//nextMinuteRefresh=true;
         if (!(number>=0 && number<=1)) return;
         color=[0, 1];
         cleaner[1].opacity=color[number];
@@ -582,10 +620,11 @@
         update();
         return true;
       }
-      function getOffsetDate(){
+      function getOffsetDate(offset){
         var date=new Date();
+        if (typeof offset!='number') offset=0;
         date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
-        date.setMilliseconds(date.getMilliseconds()+timeOffset);
+        date.setMilliseconds(date.getMilliseconds()+timeOffset+offset);
         return date;
       }
       function updateInterval(){
@@ -598,6 +637,7 @@
       }
       function update(){
         var date=getOffsetDate();
+        runTaskOnPageChange();
         if (timeOffset==0)//bug on kindle
           date.setMinutes(date.getMinutes()+1);
         var weekList = ['日', '一', '二', '三', '四', '五', '六'];
@@ -606,10 +646,10 @@
         clock[1].innerHTML = frontZero(date.getMinutes())
         clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
         clock[3].innerHTML = '星期' + weekList[date.getDay()]
-        if (nextMinuteRefresh){
+        /*if (nextMinuteRefresh){
           reduceShadow(0);
           nextMinuteRefresh=false;
-        }
+        }*/
         return date;
       }
       function weatherInterval(){
