@@ -110,16 +110,21 @@
       var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
       var clearCommentTime=0;
       function comment(s){
+        var basket=document.getElementById('basket');
         if (s!=undefined) {
-          var lag=60*1000;
+          var lag=10*60*1000;
           clearCommentTime=new Date().getTime() + lag;
           setTimeout("comment()", lag);
-          document.getElementById('basket').innerHTML=(document.getElementById('basket').innerHTML+String(s)+'|').slice(-130);
-          return s;
-        } else if (new Date().getTime()<clearCommentTime)
-            return;
+          if (basket.innerHTML.length==0)
+            basket.innerHTML=String(s);
           else
-            document.getElementById('basket').innerHTML='';
+            basket.innerHTML=(basket.innerHTML+'|'+String(s)).slice(-130);
+          return s;
+        } else
+            if (new Date().getTime()<clearCommentTime)
+              return;
+            else
+              basket.innerHTML='';
       }
       if (!testStatus)
         window.onbeforeunload = function(e) {
@@ -387,6 +392,7 @@
       var hasClockInit=false;
       var networkFaliure=false;
       var cmdList=[0];
+      var weatherTaskIndex=0;
 
       initDateFromServer();
       adjustAgainstHardwareTimeLag();//extra offset cycle
@@ -462,12 +468,16 @@
         }
         xmlhttp.send(null);
       }
-      function addTaskOnPageChange(cmd, s){
-        var interval=s*1000;
+      function addTaskOnPageChange(cmd, interval){
         var t=getOffsetDate(interval).getTime();
-        if (cmdList[0]==0||t<cmdList[0])
-          cmdList[0]=t;
-        cmdList.push([cmd, interval, t]);
+        if (cmd<cmdList.length)
+          cmdList[cmd]=[cmdList[cmd][0], interval, t];
+        else {
+          if (cmdList[0]==0||t<cmdList[0])
+            cmdList[0]=t;
+          cmdList.push([cmd, interval, t]);
+          return cmdList.length-1;
+        }
       }
       function runTaskOnPageChange(){
         //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
@@ -492,8 +502,8 @@
       function initBrowserPage(){
         setIcon();
         killShadow();
-        addTaskOnPageChange("killShadow()", 86300);//24*3600=86400 & 1700 --> 17*24*3600
-        addTaskOnPageChange("reduceShadow()", 3100);//prime number 60*60=3600
+        addTaskOnPageChange("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
+        addTaskOnPageChange("reduceShadow()", 3100*1000);//prime number 60*60=3600
       }
       function initClockWeather(){
         if(hasClockInit)
@@ -650,16 +660,22 @@
       }
       function weatherInterval(){
         var date = getOffsetDate();
+        var nextRefresh=0;
         if (!lastSyncTime) lastSyncTime=date.getTime();
         if (date.getTime()-lastSyncTime>refreshRate+100000)
-          setTimeout('weatherInterval()', 10*60*1000);
+          nextRefresh=10*60*1000;
         else
           if (date.getHours()+refreshRate/1000/3600<24)
-            setTimeout('weatherInterval()', refreshRate);
+            nextRefresh=refreshRate;
           else
             //calculate time till 00:00
             //setTimeout('weatherInterval()', (24*3600*1000-1)-date.getTime()%(24*3600*1000)+50);//have timezone bug
-            setTimeout('weatherInterval()', (((23-date.getHours())*60+59-date.getMinutes())*60+59-date.getSeconds())*1000+999-date.getMilliseconds()+50);
+            nextRefresh=(((23-date.getHours())*60+59-date.getMinutes())*60+59-date.getSeconds())*1000+999-date.getMilliseconds()+50;
+        if (weatherTaskIndex==0)
+          weatherTaskIndex=addTaskOnPageChange('weatherInterval()', nextRefresh);
+        else
+          addTaskOnPageChange(weatherTaskIndex, nextRefresh);
+        //setTimeout('weatherInterval()', nextRefresh);
         if (date.getTime()-lastSyncTime>10000)
           onlineWeather();
       }
