@@ -3,11 +3,14 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
+
   <!--
     version 1.4 (bug-fix changes are in commit logs)
     author  wmillers@github
     license LGPL2.1
   -->
+  <script type="text/javascript">var testStatus=false;</script>
+
   <title>tomatoClock</title>
   <link id='ico' href="" rel="icon" type="image/x-icon" />
 	<style>
@@ -60,15 +63,15 @@
     }
     .weath {
       position: fixed;
-      margin-top: 3rem;
+      margin-top: 4rem;
       padding-left: 7rem;
       width: 500px;
       height: 70px;
-      -ms-transform: scale(2.75);
-      -moz-transform: scale(2.75);
-      -o-transform: scale(2.75);
-      -webkit-transform: scale(2.75);
-      transform: scale(2.75);
+      -ms-transform: scale(2.7);
+      -moz-transform: scale(2.7);
+      -o-transform: scale(2.7);
+      -webkit-transform: scale(2.7);
+      transform: scale(2.7);
     }
     .basket{
       text-align: center;
@@ -117,11 +120,12 @@
         document.getElementsByTagName('title')[0].innerHTML=String(s);
         return s;
       }
-      window.onbeforeunload = function(e) {
-        var dialogText = 'Prevent RELOAD';
-        e.returnValue = dialogText;
-        return dialogText;
-      };
+      if (!testStatus)
+        window.onbeforeunload = function(e) {
+          var dialogText = '#preventReload';
+          e.returnValue = dialogText;
+          return dialogText;
+        };
       
       var toStatus, ispaused, weeklyTomato;
       var timerEntity;
@@ -370,9 +374,8 @@
 
     <script>
       var refreshRate=8*3600*1000;
-      var hardwareLagRate=6.66;//+1s/xx hour
+      var hardwareLagRate=6.66;//+1s/6.66h
       var lastSyncTime;
-      //var nextMinuteRefresh;
       var timeOffset=0;
       var preventDecreaseShadow=false;//Stop when tomato
       var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
@@ -446,9 +449,9 @@
             if (xmlhttp.status!=0) {
               var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
               var clientTime=new Date().getTime();
-              timeOffset=serverTime-clientTime+1900;//preset lag==>+1s(screen refresh time)
+              timeOffset=serverTime-clientTime+2300;//preset lag==>+1s(screen refresh time)
               averageTimeOffset.push(timeOffset);
-              console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e6)+":S"+serverTime%1e6/1000+".000:C"+clientTime%1e6/1000+":"+timeOffsetFormat());
+              console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e5)+":S"+serverTime%1e5/1000+".:C"+clientTime%1e5/1000+":"+timeOffsetFormat());
               comment("#"+timeOffsetFormat(3));
               //initClockWeather();//immediately after date time got from server
             } else {
@@ -462,10 +465,9 @@
       function addTaskOnPageChange(cmd, s){
         var interval=s*1000;
         var t=getOffsetDate(interval).getTime();
-        var task=[cmd, interval, t];
         if (cmdList[0]==0||t<cmdList[0])
           cmdList[0]=t;
-        cmdList.push(task);
+        cmdList.push([cmd, interval, t]);
       }
       function runTaskOnPageChange(){
         //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
@@ -489,19 +491,17 @@
       }
       function initBrowserPage(){
         setIcon();
-        //nextMinuteRefresh=false;
         killShadow();
         addTaskOnPageChange("killShadow()", 86300);//24*3600=86400 & 1700 --> 17*24*3600
         addTaskOnPageChange("reduceShadow()", 3100);//prime number 60*60=3600
       }
       function initClockWeather(){
-        if(hasClockInit){
+        if(hasClockInit)
           return;//avoid duplicated init clock;
-        }
         hasClockInit=true;
         var date=getOffsetDate();
 
-        //update();//included in updateInterval()
+        //update() included in updateInterval()
         updateInterval();
 
         //No need to update weather manually at the first time.
@@ -535,7 +535,7 @@
       }
       function reduceShadow(number){
         if (preventDecreaseShadow) return;
-        if (number==undefined) number=0;//nextMinuteRefresh=true;
+        if (number==undefined) number=0;
         if (!(number>=0 && number<=1)) return;
         color=[0, 1];
         cleaner[1].opacity=color[number];
@@ -642,14 +642,10 @@
           date.setMinutes(date.getMinutes()+1);
         var weekList = ['日', '一', '二', '三', '四', '五', '六'];
         //comment(date.getMinutes()+" "+date.getTimezoneOffset() + 480+" "+timeOffset);
-        clock[0].innerHTML = frontZero(date.getHours())+':'
-        clock[1].innerHTML = frontZero(date.getMinutes())
-        clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
-        clock[3].innerHTML = '星期' + weekList[date.getDay()]
-        /*if (nextMinuteRefresh){
-          reduceShadow(0);
-          nextMinuteRefresh=false;
-        }*/
+        clock[0].innerHTML = frontZero(date.getHours())+':';
+        clock[1].innerHTML = frontZero(date.getMinutes());
+        clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
+        clock[3].innerHTML = '星期' + weekList[date.getDay()] + (testStatus?' #envTest':'');
         return date;
       }
       function weatherInterval(){
