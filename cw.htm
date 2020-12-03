@@ -79,6 +79,7 @@
       margin-top: 12rem;
       padding-bottom: 0.2rem;
       overflow: hidden;
+      word-break: break-all;
       height: 2rem;
     }
     .tImg{
@@ -110,15 +111,15 @@
       var clearCommentTime=0;
       function comment(s){
         if (s!=undefined) {
-          clearCommentTime=new Date().getTime()+30*1000;
-          setTimeout("comment()",30*1000);
-        } else 
-          if (new Date().getTime()<clearCommentTime)
+          var lag=60*1000;
+          clearCommentTime=new Date().getTime() + lag;
+          setTimeout("comment()", lag);
+          document.getElementById('basket').innerHTML=(document.getElementById('basket').innerHTML+String(s)+'|').slice(-130);
+          return s;
+        } else if (new Date().getTime()<clearCommentTime)
             return;
           else
-            s=initialTitle;
-        document.getElementsByTagName('title')[0].innerHTML=String(s);
-        return s;
+            document.getElementById('basket').innerHTML='';
       }
       if (!testStatus)
         window.onbeforeunload = function(e) {
@@ -140,7 +141,6 @@
         shinningSignal.push(document.getElementById('ato').style);
         shinningSignal.push(document.getElementById('inform').style);
         shinningSignal.push(document.getElementById('allDate').style);
-      //comment(navigator.userAgent);
       prepareTomato();
       //dumpTomato();gatherTomato(719);
       function dumpTomato(){rottenTomato(-1);}
@@ -594,6 +594,7 @@
       }
       function correctPrompt(){
         var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *');
+        var who=navigator.userAgent;
         if (!timeCorrect(userIuput))
           try{
             comment(eval(userIuput));
@@ -638,10 +639,9 @@
       function update(){
         var date=getOffsetDate();
         runTaskOnPageChange();
-        if (timeOffset==0)//bug on kindle
+        if (timeOffset==0)//fix the bug on kindle
           date.setMinutes(date.getMinutes()+1);
         var weekList = ['日', '一', '二', '三', '四', '五', '六'];
-        //comment(date.getMinutes()+" "+date.getTimezoneOffset() + 480+" "+timeOffset);
         clock[0].innerHTML = frontZero(date.getHours())+':';
         clock[1].innerHTML = frontZero(date.getMinutes());
         clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
