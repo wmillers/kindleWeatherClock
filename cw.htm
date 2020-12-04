@@ -9,7 +9,7 @@
     author  wmillers@github
     license LGPL2.1
   -->
-  <script type="text/javascript">var testStatus=false;</script>
+  <script type="text/javascript">var testStatus=true;</script>
 
   <title>tomatoClock</title>
   <link id='ico' href="" rel="icon" type="image/x-icon" />
@@ -112,13 +112,20 @@
       function comment(s){
         var basket=document.getElementById('basket');
         if (s!=undefined) {
+          var s=String(s);
           var lag=10*60*1000;
           clearCommentTime=new Date().getTime() + lag;
           setTimeout("comment()", lag);
           if (basket.innerHTML.length==0)
-            basket.innerHTML=String(s);
-          else
-            basket.innerHTML=(basket.innerHTML+'|'+String(s)).slice(-130);
+            basket.innerHTML=s;
+          else {
+            basket.innerHTML+='|'+s;
+            if (basket.innerHTML.length>130)
+              if (s.length>75)
+                basket.innerHTML=basket.innerHTML.slice(-130);
+              else
+                basket.innerHTML=basket.innerHTML.slice(-75);
+          }
           return s;
         } else
             if (new Date().getTime()<clearCommentTime)
@@ -602,9 +609,29 @@
         if (!n) n=2;
         return timeFormat(timeOffset,n);
       }
+      function how(){
+        var inspect=['testStatus', 'initialTitle', 'toStatus', 'ispaused', 'weeklyTomato', 'hardwareLagRate', 'timeOffset', 'initTimeOffset'];
+        var o='';
+        for (var i in inspect)
+          o+=inspect[i].slice(0,9)+':'+eval(inspect[i])+', ';
+        comment(o.slice(0,-2));
+      }
+      function wipe(){
+        document.getElementById('basket').innerHTML='';
+      }
+      function help(cmd){
+        var func=['help', 'how', 'wipe'];
+        var vari=['who'];
+        if (cmd)
+          return func;
+        else
+          return func+','+vari;
+      }
       function correctPrompt(){
         var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *');
         var who=navigator.userAgent;
+        if (help(true).indexOf(userIuput)!=-1)
+          userIuput+='()';
         if (!timeCorrect(userIuput))
           try{
             comment(eval(userIuput));
