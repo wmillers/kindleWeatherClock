@@ -4,12 +4,16 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
 
-  <!--
-    version 1.4 (bug-fix changes are in commit logs)
-    author  wmillers@github
-    license LGPL2.1
-  -->
-  <script type="text/javascript">var testStatus=true;</script>
+  <script type="text/javascript">
+    var testStatus=false;
+    var info={
+      version: '1.4',
+      description: '(bug-fix changes are in commit logs)',
+      author: 'wmillers@github',
+      license: 'LGPL2.1'
+    }
+    if (testStatus) setInterval('how()', 8*60*1000);
+  </script>
 
   <title>tomatoClock</title>
   <link id='ico' href="" rel="icon" type="image/x-icon" />
@@ -111,9 +115,9 @@
       var clearCommentTime=0;
       function comment(s){
         var basket=document.getElementById('basket');
-        if (s!=undefined) {
+        if (s!=undefined){
           var s=String(s);
-          var lag=10*60*1000;
+          var lag=30*60*1000;
           clearCommentTime=new Date().getTime() + lag;
           setTimeout("comment()", lag);
           if (basket.innerHTML.length==0)
@@ -224,7 +228,6 @@
           console.log("Empty >ToMaMaTo< Store from "+source);
         else
           console.log("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
-        //comment("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
       }
       function rottenTomato(expire){
         if (!expire) expire=expireTomato;
@@ -517,10 +520,8 @@
           return;//avoid duplicated init clock;
         hasClockInit=true;
         var date=getOffsetDate();
-
         //update() included in updateInterval()
         updateInterval();
-
         //No need to update weather manually at the first time.
         document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
         document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
@@ -610,25 +611,34 @@
         return timeFormat(timeOffset,n);
       }
       function how(){
-        var inspect=['testStatus', 'initialTitle', 'toStatus', 'ispaused', 'weeklyTomato', 'hardwareLagRate', 'timeOffset', 'initTimeOffset'];
+        var inspect=['testStatus', 'weeklyTomato', 'hardwareLagRate', 'initTimeOffset'];
         var o='';
-        for (var i in inspect)
-          o+=inspect[i].slice(0,9)+':'+eval(inspect[i])+', ';
-        comment(o.slice(0,-2));
+        var res;
+        for (var i in inspect){
+          res=eval(inspect[i]);
+          if (typeof res=='number'&&res>5*60*1000)
+              res=timeFormat(res,2);
+          o+=inspect[i].slice(0,7)+':'+res+',';
+        }
+        o+='[';
+        for (var i in cmdList)
+          if (i!=0)
+          o+=cmdList[i][0].slice(0,5)+cmdList[i][0].slice(-2)+','+timeFormat(cmdList[i][1], 2, true)+','+new Date(cmdList[i][2]).toLocaleTimeString()+';';
+        return o.slice(0,-1)+']';
       }
       function wipe(){
         document.getElementById('basket').innerHTML='';
       }
+      function credit() {
+        return JSON.stringify(info);
+      }
       function help(cmd){
-        var func=['help', 'how', 'wipe'];
+        var func=['help', 'how', 'wipe', 'credit'];
         var vari=['who'];
-        if (cmd)
-          return func;
-        else
-          return func+','+vari;
+        return cmd?func:func+','+vari;
       }
       function correctPrompt(){
-        var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *');
+        var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *\n'+help());
         var who=navigator.userAgent;
         if (help(true).indexOf(userIuput)!=-1)
           userIuput+='()';
