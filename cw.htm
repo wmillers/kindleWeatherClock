@@ -6,13 +6,14 @@
 
   <script type="text/javascript">
     var testStatus=false;
+    var testInterval=0;
     var info={
-      version: '1.4',
+      version: '1.5',
       description: '(bug-fix changes are in commit logs)',
       author: 'wmillers@github',
       license: 'LGPL2.1'
     }
-    if (testStatus) setInterval('how()', 8*60*1000);
+    if (testStatus) testInterval=setInterval('comment(how())', 10*1000);
   </script>
 
   <title>tomatoClock</title>
@@ -493,16 +494,16 @@
         //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
         var t=getOffsetDate().getTime();
         var count=0;
-        if (cmdList[0]!=0&&cmdList[0]-10*1000<t){
+        if (cmdList[0]-10*1000<t){
           var interval=0;
           for (var i in cmdList){
             if (cmdList[i][2]-10*1000<t){
+              eval(cmdList[i][0]);
               var next=getOffsetDate(cmdList[i][1]).getTime();
               if (interval==0||next<interval)
                 interval=next;
               cmdList[i][2]=next;
               count++;
-              eval(cmdList[i][0]);
             }
           }
           cmdList[0]=interval;
@@ -620,7 +621,7 @@
               res=timeFormat(res,2);
           o+=inspect[i].slice(0,7)+':'+res+',';
         }
-        o+='[';
+        o+='['+new Date(cmdList[0]).toLocaleTimeString()+',';
         for (var i in cmdList)
           if (i!=0)
           o+=cmdList[i][0].slice(0,5)+cmdList[i][0].slice(-2)+','+timeFormat(cmdList[i][1], 2, true)+','+new Date(cmdList[i][2]).toLocaleTimeString()+';';
@@ -630,10 +631,22 @@
         document.getElementById('basket').innerHTML='';
       }
       function credit() {
-        return JSON.stringify(info);
+        return JSON.stringify(info).replace(/"/g,'');
+      }
+      function test(){
+        testStatus=!testStatus;
+        if (testStatus){
+          comment(how());
+          testInterval=setInterval('comment(how())', 58*1000);
+          update();
+        } else {
+          clearInterval(testInterval);
+          update();
+          wipe();
+        }
       }
       function help(cmd){
-        var func=['help', 'how', 'wipe', 'credit'];
+        var func=['help', 'how', 'wipe', 'credit', 'test'];
         var vari=['who'];
         return cmd?func:func+','+vari;
       }
