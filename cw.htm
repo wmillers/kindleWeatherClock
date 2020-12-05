@@ -13,7 +13,7 @@
       author: 'wmillers@github',
       license: 'LGPL2.1'
     }
-    if (testStatus) testInterval=setInterval('comment(how())', 10*1000);
+    if (testStatus) testInterval=setInterval('comment(how())', 15*1000);
   </script>
 
   <title>tomatoClock</title>
@@ -124,12 +124,17 @@
           if (basket.innerHTML.length==0)
             basket.innerHTML=s;
           else {
-            basket.innerHTML+='|'+s;
-            if (basket.innerHTML.length>130)
-              if (s.length>75)
-                basket.innerHTML=basket.innerHTML.slice(-130);
-              else
-                basket.innerHTML=basket.innerHTML.slice(-75);
+            basket.innerHTML+='|';
+            if (s.length>100){
+              basket.innerHTML+=s;
+              while (basket.scrollHeight>basket.clientHeight*1.25)
+                basket.innerHTML=basket.innerHTML.slice(1); 
+            } else
+              for (var i=0;i<s.length;i++){
+                basket.innerHTML+=s[i];
+                if (basket.scrollHeight>basket.clientHeight*1.25)
+                  basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
+            }
           }
           return s;
         } else
@@ -612,19 +617,19 @@
         return timeFormat(timeOffset,n);
       }
       function how(){
-        var inspect=['testStatus', 'weeklyTomato', 'hardwareLagRate', 'initTimeOffset'];
+        var inspect=['weeklyTomato', 'hardwareLagRate', 'initTimeOffset'];
         var o='';
         var res;
         for (var i in inspect){
           res=eval(inspect[i]);
           if (typeof res=='number'&&res>5*60*1000)
-              res=timeFormat(res,2);
-          o+=inspect[i].slice(0,7)+':'+res+',';
+            res=timeFormat(res,2);
+          o+=inspect[i].slice(0,9)+':'+res+',';
         }
         o+='['+new Date(cmdList[0]).toLocaleTimeString()+',';
         for (var i in cmdList)
           if (i!=0)
-          o+=cmdList[i][0].slice(0,5)+cmdList[i][0].slice(-2)+','+timeFormat(cmdList[i][1], 2, true)+','+new Date(cmdList[i][2]).toLocaleTimeString()+';';
+          o+=cmdList[i][0].slice(0,7)+'.'+cmdList[i][0].slice(-2)+','+timeFormat(cmdList[i][1], 2, true)+','+new Date(cmdList[i][2]).toLocaleTimeString()+';';
         return o.slice(0,-1)+']';
       }
       function wipe(){
