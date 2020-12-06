@@ -500,18 +500,17 @@
         var t=getOffsetDate().getTime();
         var count=0;
         if (cmdList[0]-10*1000<t){
-          var interval=0;
-          for (var i in cmdList){
+          cmdList[0]=0;
+          for (var i=1;i<cmdList.length;i++){
             if (cmdList[i][2]-10*1000<t){
               eval(cmdList[i][0]);
-              var next=getOffsetDate(cmdList[i][1]).getTime();
-              if (interval==0||next<interval)
-                interval=next;
-              cmdList[i][2]=next;
+              cmdList[i][2]=getOffsetDate(cmdList[i][1]).getTime();
+              for (var j=1;j<cmdList.length;j++)
+                if (cmdList[0]==0||cmdList[j][2]<cmdList[0])
+                  cmdList[0]=cmdList[j][2];
               count++;
             }
           }
-          cmdList[0]=interval;
         }
         return count;
       }
@@ -638,11 +637,12 @@
       function credit() {
         return JSON.stringify(info).replace(/"/g,'');
       }
-      function test(){
-        testStatus=!testStatus;
+      function test(boole, s){
+        testStatus=(boole==undefined)?!testStatus:boole;
+        s=(s==undefined)?58:s;;
         if (testStatus){
           comment(how());
-          testInterval=setInterval('comment(how())', 58*1000);
+          testInterval=setInterval('comment(how())', s*1000);
           update();
         } else {
           clearInterval(testInterval);
@@ -650,8 +650,12 @@
           wipe();
         }
       }
+      function loop(){
+        test(true, 3);
+        setInterval('timeOffset+=57*1000;update()',  100);
+      }
       function help(cmd){
-        var func=['help', 'how', 'wipe', 'credit', 'test'];
+        var func=['help', 'how', 'wipe', 'credit', 'test', 'loop'];
         var vari=['who'];
         return cmd?func:func+','+vari;
       }
@@ -732,7 +736,7 @@
           addTaskOnPageChange(weatherTaskIndex, nextRefresh);
         //setTimeout('weatherInterval()', nextRefresh);
         if (date.getTime()-lastSyncTime>10000)
-          onlineWeather();
+          setTimeout(onlineWeather(), 100);
       }
       function onlineWeather(){
         var _doc=document.getElementsByTagName('body')[0];
