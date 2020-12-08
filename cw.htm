@@ -13,7 +13,6 @@
       author: 'wmillers@github',
       license: 'LGPL2.1'
     }
-    if (testStatus) testInterval=setInterval('comment(how())', 15*1000);
   </script>
 
   <title>tomatoClock</title>
@@ -98,58 +97,66 @@
       font-size: 1.5rem;
       font-weight: normal;
     }
+    .tickList {
+      position: absolute;
+      font-size: 1.5rem;
+      color: #404040;
+      top: 6rem;
+    }
   </style>
 </head>
 <body>
   <div class="cleaner" id="cleaner"></div>
 	<div class="app">
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
-    <div class="tomato"><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
+    <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
     <iframe class='weath' id="ifrmid" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
+    <div class='tickList' id='tickList' onclick="tickListStatus++;showIcs();"><img class="tImg"></div>
   </div>
-
-    <script type="text/javascript">
-      var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
-      var clearCommentTime=0;
-      function comment(s){
-        var basket=document.getElementById('basket');
-        if (s!=undefined){
-          var s=String(s);
-          var lag=30*60*1000;
-          clearCommentTime=new Date().getTime() + lag;
-          setTimeout("comment()", lag);
-          if (basket.innerHTML.length==0)
-            basket.innerHTML=s;
-          else {
-            basket.innerHTML+='|';
-            if (s.length>100){
-              basket.innerHTML+=s;
-              while (basket.scrollHeight>basket.clientHeight*1.25)
-                basket.innerHTML=basket.innerHTML.slice(1); 
-            } else
-              for (var i=0;i<s.length;i++){
-                basket.innerHTML+=s[i];
-                if (basket.scrollHeight>basket.clientHeight*1.25)
-                  basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
-            }
+  <script type="text/javascript">
+    if (testStatus) testInterval=setInterval('comment(how())', 7*1000);
+    var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
+    var clearCommentTime=0;
+    function comment(s){
+      var basket=document.getElementById('basket');
+      if (s!=undefined){
+        var s=String(s);
+        var lag=30*60*1000;
+        clearCommentTime=new Date().getTime() + lag;
+        setTimeout("comment()", lag);
+        if (basket.innerHTML.length==0)
+          basket.innerHTML=s;
+        else {
+          basket.innerHTML+='|';
+          if (s.length>100){
+            basket.innerHTML+=s;
+            while (basket.scrollHeight>basket.clientHeight*1.25)
+              basket.innerHTML=basket.innerHTML.slice(1); 
+          } else
+            for (var i=0;i<s.length;i++){
+              basket.innerHTML+=s[i];
+              if (basket.scrollHeight>basket.clientHeight*1.25)
+                basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
           }
-          return s;
-        } else
-            if (new Date().getTime()<clearCommentTime)
-              return;
-            else
-              basket.innerHTML='';
-      }
-      if (!testStatus)
-        window.onbeforeunload = function(e) {
-          var dialogText = '#preventReload';
-          e.returnValue = dialogText;
-          return dialogText;
-        };
-      
+        }
+        return s;
+      } else
+          if (new Date().getTime()<clearCommentTime)
+            return;
+          else
+            basket.innerHTML='';
+    }
+    if (!testStatus)
+      window.onbeforeunload = function(e) {
+        var dialogText = '#preventReload';
+        e.returnValue = dialogText;
+        return dialogText;
+      };
+  </script>
+    <script type="text/javascript">
       var toStatus, ispaused, weeklyTomato;
       var timerEntity;
       var signalTired=0;
@@ -393,7 +400,7 @@
       }
     </script>
 
-    <script>
+    <script type="text/javascript">
       var refreshRate=8*3600*1000;
       var hardwareLagRate=6.66;//+1s/6.66h
       var lastSyncTime;
@@ -564,8 +571,8 @@
         cleaner[1].opacity=color[number];
         setTimeout("reduceShadow("+(++number)+")", 600);
       }
-      function runTime(){
-        console.log(comment(timeFormat(new Date().getTime()-initTime, 3, true)));
+      function runTime(n){
+        return timeFormat(new Date().getTime()-initTime, n?n:3, true);
       }
       function noCache(){
         return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);
@@ -616,19 +623,21 @@
         return timeFormat(timeOffset,n);
       }
       function how(){
-        var inspect=['weeklyTomato', 'hardwareLagRate', 'initTimeOffset'];
+        var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate', 'initTimeOffset', 'tickListStatus'];
         var o='';
         var res;
         for (var i in inspect){
           res=eval(inspect[i]);
           if (typeof res=='number'&&res>5*60*1000)
-            res=timeFormat(res,2);
-          o+=inspect[i].slice(0,9)+':'+res+',';
+            res=timeFormat(res,2,true);
+          o+=inspect[i].slice(0,6)+':'+res+',';
         }
-        o+='['+new Date(cmdList[0]).toLocaleTimeString()+',';
+        o+='['+dateString(cmdList[0], false, true)+',';
         for (var i in cmdList)
-          if (i!=0)
-          o+=cmdList[i][0].slice(0,7)+'.'+cmdList[i][0].slice(-2)+','+timeFormat(cmdList[i][1], 2, true)+','+new Date(cmdList[i][2]).toLocaleTimeString()+';';
+          if (i!=0){
+            var n=(cmdList[i][0].length>9)?cmdList[i][0].slice(0,7)+'.'+cmdList[i][0].slice(-2):cmdList[i][0];
+            o+=n+','+timeFormat(cmdList[i][1], 2, true)+','+dateString(cmdList[i][2], false, true).slice(0,-3)+';';
+          }
         return o.slice(0,-1)+']';
       }
       function wipe(){
@@ -736,7 +745,7 @@
           addTaskOnPageChange(weatherTaskIndex, nextRefresh);
         //setTimeout('weatherInterval()', nextRefresh);
         if (date.getTime()-lastSyncTime>10000)
-          setTimeout(onlineWeather(), 100);
+          setTimeout('onlineWeather()', 100);
       }
       function onlineWeather(){
         var _doc=document.getElementsByTagName('body')[0];
@@ -766,6 +775,102 @@
         } else {
           document.getElementById('net').innerHTML='无网络连接';
         }
+      }
+    </script>
+    <script type="text/javascript">
+      var tickList={future:[],expire:[],noDate:[]};
+      var tickListStatus=0;
+      var initTickListRead=false;
+      var tickListTaskIndex=addTaskOnPageChange('getIcs()', 12*3600*1000);
+      var tickListMaxLine=20;
+      function dateString(timeStamp, isDate, isTime){
+        var s='';
+        var date=new Date(timeStamp+(new Date().getTimezoneOffset()+480)*60*1000);
+        var y=date.getFullYear();
+        if (!isDate&&!isTime) isDate=isTime=true;
+        if (date.getHours()==12&&date.getMinutes()==34) isTime=false;
+        if (isDate) s+=(y!=new Date().getFullYear()?y+'-':'')+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' ';
+        if (isTime) s+=frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
+        return s;
+      }
+      function getIcs(){
+        var url = "/ics/";		   
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {  
+          if (xmlhttp.readyState == 4) {  
+            if(xmlhttp.status == 200){
+              var s = xmlhttp.responseText;
+              xmlhttp = null;
+              readIcs(s);
+              showIcs();
+            }					
+          }  
+        }
+        xmlhttp.open('GET', url);
+        xmlhttp.send();
+      }
+      function readIcs(s){
+        s=s.split('\n');
+        var r=[];
+        var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER'];
+        tickList={future:[],expire:[],noDate:[]};
+        for (var i in s){
+          var line=s[i].split(':');
+          line=[line[0]?line[0].trim():'', line[1]?line[1].trim():''];
+          if (line[0]=='BEGIN'){
+            if (line[1]=='VEVENT')
+              r.push({});
+          } else if (tag.indexOf(line[0])!=-1&&r.length!=0&&r[r.length-1][line[0]]==undefined){
+            if (line[0]==tag[0])
+              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,11)+':'+line[1].slice(11,13)+':'+line[1].slice(13));
+            else if (line[0]==tag[1]) {
+              line[0]=tag[0]
+              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T12:34:56Z');
+            }
+            r[r.length-1][line[0]]=line[1];
+          }
+        }
+        var d=new Date().getTime();
+        for (var i in r)
+          if (r[i].DTSTART){
+            if (r[i].DTSTART-d>-14*24*3600*1000)
+              tickList.future.push(r[i]);
+            else
+              tickList.expire.push(r[i]);
+          } else
+            tickList.noDate.push(r[i]);
+        tickList.future.sort(function (a,b){return a.DTSTART-b.DTSTART;});
+        tickList.expire.sort(function (a,b){return b.DTSTART-a.DTSTART;});
+        initTickListRead=true;
+        return tickList;
+      }
+      function tickStyle(t){
+        var d=1-Math.floor(Math.abs(t-new Date().getTime())/(365*24*3600*1000)*10)/10; 
+        //var f=(Math.abs(t-new Date().getTime())<180*24*3600*1000)?1:0.5;
+        if (d<0.4) d=0;
+        return '<span style="opacity:'+d+';">'; 
+      }
+      function showIcs(){
+        var t=document.getElementById('tickList');
+        var count=0;
+        if (!initTickListRead){
+          getIcs();
+          return;
+        }
+        if (tickListStatus%3==1){
+          t.innerHTML='';
+          for (var j in tickList){
+            var l=tickList[j];
+            for (var i in l){
+              if (++count>tickListMaxLine)
+                break;
+              t.innerHTML+=tickStyle(l[i].DTSTART)+dateString(l[i].DTSTART).slice(0,-3)+' '+l[i].SUMMARY+' '+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
+            }
+          }
+        } else if (tickListStatus%3==2){
+          t.innerHTML=t.innerHTML.split('<br>').slice(0,5).join('<br>');
+        } else //tickListStatus%3==0
+          t.innerHTML='<img class="tImg">';
       }
     </script>
 </body>
