@@ -101,6 +101,7 @@
       position: absolute;
       font-size: 1.5rem;
       color: #404040;
+      white-space: nowrap;
       top: 6rem;
     }
   </style>
@@ -778,7 +779,8 @@
       }
     </script>
     <script type="text/javascript">
-    /*Note: you need set a Nginx server to proxy the GET method to the
+    /*
+      Note: you need set a Nginx server to proxy the GET method to the
             calendar server to download the .ics file. Add those lines
             to your Nginx config file to avoid CROS problem as the
             request is directly from your browser which has banned the
@@ -805,16 +807,21 @@
       var tickListStatus=0;
       var initTickListRead=false;
       var tickListTaskIndex=addTaskOnPageChange('getIcs()', 12*3600*1000);
-      var tickListMaxLine=20;
+      var tickListMaxLine=18;
       function dateString(timeStamp, isDate, isTime){
         var s='';
         var date=new Date(timeStamp+(new Date().getTimezoneOffset()+480)*60*1000);
-        var y=date.getFullYear();
         if (!isDate&&!isTime) isDate=isTime=true;
         if (date.getHours()==12&&date.getMinutes()==34) isTime=false;
-        if (isDate) s+=(y!=new Date().getFullYear()?y+'-':'')+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' ';
+        if (isDate) s+=frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' ';
         if (isTime) s+=frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
         return s;
+      }
+      function testIcs(){
+        var s="BEGIN:VEVENT\nDTSTART:20200811T030405Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n";
+        readIcs(s);
+        tickListStatus++;
+        showIcs();
       }
       function getIcs(){
         var url = "/ics/";
@@ -867,11 +874,8 @@
         initTickListRead=true;
         return tickList;
       }
-      function tickStyle(t){
-        var d=1-Math.floor(Math.abs(t-new Date().getTime())/(365*24*3600*1000)*10)/10;
-        //var f=(Math.abs(t-new Date().getTime())<180*24*3600*1000)?1:0.5;
-        if (d<0.4) d=0;
-        return '<span style="opacity:'+d+';">';
+      function dDay(t){
+        return Math.floor((t-new Date().getTime())/(24*3600*1000));
       }
       function showIcs(){
         var t=document.getElementById('tickList');
@@ -887,7 +891,10 @@
             for (var i in l){
               if (++count>tickListMaxLine)
                 break;
-              t.innerHTML+=tickStyle(l[i].DTSTART)+dateString(l[i].DTSTART).slice(0,-3)+' '+l[i].SUMMARY+' '+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
+              var dD=dDay(l[i].DTSTART);
+              t.innerHTML+='<span style="font-size:1rem">'+dateString(l[i].DTSTART).slice(0,-3)+'</span>';
+              t.innerHTML+='<span style="opacity:'+(1-Math.abs(dD)/365)+';"> ['+dD+'] </span>';
+              t.innerHTML+=l[i].SUMMARY+' <span style="font-size:1rem">'+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
             }
           }
         } else if (tickListStatus%3==2){
