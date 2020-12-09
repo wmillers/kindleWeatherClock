@@ -118,7 +118,7 @@
     <div class='tickList' id='tickList' onclick="tickListStatus++;showIcs();"><img class="tImg"></div>
   </div>
   <script type="text/javascript">
-    if (testStatus) testInterval=setInterval('comment(how())', 7*1000);
+    if (testStatus) {testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 3*1000);}
     var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
     var clearCommentTime=0;
     function comment(s){
@@ -624,7 +624,7 @@
         return timeFormat(timeOffset,n);
       }
       function how(){
-        var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate', 'initTimeOffset', 'tickListStatus'];
+        var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate', 'countIcs()', 'tickListStatus'];
         var o='';
         var res;
         for (var i in inspect){
@@ -651,6 +651,7 @@
         testStatus=(boole==undefined)?!testStatus:boole;
         s=(s==undefined)?58:s;;
         if (testStatus){
+          testIcs();
           comment(how());
           testInterval=setInterval('comment(how())', s*1000);
           update();
@@ -662,7 +663,7 @@
       }
       function loop(){
         test(true, 3);
-        setInterval('timeOffset+=57*1000;update()',  100);
+        setInterval('timeOffset+=57*1000;update()',  50);
       }
       function help(cmd){
         var func=['help', 'how', 'wipe', 'credit', 'test', 'loop'];
@@ -724,7 +725,7 @@
         clock[0].innerHTML = frontZero(date.getHours())+':';
         clock[1].innerHTML = frontZero(date.getMinutes());
         clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
-        clock[3].innerHTML = '星期' + weekList[date.getDay()] + (testStatus?' #envTest':'');
+        clock[3].innerHTML = '星期' + weekList[date.getDay()] + (testStatus?' #envTest':'') + ' ' + tickListAlarm;
         return date;
       }
       function weatherInterval(){
@@ -806,19 +807,32 @@
       var tickList={future:[],expire:[],noDate:[]};
       var tickListStatus=0;
       var initTickListRead=false;
-      var tickListTaskIndex=addTaskOnPageChange('getIcs()', 12*3600*1000);
-      var tickListMaxLine=18;
+      var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 12*3600*1000):0;
+      var tickListMaxLine=22;
+      var tickListAlarm='';
+      var tickListNext={};
       function dateString(timeStamp, isDate, isTime){
         var s='';
-        var date=new Date(timeStamp+(new Date().getTimezoneOffset()+480)*60*1000);
+        var date=new Date(timeStamp);
         if (!isDate&&!isTime) isDate=isTime=true;
-        if (date.getHours()==12&&date.getMinutes()==34) isTime=false;
+        //if (date.getHours()==12&&date.getMinutes()==34) isTime=false;
         if (isDate) s+=frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' ';
         if (isTime) s+=frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
         return s;
       }
+      function randInt(n, from){
+        if (from==undefined) from=0;
+        return Math.ceil(Math.random()*(n-from))+from;
+      }
+      function countIcs(){
+        return [tickList.future.length, tickList.expire.length, tickList.noDate.length];
+      }
       function testIcs(){
-        var s="BEGIN:VEVENT\nDTSTART:20200811T030405Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n";
+        var s='';
+        var d=getOffsetDate();
+        for (var i=0;i<30;i++)
+          s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
+        s+="BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero(d.getMonth()+1)+frontZero(d.getDate())+'T'+'150702Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
         readIcs(s);
         tickListStatus++;
         showIcs();
@@ -852,18 +866,22 @@
               r.push({});
           } else if (tag.indexOf(line[0])!=-1&&r.length!=0&&r[r.length-1][line[0]]==undefined){
             if (line[0]==tag[0])
-              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,11)+':'+line[1].slice(11,13)+':'+line[1].slice(13));
+              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,11)+':'+line[1].slice(11,13)+':'+line[1].slice(13))+(new Date().getTimezoneOffset()+480)*60*1000;
             else if (line[0]==tag[1]) {
               line[0]=tag[0]
-              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T12:34:56Z');
+              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
             }
             r[r.length-1][line[0]]=line[1];
           }
         }
-        var d=new Date().getTime();
         for (var i in r)
           if (r[i].DTSTART){
-            if (r[i].DTSTART-d>-14*24*3600*1000)
+            var dD=dDay(r[i].DTSTART);
+            if (!dD){
+              tickListNext=r[i];
+              alarmIcs();
+            }
+            if (dD>-14)
               tickList.future.push(r[i]);
             else
               tickList.expire.push(r[i]);
@@ -874,9 +892,9 @@
         initTickListRead=true;
         return tickList;
       }
-      function dDay(t){
-        return Math.floor((t-new Date().getTime())/(24*3600*1000));
-      }
+      function dDay(t){return dHour(t, 24);}
+      function dHour(t, h){return parseInt(dMinu(t, (!h?1:h)*60));}
+      function dMinu(t, m){return (t-getOffsetDate().getTime())/((!m?1:m)*60*1000);}
       function showIcs(){
         var t=document.getElementById('tickList');
         var count=0;
@@ -892,15 +910,27 @@
               if (++count>tickListMaxLine)
                 break;
               var dD=dDay(l[i].DTSTART);
-              t.innerHTML+='<span style="font-size:1rem">'+dateString(l[i].DTSTART).slice(0,-3)+'</span>';
-              t.innerHTML+='<span style="opacity:'+(1-Math.abs(dD)/365)+';"> ['+dD+'] </span>';
-              t.innerHTML+=l[i].SUMMARY+' <span style="font-size:1rem">'+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
+              t.innerHTML+=(!dD?'<b>':'')+'<span style="font-size:1rem">'+dateString(l[i].DTSTART).slice(0,-3)+'</span>';
+              t.innerHTML+=!dD?' <img class="tImg" style="vertical-align:bottom;background-color:white;"> ':'<span style="opacity:'+(1-Math.abs(dD)/365)+';"> ['+dD+'] </span>';
+              t.innerHTML+=(!dD?'<b>':'')+l[i].SUMMARY+' <span style="font-size:1rem">'+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
             }
           }
         } else if (tickListStatus%3==2){
-          t.innerHTML=t.innerHTML.split('<br>').slice(0,5).join('<br>');
+          t.innerHTML=t.innerHTML.split('<br>').slice(0,7).join('<br>');
         } else //tickListStatus%3==0
           t.innerHTML='<img class="tImg">';
+      }
+      function alarmIcs(){
+        var tick=tickListNext;
+        var dH=dHour(tick.DTSTART);
+        tickListAlarm='';
+        if (dH>=-4)
+          if (dH<=4){
+            tickListAlarm='['+tick.SUMMARY.slice(0,7)+']';
+            if (dMinu(tick.DTSTART)>=0)
+              setTimeout('alert("['+dateString(tick.DTSTART)+']\\n'+tick.SUMMARY+'\\n'+tick.DESCRIPTION+'")', (tick.DTSTART-getOffsetDate()-5*60*1000));
+          } else
+            setTimeout('alarmIcs()', (dH-4+1)*3600*1000);
       }
     </script>
 </body>
