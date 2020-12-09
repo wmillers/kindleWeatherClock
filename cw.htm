@@ -22,6 +22,7 @@
       color: #000000;
       background-color: #ffffff;
       font-family: Arial,sans-serif;
+      text-align: center;
     }
     .cleaner {
         background: black;
@@ -103,6 +104,18 @@
       color: #404040;
       white-space: nowrap;
       top: 6rem;
+      text-align: left;
+    }
+    .reminder {
+      display: none;
+      bottom: 30rem;
+      margin: 6rem;
+      padding: 1rem;
+      position: relative;
+      border: dotted;
+      background-color: rgba(255, 255, 255, 0.8);
+      font-size: 1.5rem;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -116,6 +129,7 @@
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
     <div class='tickList' id='tickList' onclick="tickListStatus++;showIcs();"><img class="tImg"></div>
+    <div class='reminder' id='reminder' onclick="displayReminder(false)">REMINDER<br>empty</div>
   </div>
   <script type="text/javascript">
     if (testStatus) {testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 3*1000);}
@@ -832,7 +846,7 @@
         var d=getOffsetDate();
         for (var i=0;i<30;i++)
           s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
-        s+="BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero(d.getMonth()+1)+frontZero(d.getDate())+'T'+'150702Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
+        s+="BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero(d.getMonth()+1)+'09T201502Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
         readIcs(s);
         tickListStatus++;
         showIcs();
@@ -927,10 +941,17 @@
         if (dH>=-4)
           if (dH<=4){
             tickListAlarm='['+tick.SUMMARY.slice(0,7)+']';
-            if (dMinu(tick.DTSTART)>=0)
-              setTimeout('alert("['+dateString(tick.DTSTART)+']\\n'+tick.SUMMARY+'\\n'+tick.DESCRIPTION+'")', (tick.DTSTART-getOffsetDate()-5*60*1000));
+            if (dMinu(tick.DTSTART)>=0){
+              var d=tick.DTSTART-getOffsetDate();
+              document.getElementById('reminder').innerHTML='['+dateString(tick.DTSTART).slice(0,-3)+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION;
+              setTimeout('displayReminder(true)', d-5*60*1000);
+              setTimeout('displayReminder(false)', d+4*60*1000)
+            }
           } else
             setTimeout('alarmIcs()', (dH-4+1)*3600*1000);
+      }
+      function displayReminder(on){
+        document.getElementById("reminder").style.display=on?'block':'none';
       }
     </script>
 </body>
