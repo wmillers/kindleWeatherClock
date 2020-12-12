@@ -3,7 +3,6 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
-
   <script type="text/javascript">
     var testStatus=false;
     var testInterval=0;
@@ -14,21 +13,19 @@
       license: 'LGPL2.1'
     }
   </script>
-
   <title>tomatoClock</title>
   <link id='ico' href="" rel="icon" type="image/x-icon" />
+
 	<style>
     body {
-      color: #000000;
-      background-color: #ffffff;
       font-family: Arial,sans-serif;
       text-align: center;
     }
     .cleaner {
         background: black;
         position: fixed;
-        left: 0px;
-        top: 0px;
+        left: 0;
+        top: 0;
         width: 100%;
         height: 100%;
         display: none;
@@ -48,21 +45,18 @@
       -o-transform:rotate(270deg); /* Opera */
     }
     .time {
-      text-align: center;
       font-size: 15.5rem;
       font-family: 'Arial', sans-serif;/*'Lucida Console', 'Monaco', monospace;*/
       font-variant-numeric: tabular-nums;
       font-weight: 900;
     }
     .tomato {
-      text-align: center;
       overflow: hidden;
       margin-top: 0rem;
       font-size: 2rem;
       font-weight: bold;
     }
     .date {
-      text-align: center;
       font-size: 2rem;
       font-weight: bold;
     }
@@ -79,7 +73,6 @@
       transform: scale(2.7);
     }
     .basket{
-      text-align: center;
       font-size: 1rem;
       margin-top: 12rem;
       padding-bottom: 0.2rem;
@@ -93,7 +86,6 @@
       width: auto;
     }
     .inform {
-      text-align: center;
       margin-top: 0.5rem;
       font-size: 1.5rem;
       font-weight: normal;
@@ -171,797 +163,776 @@
         return dialogText;
       };
   </script>
-    <script type="text/javascript">
-      var toStatus, ispaused, weeklyTomato;
-      var timerEntity;
-      var signalTired=0;
-      var toWorkTimer=25*60;//Second
-      var timerEnd, restWhenPaused;
-      var toRestTimer=5*60
-      var expireTomato=30;//Day
-      var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
-      var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
-      var shinningSignal=[];
-        shinningSignal.push(document.getElementById('ato').style);
-        shinningSignal.push(document.getElementById('inform').style);
-        shinningSignal.push(document.getElementById('allDate').style);
+  <script type="text/javascript">
+    var toStatus, ispaused, weeklyTomato;
+    var timerEntity;
+    var signalTired=0;
+    var toWorkTimer=25*60;//Second
+    var timerEnd, restWhenPaused;
+    var toRestTimer=5*60
+    var expireTomato=30;//Day
+    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
+    var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
+    var shinningSignal=[document.getElementById('ato').style, document.getElementById('inform').style, document.getElementById('allDate').style];
+    prepareTomato();
+    //dumpTomato();gatherTomato(719);
+    function dumpTomato(){rottenTomato(-1);}
+    function gatherTomato(fakeTomatos){
+      if (!weeklyTomato.length) eatTomato();
+      if (fakeTomatos)
+        for (var i=0;i<fakeTomatos;i++)
+          weeklyTomato.push(-1);
+      else
+          weeklyTomato.push(Math.floor(new Date().getTime()/(24*3600*1000)));
+      canTomato();
+      showTomato("Gather");
+    }
+    function canTomato(){
+      document.cookie = "tomato="+compressTomato()+";expires="+ new Date(0x7fffffff * 1e3).toUTCString();
+    }
+    function compressTomato(){
+      var compressed="";
+      for (var i in weeklyTomato){
+        if (i!=0) compressed+='.';
+        compressed+=Math.floor(weeklyTomato[i]).toString(36);
+      }
+      return compressed;
+    }
+    function showTomato(source){
+      var _doc=document.getElementById('basket');
+      _doc.textContent="";
+      var f=[1,2,20,60,180];
+      var css=['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'];
+      var res=0;
+      var tomatos=weeklyTomato.length;
+      for (var i=f.length-1;i>=0&&tomatos!=0;i--){
+        res=Math.floor(tomatos/f[i]);
+        tomatos%=f[i];
+        for (var j=0;j<res;j++)
+          enchantTomato(_doc, css[i]);
+      }
+      if (weeklyTomato.length!=0)
+        _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
+      logTomato(source);
+    }
+    function enchantTomato(_doc, magicType){
+        var script=document.createElement('img');
+        script.setAttribute('class','tImg');
+        if (magicType)
+          script.setAttribute('style',magicType);
+        _doc.appendChild(script);
+    }
+    function eatTomato(){
+      var offset=document.cookie.indexOf("tomato=");
+      var end = document.cookie.indexOf(";",offset);
+      if (offset!=-1){
+        offset+="tomato=".length
+        if (end==-1)
+          end=document.cookie.length;
+        var content=document.cookie.substring(offset, end);
+        if (content){
+          weeklyTomato=Array();
+          content=content.split(".");
+          for(var i in content)
+            if (parseInt(content[i], 36))
+              weeklyTomato.push(parseInt(content[i], 36));
+        }
+        logTomato("Read");
+      }
+    }
+    function logTomato(source){
+      if (weeklyTomato.length==0)
+        console.log("Empty >ToMaMaTo< Store from "+source);
+      else
+        console.log("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
+    }
+    function rottenTomato(expire){
+      if (!expire) expire=expireTomato;
+      var date=Math.floor(new Date().getTime()/(24*3600*1000))-expire;
+      weeklyTomato=weeklyTomato.sort(function(a, b){return b-a;});
+      for (var i in weeklyTomato)
+        if (weeklyTomato[i]<date){
+          weeklyTomato=weeklyTomato.slice(0, i);
+          break;
+        }
+      canTomato();
+      setTimeout("rottenTomato()", expireTomato*24*3600*1000/3);
+      showTomato("Rotten");
+    }
+    function secondsUntilNow(future){
+      return Math.round((future-new Date().getTime())/1000);
+    }
+    function updateMsg(tom, sliceIndex){
+      if (tom) {
+        if (sliceIndex){
+          tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
+        }
+        if (tom.slice(-2)!=": ")
+          tom+=": "
+        tomatoMsg[0].innerHTML=tom;
+      }
+      timerCount=secondsUntilNow(timerEnd);
+      timeString=""+frontZero(Math.floor(timerCount/60))+":"+frontZero(timerCount%60);
+      tomatoMsg[1].innerHTML=timeString;
+      tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
+    }
+    function fridgeTomato(){
       prepareTomato();
-      //dumpTomato();gatherTomato(719);
-      function dumpTomato(){rottenTomato(-1);}
-      function gatherTomato(fakeTomatos){
-        if (!weeklyTomato.length) eatTomato();
-        if (fakeTomatos)
-          for (var i=0;i<fakeTomatos;i++)
-            weeklyTomato.push(-1);
-        else
-            weeklyTomato.push(Math.floor(new Date().getTime()/(24*3600*1000)));
-        canTomato();
-        showTomato("Gather");
-      }
-      function canTomato(){
-        document.cookie = "tomato="+compressTomato()+";expires="+ new Date(0x7fffffff * 1e3).toUTCString();
-      }
-      function compressTomato(){
-        var compressed="";
-        for (var i in weeklyTomato){
-          if (i!=0) compressed+='.';
-          compressed+=Math.floor(weeklyTomato[i]).toString(36);
-        }
-        return compressed;
-      }
-      function showTomato(source){
-        var _doc=document.getElementById('basket');
-        _doc.textContent="";
-        var f=[1,2,20,60,180];
-        var css=['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'];
-        var res=0;
-        var tomatos=weeklyTomato.length;
-        for (var i=f.length-1;i>=0&&tomatos!=0;i--){
-          res=Math.floor(tomatos/f[i]);
-          tomatos%=f[i];
-          for (var j=0;j<res;j++)
-            enchantTomato(_doc, css[i]);
-        }
-        if (weeklyTomato.length!=0)
-          _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
-        logTomato(source);
-      }
-      function enchantTomato(_doc, magicType){
-          var script=document.createElement('img');
-          script.setAttribute('class','tImg');
-          if (magicType)
-            script.setAttribute('style',magicType);
-          _doc.appendChild(script);
-      }
-      function eatTomato(){
-        var offset=document.cookie.indexOf("tomato=");
-        var end = document.cookie.indexOf(";",offset);
-        if (offset!=-1){
-          offset+="tomato=".length
-          if (end==-1)
-            end=document.cookie.length;
-          var content=document.cookie.substring(offset, end);
-          if (content){
-            weeklyTomato=Array();
-            content=content.split(".");
-            for(var i in content)
-              if (parseInt(content[i], 36))
-                weeklyTomato.push(parseInt(content[i], 36));
-          }
-          logTomato("Read");
-        }
-      }
-      function logTomato(source){
-        if (weeklyTomato.length==0)
-          console.log("Empty >ToMaMaTo< Store from "+source);
-        else
-          console.log("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
-      }
-      function rottenTomato(expire){
-        if (!expire) expire=expireTomato;
-        var date=Math.floor(new Date().getTime()/(24*3600*1000))-expire;
-        weeklyTomato=weeklyTomato.sort(function(a, b){return b-a;});
-        for (var i in weeklyTomato)
-          if (weeklyTomato[i]<date){
-            weeklyTomato=weeklyTomato.slice(0, i);
-            break;
-          }
-        canTomato();
-        setTimeout("rottenTomato()", expireTomato*24*3600*1000/3);
-        showTomato("Rotten");
-      }
-      function secondsUntilNow(future){
-        return Math.round((future-new Date().getTime())/1000);
-      }
-      function updateMsg(tom, sliceIndex){
-        if (tom) {
-          if (sliceIndex){
-            tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
-          }
-          if (tom.slice(-2)!=": ")
-            tom+=": "
-          tomatoMsg[0].innerHTML=tom;
-        }
-        timerCount=secondsUntilNow(timerEnd);
-        timeString=""+frontZero(Math.floor(timerCount/60))+":"+frontZero(timerCount%60);
-        tomatoMsg[1].innerHTML=timeString;
-        tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
-      }
-      function fridgeTomato(){
-        prepareTomato();
-        tomatoMsg[0].innerHTML="MATO";
-        tomatoMsg[1].innerHTML="TOMA";
-        tomatoMsg[2].innerHTML=initialTitle;
-        killShadow();
-      }
-      function prepareTomato(){
-        //quit from tomato
-        preventDecreaseShadow=false;
-        lessDisturbUpdateWhenTomato=false;
-        toStatus='stop';//work,rest,stop
-        ispaused=false;
-        weeklyTomato=Array();
-        eatTomato();
-        clearTimeout(timerEntity);
-        updateButton();
-      }
-      function switchTomato(){
-        switch (toStatus){
-          case 'stop':
-            toStatus='work';
-            setTimer();
-            preventDecreaseShadow=true;
-            lessDisturbUpdateWhenTomato=true;
-            timerEnd=new Date().getTime()+toWorkTimer*1000;
-            rottenTomato();
-            updateMsg("番茄开始");
-            updateButton();
-            break;
-          case 'work':
-            toStatus='rest';
-            restWhenPaused=toRestTimer*1000;
-            timerEnd=new Date().getTime()+restWhenPaused;
-            clearTimeout(timerEntity);
-            updateMsg("番茄中场");
-            pauseTomato();
-            break;
-          case 'rest':
-            toStatus='work';
-            restWhenPaused=toWorkTimer*1000;
-            timerEnd=new Date().getTime()+restWhenPaused;
-            clearTimeout(timerEntity);
-            updateMsg("番茄工作");
-            pauseTomato();
-            break;
-        }
-      }
-      function setTimer(){
-        clearTimeout(timerEntity);
-        timerEntity=setTimeout('tomatoTimer()',1000);
-      }
-      function tomatoTimer(){
-        if (timerEnd<new Date().getTime()){
-          if (toStatus=='work')
-            gatherTomato();
-          switchTomato();
-        } else {
-          updateMsg();
+      tomatoMsg[0].innerHTML="MATO";
+      tomatoMsg[1].innerHTML="TOMA";
+      tomatoMsg[2].innerHTML=initialTitle;
+      killShadow();
+    }
+    function prepareTomato(){
+      //quit from tomato
+      preventDecreaseShadow=false;
+      lessDisturbUpdateWhenTomato=false;
+      toStatus='stop';//work,rest,stop
+      ispaused=false;
+      weeklyTomato=Array();
+      eatTomato();
+      clearTimeout(timerEntity);
+      updateButton();
+    }
+    function switchTomato(){
+      switch (toStatus){
+        case 'stop':
+          toStatus='work';
           setTimer();
-        }
+          preventDecreaseShadow=true;
+          lessDisturbUpdateWhenTomato=true;
+          timerEnd=new Date().getTime()+toWorkTimer*1000;
+          rottenTomato();
+          updateMsg("番茄开始");
+          updateButton();
+          break;
+        case 'work':
+          toStatus='rest';
+          restWhenPaused=toRestTimer*1000;
+          timerEnd=new Date().getTime()+restWhenPaused;
+          clearTimeout(timerEntity);
+          updateMsg("番茄中场");
+          pauseTomato();
+          break;
+        case 'rest':
+          toStatus='work';
+          restWhenPaused=toWorkTimer*1000;
+          timerEnd=new Date().getTime()+restWhenPaused;
+          clearTimeout(timerEntity);
+          updateMsg("番茄工作");
+          pauseTomato();
+          break;
       }
-      function updateButton(){
-        if (ispaused)
-          buttonStyle[1].color='#303030';
-        else
-          buttonStyle[1].color='#a9a9a9';
-        if (toStatus=='stop')
-          buttonStyle[1].color='#000000';
-        switch (toStatus){
-          case 'stop':
-            buttonStyle[0].color='#000000';
-            break;
-          case 'work':
-            buttonStyle[0].color='#303030';
-            break;
-          case 'rest':
-            buttonStyle[0].color='#a9a9a9';
-            break;
-        }
+    }
+    function setTimer(){
+      clearTimeout(timerEntity);
+      timerEntity=setTimeout('tomatoTimer()',1000);
+    }
+    function tomatoTimer(){
+      if (timerEnd<new Date().getTime()){
+        if (toStatus=='work')
+          gatherTomato();
+        switchTomato();
+      } else {
+        updateMsg();
+        setTimer();
       }
-      function updateSignal(){
-        if (ispaused && toStatus!='stop'){
-          if (signalTired>toWorkTimer){
-            tomatoMsg[2].innerHTML=initialTitle;
-            for (var i in shinningSignal)
-              shinningSignal[i].color='#000000';
-          } else {
-            if (signalTired%2==0){
-              tomatoMsg[2].innerHTML='✔ * * * ✔';
-              for (var i in shinningSignal)
-                shinningSignal[i].color='#ffffff';
-            } else {
-              tomatoMsg[2].innerHTML='* RELAX *';
-              for (var i in shinningSignal)
-                shinningSignal[i].color='#000000';
-            }
-            if (signalTired==0 || signalTired==toWorkTimer)
-              killShadow(0);
-            signalTired++;
-            setTimeout('updateSignal()', 800);
-          }
-        } else {
-          signalTired=0;
+    }
+    function updateButton(){
+      if (ispaused)
+        buttonStyle[1].color='#303030';
+      else
+        buttonStyle[1].color='#a9a9a9';
+      if (toStatus=='stop')
+        buttonStyle[1].color='#000000';
+      switch (toStatus){
+        case 'stop':
+          buttonStyle[0].color='#000000';
+          break;
+        case 'work':
+          buttonStyle[0].color='#303030';
+          break;
+        case 'rest':
+          buttonStyle[0].color='#a9a9a9';
+          break;
+      }
+    }
+    function updateSignal(){
+      if (ispaused && toStatus!='stop'){
+        if (signalTired>toWorkTimer){
           tomatoMsg[2].innerHTML=initialTitle;
           for (var i in shinningSignal)
             shinningSignal[i].color='#000000';
-        }
-      }
-      function pauseTomato(){
-        if (toStatus=="stop"){
-          return;
-        }
-        ispaused=!ispaused
-        if (ispaused){
-          clearTimeout(timerEntity);
-          restWhenPaused=timerEnd-new Date().getTime();
-          updateMsg("暂停", -4);
         } else {
-          setTimer();
-          timerEnd=new Date().getTime()+restWhenPaused;
-          updateMsg("番茄", -4);
-        }
-        updateButton();
-        updateSignal();
-      }
-    </script>
-
-    <script type="text/javascript">
-      var refreshRate=8*3600*1000;
-      var hardwareLagRate=6.66;//+1s/6.66h
-      var lastSyncTime;
-      var timeOffset=0;
-      var preventDecreaseShadow=false;//Stop when tomato
-      var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
-      var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
-      var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week")];
-      var initTime=new Date().getTime();
-      var initTimeOffset=0;
-      var averageTimeOffset=[];
-      var hasClockInit=false;
-      var networkFaliure=false;
-      var cmdList=[0];
-      var weatherTaskIndex=0;
-
-      initDateFromServer();
-      adjustAgainstHardwareTimeLag();//extra offset cycle
-      initBrowserPage();
-      setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
-
-      function adjustAgainstHardwareTimeLag(lag){
-        if (lag==undefined||lag<hardwareLagRate*3600*1000) lag=hardwareLagRate*3600*1000;//add 1s offset every xxx hour
-        if (hasClockInit)
-          timeOffset+=1000;
-        setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
-      }
-      function initDateFromServer(calculate){
-        if (calculate){
-          if (!averageTimeOffset) return false;
-          var oldHardwareLagRate=hardwareLagRate;
-          var dOffsetPerSecond="";
-          var dTimeOffset=0;
-          var sum=0;
-          for (var i in averageTimeOffset)
-            sum+=averageTimeOffset[i];
-          timeOffset=Math.floor(sum/averageTimeOffset.length);
-          if (!initTimeOffset && timeOffset) initTimeOffset=timeOffset;
-          if (initTimeOffset) {
-            var uptime=new Date().getTime()-initTime;
-            if (Math.abs(timeOffset-initTimeOffset)>200) {
-              dTimeOffset=timeOffset-initTimeOffset;
-              if (uptime>3600*1000) {
-                var newHardwareLagRate=Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100;
-                dOffsetPerSecond="1s/"+newHardwareLagRate+"h"+"("+oldHardwareLagRate+")";
-                if (uptime>3*24*3600*1000)
-                  hardwareLagRate=newHardwareLagRate;
-              }
-            }
+          if (signalTired%2==0){
+            tomatoMsg[2].innerHTML='✔ * * * ✔';
+            for (var i in shinningSignal)
+              shinningSignal[i].color='#ffffff';
+          } else {
+            tomatoMsg[2].innerHTML='* RELAX *';
+            for (var i in shinningSignal)
+              shinningSignal[i].color='#000000';
           }
-          dTimeOffset=dTimeOffset?"("+timeFormat(dTimeOffset)+")":"";
-          console.log(comment(timeOffsetFormat(2)+dTimeOffset+"#"+dOffsetPerSecond+"#"+timeFormat(uptime, 3, true)+""));
-          document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
-          return true;
-        } else {
-          averageTimeOffset=[];
-          singleDateFromServer(20);
+          if (signalTired==0 || signalTired==toWorkTimer)
+            killShadow(0);
+          signalTired++;
+          setTimeout('updateSignal()', 800);
         }
+      } else {
+        signalTired=0;
+        tomatoMsg[2].innerHTML=initialTitle;
+        for (var i in shinningSignal)
+          shinningSignal[i].color='#000000';
       }
-      function singleDateFromServer(n){
-        xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("HEAD", noCache(), true);
-        xmlhttp.onreadystatechange=function() {
-          if (xmlhttp.readyState==4) {
-            if (networkFaliure) {
-              networkFaliure=false;
-              return;
-            }
-            if (n>0)
-              setTimeout('singleDateFromServer('+(--n)+')', 100);
-            else {
-              initDateFromServer(true);
-              return;
-            }
-            if (xmlhttp.status!=0) {
-              var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
-              var clientTime=new Date().getTime();
-              timeOffset=serverTime-clientTime+2300;//preset lag==>+1s(screen refresh time)
-              averageTimeOffset.push(timeOffset);
-              console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e5)+":S"+serverTime%1e5/1000+".:C"+clientTime%1e5/1000+":"+timeOffsetFormat());
-              comment("#"+timeOffsetFormat(3));
-              //initClockWeather();//immediately after date time got from server
-            } else {
-              networkFaliure=true;
-              comment("Failed(ServerTime)#1s/"+hardwareLagRate+"h("+timeOffsetFormat(3)+")");
+    }
+    function pauseTomato(){
+      if (toStatus=="stop"){
+        return;
+      }
+      ispaused=!ispaused
+      if (ispaused){
+        clearTimeout(timerEntity);
+        restWhenPaused=timerEnd-new Date().getTime();
+        updateMsg("暂停", -4);
+      } else {
+        setTimer();
+        timerEnd=new Date().getTime()+restWhenPaused;
+        updateMsg("番茄", -4);
+      }
+      updateButton();
+      updateSignal();
+    }
+  </script>
+  <script type="text/javascript">
+    var refreshRate=8*3600*1000;
+    var hardwareLagRate=6.66;//+1s/6.66h
+    var lastSyncTime;
+    var timeOffset=0;
+    var preventDecreaseShadow=false;//Stop when tomato
+    var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
+    var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
+    var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week")];
+    var initTime=new Date().getTime();
+    var initTimeOffset=0;
+    var averageTimeOffset=[];
+    var hasClockInit=false;
+    var networkFaliure=false;
+    var cmdList=[0];
+    var weatherTaskIndex=0;
+    initDateFromServer();
+    adjustAgainstHardwareTimeLag();//extra offset cycle
+    initBrowserPage();
+    setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
+
+    function adjustAgainstHardwareTimeLag(lag){
+      if (lag==undefined||lag<hardwareLagRate*3600*1000) lag=hardwareLagRate*3600*1000;//add 1s offset every xxx hour
+      if (hasClockInit)
+        timeOffset+=1000;
+      setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
+    }
+    function initDateFromServer(calculate){
+      if (calculate){
+        if (!averageTimeOffset) return false;
+        var oldHardwareLagRate=hardwareLagRate;
+        var dOffsetPerSecond="";
+        var dTimeOffset=0;
+        var sum=0;
+        for (var i in averageTimeOffset)
+          sum+=averageTimeOffset[i];
+        timeOffset=Math.floor(sum/averageTimeOffset.length);
+        if (!initTimeOffset && timeOffset) initTimeOffset=timeOffset;
+        if (initTimeOffset) {
+          var uptime=new Date().getTime()-initTime;
+          if (Math.abs(timeOffset-initTimeOffset)>200) {
+            dTimeOffset=timeOffset-initTimeOffset;
+            if (uptime>3600*1000) {
+              var newHardwareLagRate=Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100;
+              dOffsetPerSecond="1s/"+newHardwareLagRate+"h"+"("+oldHardwareLagRate+")";
+              if (uptime>3*24*3600*1000)
+                hardwareLagRate=newHardwareLagRate;
             }
           }
         }
-        xmlhttp.send(null);
-      }
-      function addTaskOnPageChange(cmd, interval){
-        var t=getOffsetTime(interval);
-        if (cmd<cmdList.length)
-          cmdList[cmd]=[cmdList[cmd][0], interval, t];
-        else {
-          if (cmdList[0]==0||t<cmdList[0])
-            cmdList[0]=t;
-          cmdList.push([cmd, interval, t]);
-          return cmdList.length-1;
-        }
-      }
-      function runTaskOnPageChange(){
-        //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
-        var t=getOffsetTime();
-        var count=0;
-        if (cmdList[0]-10*1000<t){
-          cmdList[0]=0;
-          for (var i=1;i<cmdList.length;i++){
-            if (cmdList[i][2]-10*1000<t){
-              eval(cmdList[i][0]);
-              cmdList[i][2]=getOffsetTime(cmdList[i][1]);
-              for (var j=1;j<cmdList.length;j++)
-                if (cmdList[0]==0||cmdList[j][2]<cmdList[0])
-                  cmdList[0]=cmdList[j][2];
-              count++;
-            }
-          }
-        }
-        return count;
-      }
-      function initBrowserPage(){
-        setIcon();
-        killShadow();
-        addTaskOnPageChange("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
-        addTaskOnPageChange("reduceShadow()", 3100*1000);//prime number 60*60=3600
-      }
-      function initClockWeather(){
-        if(hasClockInit)
-          return;//avoid duplicated init clock;
-        hasClockInit=true;
-        var date=getOffsetDate();
-        //update() included in updateInterval()
-        updateInterval();
-        //No need to update weather manually at the first time.
-        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
+        dTimeOffset=dTimeOffset?"("+timeFormat(dTimeOffset)+")":"";
+        console.log(comment(timeOffsetFormat(2)+dTimeOffset+"#"+dOffsetPerSecond+"#"+timeFormat(uptime, 3, true)+""));
         document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
-        document.getElementById('net').innerHTML='初始化同步';
-        weatherInterval();
+        return true;
+      } else {
+        averageTimeOffset=[];
+        singleDateFromServer(20);
       }
-      function setIcon(){
-        for (var i in document.styleSheets)
-          for (var j in document.styleSheets[i].cssRules)
-            if (document.styleSheets[i].cssRules[j].selectorText=='.tImg'){
-              document.getElementById('ico').href=document.styleSheets[i].cssRules[j].style.content.slice(5,-2);
-              return true;
-            }
-        return false;
-      }
-      function killShadow(number){
-        if (number==undefined)
-          if (preventDecreaseShadow)
+    }
+    function singleDateFromServer(n){
+      xmlhttp = new XMLHttpRequest();
+      xmlhttp.open("HEAD", noCache(), true);
+      xmlhttp.onreadystatechange=function() {
+        if (xmlhttp.readyState==4) {
+          if (networkFaliure) {
+            networkFaliure=false;
             return;
-          else
-            number=0;
+          }
+          if (n>0)
+            setTimeout('singleDateFromServer('+(--n)+')', 100);
+          else {
+            initDateFromServer(true);
+            return;
+          }
+          if (xmlhttp.status!=0) {
+            var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
+            var clientTime=new Date().getTime();
+            timeOffset=serverTime-clientTime+2300;//preset lag==>+1s(screen refresh time)
+            averageTimeOffset.push(timeOffset);
+            console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e5)+":S"+serverTime%1e5/1000+".:C"+clientTime%1e5/1000+":"+timeOffsetFormat());
+            comment("#"+timeOffsetFormat(3));
+            //initClockWeather();//immediately after date time got from server
+          } else {
+            networkFaliure=true;
+            comment("Failed(ServerTime)#1s/"+hardwareLagRate+"h("+timeOffsetFormat(3)+")");
+          }
+        }
+      }
+      xmlhttp.send(null);
+    }
+    function addTaskOnPageChange(cmd, interval){
+      var t=getOffsetTime(interval);
+      if (cmd<cmdList.length)
+        cmdList[cmd]=[cmdList[cmd][0], interval, t];
+      else {
+        if (cmdList[0]==0||t<cmdList[0])
+          cmdList[0]=t;
+        cmdList.push([cmd, interval, t]);
+        return cmdList.length-1;
+      }
+    }
+    function runTaskOnPageChange(){
+      //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
+      var t=getOffsetTime();
+      var count=0;
+      if (cmdList[0]-10*1000<t){
+        cmdList[0]=0;
+        for (var i=1;i<cmdList.length;i++){
+          if (cmdList[i][2]-10*1000<t){
+            eval(cmdList[i][0]);
+            cmdList[i][2]=getOffsetTime(cmdList[i][1]);
+            for (var j=1;j<cmdList.length;j++)
+              if (cmdList[0]==0||cmdList[j][2]<cmdList[0])
+                cmdList[0]=cmdList[j][2];
+            count++;
+          }
+        }
+      }
+      return count;
+    }
+    function initBrowserPage(){
+      setIcon();
+      killShadow();
+      addTaskOnPageChange("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
+      addTaskOnPageChange("reduceShadow()", 3100*1000);//prime number 60*60=3600
+    }
+    function initClockWeather(){
+      if(hasClockInit) return;//avoid duplicated init clock;
+      hasClockInit=true;
+      var date=getOffsetDate();
+      //update() included in updateInterval()
+      updateInterval();
+      //No need to update weather manually at the first time.
+      document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero(date.getMonth()+1)+'-'+frontZero(date.getDate())+' '+frontZero(date.getHours())+':'+frontZero(date.getMinutes())+':'+frontZero(date.getSeconds());
+      document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
+      document.getElementById('net').innerHTML='初始化同步';
+      weatherInterval();
+    }
+    function setIcon(){
+      for (var i in document.styleSheets)
+        for (var j in document.styleSheets[i].cssRules)
+          if (document.styleSheets[i].cssRules[j].selectorText=='.tImg'){
+            document.getElementById('ico').href=document.styleSheets[i].cssRules[j].style.content.slice(5,-2);
+            return true;
+          }
+      return false;
+    }
+    function killShadow(number){
+      if (number==undefined)
+        if (preventDecreaseShadow)
+          return;
         else
-          if (!(number>=0 && number<=2)) return;
-        clean=["block", "block", "none"];
-        color=["black", "white", "black"];
-        cleaner[0].display=clean[number];
-        cleaner[0].background=color[number];
-        setTimeout("killShadow("+(++number)+")", 600);
+          number=0;
+      else
+        if (!(number>=0 && number<=2)) return;
+      clean=["block", "block", "none"];
+      color=["black", "white", "black"];
+      cleaner[0].display=clean[number];
+      cleaner[0].background=color[number];
+      setTimeout("killShadow("+(++number)+")", 600);
+    }
+    function reduceShadow(number){
+      if (preventDecreaseShadow) return;
+      if (number==undefined) number=0;
+      if (!(number>=0 && number<=1)) return;
+      color=[0, 1];
+      cleaner[1].opacity=color[number];
+      setTimeout("reduceShadow("+(++number)+")", 600);
+    }
+    function runTime(n){return timeFormat(new Date().getTime()-initTime, n?n:3, true);}
+    function noCache(){return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);}
+    function frontZero(a, n){
+      if (!n) n=2;
+      if (typeof a!='object')
+        a=[a];
+      for (var i in a)
+        if (typeof a[i]=='number'){
+          a[i]=a[i].toString();
+          for (var j=n-a[i].length;j>0;j--)
+            a[i]='0'+a[i];
+        }
+      return a.join('');
+    }
+    function timeFormat(s,n,noPlus){
+      s=Math.floor(s);
+      if (s==0) return "";
+      if (!n) n=3;
+      var str="";
+      var a="";
+      if (s>0)
+        a="+";
+      else {
+        a='-';
+        s=-s;
       }
-      function reduceShadow(number){
-        if (preventDecreaseShadow) return;
-        if (number==undefined) number=0;
-        if (!(number>=0 && number<=1)) return;
-        color=[0, 1];
-        cleaner[1].opacity=color[number];
-        setTimeout("reduceShadow("+(++number)+")", 600);
-      }
-      function runTime(n){
-        return timeFormat(new Date().getTime()-initTime, n?n:3, true);
-      }
-      function noCache(){
-        return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);
-      }
-      function frontZero(a, n){
-        if (!n) n=2;
-        if (typeof a!='object')
-          a=[a];
-        for (var i in a)
-          if (typeof a[i]=='number'){
-            a[i]=a[i].toString();
-            for (var j=n-a[i].length;j>0;j--)
-              a[i]='0'+a[i];
+      if (s<1000)
+        str="."+frontZero(s,3)+"s";
+      else{
+        var f=[[10,100,60,60,24,365,100,10],
+                ["","s","m","h","d","Y","C","T"]];
+        var fsum=1;
+        for (var i in f[0])
+          fsum*=f[0][i];
+        for (var i=f[0].length-1;i>0&&n>0;i--){
+          if (s>=fsum){
+            str+=Math.floor(s/fsum)+f[1][i];
+            s%=fsum;
+            n--;
           }
-        return a.join('');
-      }
-      function timeFormat(s,n,noPlus){
-        s=Math.floor(s);
-        if (s==0) return "";
-        if (!n) n=3;
-        var str="";
-        var a="";
-        if (s>0)
-          a="+";
-        else {
-          a='-';
-          s=-s;
+          fsum/=f[0][i];
         }
-        if (s<1000)
-          str="."+frontZero(s,3)+"s";
-        else{
-          var f=[[10,100,60,60,24,365,100,10],
-                 ["","s","m","h","d","Y","C","T"]];
-          var fsum=1;
-          for (var i in f[0])
-            fsum*=f[0][i];
-          for (var i=f[0].length-1;i>0&&n>0;i--){
-            if (s>=fsum){
-              str+=Math.floor(s/fsum)+f[1][i];
-              s%=fsum;
-              n--;
-            }
-            fsum/=f[0][i];
-          }
-          if (s!=0&&n>0)
-            str+=frontZero(Math.floor(s/fsum), 2)+f[1][0];
+        if (s!=0&&n>0)
+          str+=frontZero(Math.floor(s/fsum), 2)+f[1][0];
+      }
+      return (!noPlus||a=='-'?a:"")+str;
+    }
+    function timeOffsetFormat(n){return timeFormat(timeOffset, !n?2:n);}
+    function how(){
+      var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate', 'countIcs()', 'tickListStatus'];
+      var o='';
+      var res;
+      for (var i in inspect){
+        res=eval(inspect[i]);
+        if (typeof res=='number'&&res>5*60*1000)
+          res=timeFormat(res,2,true);
+        o+=inspect[i].slice(0,6)+':'+res+',';
+      }
+      o+='['+dateString(cmdList[0], 'hm')+',';
+      for (var i in cmdList)
+        if (i!=0){
+          var n=(cmdList[i][0].length>9)?cmdList[i][0].slice(0,7)+'.'+cmdList[i][0].slice(-2):cmdList[i][0];
+          o+=n+','+timeFormat(cmdList[i][1], 2, true)+','+dateString(cmdList[i][2], false, true).slice(0,-3)+';';
         }
-        return (!noPlus||a=='-'?a:"")+str;
+      return o.slice(0,-1)+']';
+    }
+    function wipe(){document.getElementById('basket').innerHTML='';}
+    function credit(){return JSON.stringify(info).replace(/"/g,'');}
+    function test(boole, s){
+      testStatus=(boole==undefined)?!testStatus:boole;
+      s=(s==undefined)?58:s;;
+      if (testStatus){
+        comment(how());
+        testInterval=setInterval('comment(how())', s*1000);
+        update();
+      } else {
+        clearInterval(testInterval);
+        update();
+        wipe();
       }
-      function timeOffsetFormat(n){
-        if (!n) n=2;
-        return timeFormat(timeOffset,n);
-      }
-      function how(){
-        var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate', 'countIcs()', 'tickListStatus'];
-        var o='';
-        var res;
-        for (var i in inspect){
-          res=eval(inspect[i]);
-          if (typeof res=='number'&&res>5*60*1000)
-            res=timeFormat(res,2,true);
-          o+=inspect[i].slice(0,6)+':'+res+',';
+    }
+    function loop(){
+      test(true, 3);
+      setInterval('timeOffset+=57*1000;update()',  50);
+    }
+    function help(cmd){
+      var func=['help', 'how', 'wipe', 'credit', 'test', 'loop', 'testIcs'];
+      var vari=['who'];
+      return cmd?func:func+','+vari;
+    }
+    function correctPrompt(){
+      var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *\n'+help());
+      var who=navigator.userAgent;
+      if (help(true).indexOf(userIuput)!=-1)
+        userIuput+='()';
+      if (!timeCorrect(userIuput))
+        try{
+          comment(eval(userIuput));
+        } catch (e){
+          comment(e);
         }
-        o+='['+dateString(cmdList[0], false, true)+',';
-        for (var i in cmdList)
-          if (i!=0){
-            var n=(cmdList[i][0].length>9)?cmdList[i][0].slice(0,7)+'.'+cmdList[i][0].slice(-2):cmdList[i][0];
-            o+=n+','+timeFormat(cmdList[i][1], 2, true)+','+dateString(cmdList[i][2], false, true).slice(0,-3)+';';
-          }
-        return o.slice(0,-1)+']';
-      }
-      function wipe(){
-        document.getElementById('basket').innerHTML='';
-      }
-      function credit() {
-        return JSON.stringify(info).replace(/"/g,'');
-      }
-      function test(boole, s){
-        testStatus=(boole==undefined)?!testStatus:boole;
-        s=(s==undefined)?58:s;;
-        if (testStatus){
-          testIcs();
-          comment(how());
-          testInterval=setInterval('comment(how())', s*1000);
-          update();
-        } else {
-          clearInterval(testInterval);
-          update();
-          wipe();
-        }
-      }
-      function loop(){
-        test(true, 3);
-        setInterval('timeOffset+=57*1000;update()',  50);
-      }
-      function help(cmd){
-        var func=['help', 'how', 'wipe', 'credit', 'test', 'loop'];
-        var vari=['who'];
-        return cmd?func:func+','+vari;
-      }
-      function correctPrompt(){
-        var  userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *\n'+help());
-        var who=navigator.userAgent;
-        if (help(true).indexOf(userIuput)!=-1)
-          userIuput+='()';
-        if (!timeCorrect(userIuput))
-          try{
-            comment(eval(userIuput));
-          } catch (e){
-            comment(e);
-          }
-      }
-      function timeCorrect(correct){//000000~235959
-        if (!correct||correct.length!=5&&correct.length!=6) return false;
-        if (correct=="123456"){
-          timeOffset=0;
-          update();
-          return true;
-        }
-        var hms=[correct.slice(-6,-4), correct.slice(-4,-2), correct.slice(-2)];
-        var allow=[[0,23],[0,59],[0,59]];
-        for (var i in hms){
-          hms[i]=Math.floor(parseInt(hms[i]));
-          if (!(hms[i]>=allow[i][0]&&hms[i]<=allow[i][1])) return false;
-        }
-        var date=new Date();
-        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
-        timeOffset=(((hms[0]-date.getHours())*60+(hms[1]-date.getMinutes()))*60+(hms[2]-date.getSeconds()))*1000;
+    }
+    function timeCorrect(correct){//000000~235959
+      if (!correct||correct.length!=5&&correct.length!=6) return false;
+      if (correct=="123456"){
+        timeOffset=0;
         update();
         return true;
       }
-      function getOffsetDate(offset){
-        var date=new Date();
-        if (typeof offset!='number') offset=0;
-        date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
-        date.setMilliseconds(date.getMilliseconds()+timeOffset+offset);
-        return date;
+      var hms=[correct.slice(-6,-4), correct.slice(-4,-2), correct.slice(-2)];
+      var allow=[[0,23],[0,59],[0,59]];
+      for (var i in hms){
+        hms[i]=Math.floor(parseInt(hms[i]));
+        if (!(hms[i]>=allow[i][0]&&hms[i]<=allow[i][1])) return false;
       }
-      function getOffsetTime(offset){return getOffsetDate(offset).getTime();}
-      function updateInterval(){
-        var mscs=getOffsetTime();
-        if (lessDisturbUpdateWhenTomato)
-          setTimeout("updateInterval()", (599999-mscs%600000)+50);//(60*10)*1000+50
-        else
-          setTimeout("updateInterval()", (59999-mscs%60000)+50);//60*1000+50
-        update();
+      var date=new Date();
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+      timeOffset=(((hms[0]-date.getHours())*60+(hms[1]-date.getMinutes()))*60+(hms[2]-date.getSeconds()))*1000;
+      update();
+      return true;
+    }
+    function getOffsetDate(offset){
+      var date=new Date();
+      if (typeof offset!='number') offset=0;
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+      date.setMilliseconds(date.getMilliseconds()+timeOffset+offset);
+      return date;
+    }
+    function getOffsetTime(offset){return getOffsetDate(offset).getTime();}
+    function updateInterval(){
+      var mscs=getOffsetTime();
+      setTimeout("updateInterval()", lessDisturbUpdateWhenTomato?((599999-mscs%600000)+50):(59999-mscs%60000)+50);//(60*10)*1000+50
+      update();
+    }
+    function update(){
+      var date=getOffsetDate();
+      runTaskOnPageChange();
+      if (timeOffset==0)//fix the bug on kindle
+        date.setMinutes(date.getMinutes()+1);
+      var weekList = ['日', '一', '二', '三', '四', '五', '六'];
+      clock[0].innerHTML = frontZero(date.getHours())+':';
+      clock[1].innerHTML = frontZero(date.getMinutes());
+      clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
+      clock[3].innerHTML = '星期' + weekList[date.getDay()] + (testStatus?' #envTest':'') + ' ' + tickListAlarm;
+      return date;
+    }
+    function weatherInterval(){
+      var date = getOffsetDate();
+      var nextRefresh=0;
+      if (!lastSyncTime) lastSyncTime=date.getTime();
+      if (date.getTime()-lastSyncTime>refreshRate+100000)
+        nextRefresh=10*60*1000;
+      else
+        if (date.getHours()+refreshRate/1000/3600<24)
+          nextRefresh=refreshRate;
+        else//calculate time till 00:00
+          nextRefresh=24*3600*1000-date.getTime()%(24*3600*1000)+50;
+      if (weatherTaskIndex==0)
+        weatherTaskIndex=addTaskOnPageChange('weatherInterval()', nextRefresh);
+      else
+        addTaskOnPageChange(weatherTaskIndex, nextRefresh);
+      if (date.getTime()-lastSyncTime>10000)
+        setTimeout('onlineWeather()', 100);
+    }
+    function onlineWeather(){
+      var _doc=document.getElementsByTagName('body')[0];
+      var script=document.createElement('img');
+      script.setAttribute('id','testConnection');
+      script.setAttribute('src','//www.163.com/favicon.ico'+noCache());
+      _doc.appendChild(script);
+      script.onload=script.onreadystatechange=function(){
+        if(!this.readyState||this.readyState=='loaded'||this.readyState=='complete'){
+          weather(true);
+        } else{
+          weather(false);
+        }
+        script.onload=script.onreadystatechange=null;
       }
-      function update(){
-        var date=getOffsetDate();
-        runTaskOnPageChange();
-        if (timeOffset==0)//fix the bug on kindle
-          date.setMinutes(date.getMinutes()+1);
-        var weekList = ['日', '一', '二', '三', '四', '五', '六'];
-        clock[0].innerHTML = frontZero(date.getHours())+':';
-        clock[1].innerHTML = frontZero(date.getMinutes());
-        clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
-        clock[3].innerHTML = '星期' + weekList[date.getDay()] + (testStatus?' #envTest':'') + ' ' + tickListAlarm;
-        return date;
+      _doc.removeChild(script);
+    }
+    function weather(connected)
+    {
+      var date=getOffsetDate();
+      if (connected){
+        lastSyncTime=date.getTime();
+        document.getElementById('ifrmid').src=document.getElementById('ifrmid').src;//change iframe
+        document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero([date.getMonth()+1,'-',date.getDate(),' ',date.getHours(),':',date.getMinutes(),':',date.getSeconds()]);
+        document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
+        document.getElementById('net').innerHTML='完成上一次同步';
+      } else {
+        document.getElementById('net').innerHTML='无网络连接';
       }
-      function weatherInterval(){
-        var date = getOffsetDate();
-        var nextRefresh=0;
-        if (!lastSyncTime) lastSyncTime=date.getTime();
-        if (date.getTime()-lastSyncTime>refreshRate+100000)
-          nextRefresh=10*60*1000;
-        else
-          if (date.getHours()+refreshRate/1000/3600<24)
-            nextRefresh=refreshRate;
+    }
+  </script>
+  <script type="text/javascript">
+  /*
+    Note: you need set a Nginx server to proxy the GET method to the
+          calendar server to download the .ics file. Add those lines
+          to your Nginx config file to avoid CROS problem as the
+          request is directly from your browser which has banned the
+          act for some security reason.
+          
+    location /ics/ {
+      proxy_redirect off;
+      proxy_buffering off;
+      proxy_http_version 1.1;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;   
+      add_header Access-Control-Allow-Methods *;
+      add_header Access-Control-Allow-Credentials true;
+      add_header Access-Control-Allow-Origin $http_origin;
+      if ($request_method = OPTIONS){
+        return 200;
+      }
+      access_log off;
+      proxy_pass https://XXX.com/pub/calendar/feeds/XXXXX/basic.ics;
+    }
+  */
+    var tickList={};
+    var tickListStatus=0;
+    var initTickListRead=false;
+    var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
+    var tickListMaxLine=22;
+    var tickListAlarm='';
+    function dDay(t){return dHour(t, 24);}
+    function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
+    function dMs(t, ms){return (t-getOffsetTime())/(!ms?1:ms);}
+    function dateString(timeStamp, choose){
+      var s='';
+      var all='YMdhms';
+      var date=timeStamp?new Date(timeStamp):getOffsetDate();
+      var res=[date.getFullYear(), date.getMonth()+1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
+      if (!choose) choose='Mdhm';
+      for (var i=0;i<all.length;i++)
+        if (choose.indexOf(all[i])!=-1)
+          s+=frontZero([res[i], ['-', '-', ' ', ':', ':', ' '][i]]);
+      return s.slice(0,-1);
+    }
+    function randInt(n, from){
+      if (from==undefined) from=0;
+      return Math.ceil(Math.random()*(n-from))+from;
+    }
+    function countIcs(){
+      var b=[];
+      for (var i in tickList)
+        b.push(tickList[i].length);
+      return b;
+    }
+    function testIcs(m){
+      var s='';
+      var d=new Date();
+      d.setMinutes(d.getMinutes()+d.getTimezoneOffset());
+      for (var i=0;i<30;i++)
+        s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
+      var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),!m?d.getMinutes()+6:m])+'08Z';
+      s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
+      readIcs(s);
+      tickListStatus++;
+      showIcs();
+      return now;
+    }
+    function getIcs(){
+      var url = "/ics/";
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4) {
+          if(xmlhttp.status == 200){
+            var s = xmlhttp.responseText;
+            xmlhttp = null;
+            readIcs(s);
+            showIcs();
+          }
+        }
+      }
+      xmlhttp.open('GET', url);
+      xmlhttp.send();
+    }
+    function readIcs(s){
+      s=s.split('\n');
+      var r=[];
+      var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER'];
+      for (var i in s){
+        var line=s[i].split(':');
+        line=[line[0]?line[0].trim():'', line[1]?line[1].trim():''];
+        if (line[0]=='BEGIN'){
+          if (line[1]=='VEVENT')
+            r.push({});
+        } else if (tag.indexOf(line[0])!=-1&&r.length!=0&&r[r.length-1][line[0]]==undefined){
+          if (line[0]==tag[0])
+            line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,11)+':'+line[1].slice(11,13)+':'+line[1].slice(13))+(new Date().getTimezoneOffset()+480)*60*1000;
+          else if (line[0]==tag[1]) {
+            line[0]=tag[0]
+            line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
+          }
+          r[r.length-1][line[0]]=line[1];
+        }
+      }
+      sortIcs(r, 1);
+      return tickList;
+    }
+    function sortIcs(r, sortNum){
+      tickList={future:[],expire:[],noDate:[]};
+      var func=[[function (d){return d>-14}, function (a,b){return b.DTSTART-a.DTSTART}],
+        [function (d){return d>=-14&&d<=90}, function (a,b){return Math.abs(a.DTSTART-getOffsetTime())-Math.abs(b.DTSTART-getOffsetTime())}]][sortNum];
+      for (var i in r)
+        if (r[i].DTSTART){
+          var dD=dDay(r[i].DTSTART);
+          if (!dD)
+            alarmIcs(r[i]);
+          if (func[0](dD))
+            tickList.future.push(r[i]);
           else
-            //calculate time till 00:00
-            //setTimeout('weatherInterval()', (24*3600*1000-1)-date.getTime()%(24*3600*1000)+50);//have timezone bug
-            nextRefresh=(((23-date.getHours())*60+59-date.getMinutes())*60+59-date.getSeconds())*1000+999-date.getMilliseconds()+50;
-        if (weatherTaskIndex==0)
-          weatherTaskIndex=addTaskOnPageChange('weatherInterval()', nextRefresh);
-        else
-          addTaskOnPageChange(weatherTaskIndex, nextRefresh);
-        //setTimeout('weatherInterval()', nextRefresh);
-        if (date.getTime()-lastSyncTime>10000)
-          setTimeout('onlineWeather()', 100);
+            tickList.expire.push(r[i]);
+        } else
+          tickList.noDate.push(r[i]);
+      tickList.future.sort(function (a,b){return a.DTSTART-b.DTSTART;});
+      tickList.expire.sort(func[1]);
+      initTickListRead=true;
+    }
+    function showIcs(){
+      var t=document.getElementById('tickList');
+      var limit=0;
+      if (!initTickListRead){
+        getIcs();
+        return;
       }
-      function onlineWeather(){
-        var _doc=document.getElementsByTagName('body')[0];
-        var script=document.createElement('img');
-        script.setAttribute('id','testConnection');
-        script.setAttribute('src','//www.163.com/favicon.ico'+noCache());
-        _doc.appendChild(script);
-        script.onload=script.onreadystatechange=function(){
-          if(!this.readyState||this.readyState=='loaded'||this.readyState=='complete'){
-            weather(true);
-          } else{
-            weather(false);
-          }
-          script.onload=script.onreadystatechange=null;
-        }
-        _doc.removeChild(script);
-      }
-      function weather(connected)
-      {
-        var date=getOffsetDate();
-        if (connected){
-          lastSyncTime=date.getTime();
-          document.getElementById('ifrmid').src=document.getElementById('ifrmid').src;//change iframe
-          document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero([date.getMonth()+1,'-',date.getDate(),' ',date.getHours(),':',date.getMinutes(),':',date.getSeconds()]);
-          document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
-          document.getElementById('net').innerHTML='完成上一次同步';
-        } else {
-          document.getElementById('net').innerHTML='无网络连接';
+      t.innerHTML='';
+      if (tickListStatus%3==0){
+        t.innerHTML='<img class="tImg">';
+        return;
+      } else
+        limit=(tickListStatus%3==1)?tickListMaxLine:6;
+      t.innerHTML='<span style="position: absolute; right: 0; opacity:.3; font-size: .8rem;">'+dateString(0,'hm')+'</span>';
+      for (var j in tickList){
+        var l=tickList[j];
+        for (var i in l){
+          if (--limit<0)
+            break;
+          var dD=dDay(l[i].DTSTART);
+          t.innerHTML+=(!dD?'<b>':'')+'<span style="font-size:1rem">'+dateString(l[i].DTSTART)+'</span>';
+          t.innerHTML+=!dD?' <img class="tImg" style="vertical-align:bottom;background-color:white;"> ':'<span style="opacity:'+(1-Math.abs(dD)/365)+';"> ['+dD+'] </span>';
+          t.innerHTML+=(!dD?'<b>':'')+l[i].SUMMARY+' <span style="font-size:1rem">'+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
         }
       }
-    </script>
-    <script type="text/javascript">
-    /*
-      Note: you need set a Nginx server to proxy the GET method to the
-            calendar server to download the .ics file. Add those lines
-            to your Nginx config file to avoid CROS problem as the
-            request is directly from your browser which has banned the
-            act for some security reason.
-            
-      location /ics/ {
-        proxy_redirect off;
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $http_connection;   
-        add_header Access-Control-Allow-Methods *;
-        add_header Access-Control-Allow-Credentials true;
-        add_header Access-Control-Allow-Origin $http_origin;
-        if ($request_method = OPTIONS){
-          return 200;
-        }
-        access_log off;
-        proxy_pass https://XXX.com/pub/calendar/feeds/XXXXX/basic.ics;
+    }
+    function alarmIcs(tick){
+      var dH=dHour(tick.DTSTART);
+      var d=dMs(tick.DTSTART);
+      tickListAlarm='';
+      setTimeout("tickListAlarm='['+'"+tick.SUMMARY.slice(0,7)+"'+']'", (dH-12)*3600*1000);
+      setTimeout("tickListAlarm=''", (dH+12)*3600*1000);
+      if (d>=-3600*1000){
+        document.getElementById('reminder').innerHTML='['+dateString(tick.DTSTART)+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION;
+        setTimeout('killShadow(0);displayReminder(true)', d-5*60*1000);
+        setTimeout('displayReminder(false)', d+4*3600*1000)
       }
-    */
-      var tickList={};
-      var tickListStatus=0;
-      var initTickListRead=false;
-      var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 12*3600*1000):0;
-      var tickListMaxLine=22;
-      var tickListAlarm='';
-      function dDay(t){return dHour(t, 24);}
-      function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
-      function dMs(t, ms){return (t-getOffsetTime())/(!ms?1:ms);}
-      function dateString(timeStamp, isDate, isTime){
-        var s='';
-        var date=new Date(timeStamp);
-        if (!isDate&&!isTime) isDate=isTime=true;
-        //if (date.getHours()==12&&date.getMinutes()==34) isTime=false;
-        if (isDate) s+=frontZero([date.getMonth()+1,'-',date.getDate(),' ']);
-        if (isTime) s+=frontZero([date.getHours(),':',date.getMinutes(),':',date.getSeconds()]);
-        return s;
-      }
-      function randInt(n, from){
-        if (from==undefined) from=0;
-        return Math.ceil(Math.random()*(n-from))+from;
-      }
-      function countIcs(){
-        var b=[];
-        for (var i in tickList)
-          b.push(tickList[i].length);
-        return b;
-      }
-      function testIcs(m){
-        var s='';
-        var d=new Date();
-        d.setMinutes(d.getMinutes()+d.getTimezoneOffset());
-        for (var i=0;i<30;i++)
-          s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
-        var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),!m?d.getMinutes()+6:m])+'08Z';
-        s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
-        readIcs(s);
-        tickListStatus++;
-        showIcs();
-        return now;
-      }
-      function getIcs(){
-        var url = "/ics/";
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-          if (xmlhttp.readyState == 4) {
-            if(xmlhttp.status == 200){
-              var s = xmlhttp.responseText;
-              xmlhttp = null;
-              readIcs(s);
-              showIcs();
-            }
-          }
-        }
-        xmlhttp.open('GET', url);
-        xmlhttp.send();
-      }
-      function readIcs(s){
-        s=s.split('\n');
-        var r=[];
-        var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER'];
-        for (var i in s){
-          var line=s[i].split(':');
-          line=[line[0]?line[0].trim():'', line[1]?line[1].trim():''];
-          if (line[0]=='BEGIN'){
-            if (line[1]=='VEVENT')
-              r.push({});
-          } else if (tag.indexOf(line[0])!=-1&&r.length!=0&&r[r.length-1][line[0]]==undefined){
-            if (line[0]==tag[0])
-              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,11)+':'+line[1].slice(11,13)+':'+line[1].slice(13))+(new Date().getTimezoneOffset()+480)*60*1000;
-            else if (line[0]==tag[1]) {
-              line[0]=tag[0]
-              line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
-            }
-            r[r.length-1][line[0]]=line[1];
-          }
-        }
-        sortIcs(r, 1);
-        return tickList;
-      }
-      function sortIcs(r, sortNum){
-        tickList={future:[],expire:[],noDate:[]};
-        var func=[[function (d){return d>-14}, function (a,b){return b.DTSTART-a.DTSTART}],
-          [function (d){return d>=-14&&d<=90}, function (a,b){return Math.abs(a.DTSTART-getOffsetTime())-Math.abs(b.DTSTART-getOffsetTime())}]][sortNum];
-        for (var i in r)
-          if (r[i].DTSTART){
-            var dD=dDay(r[i].DTSTART);
-            if (!dD)
-              alarmIcs(r[i]);
-            if (func[0](dD))
-              tickList.future.push(r[i]);
-            else
-              tickList.expire.push(r[i]);
-          } else
-            tickList.noDate.push(r[i]);
-        tickList.future.sort(function (a,b){return a.DTSTART-b.DTSTART;});
-        tickList.expire.sort(func[1]);
-        initTickListRead=true;
-      }
-      function showIcs(){
-        var t=document.getElementById('tickList');
-        var count=0;
-        if (!initTickListRead){
-          getIcs();
-          return;
-        }
-        if (tickListStatus%3==1){
-          t.innerHTML='';
-          for (var j in tickList){
-            var l=tickList[j];
-            for (var i in l){
-              if (++count>tickListMaxLine)
-                break;
-              var dD=dDay(l[i].DTSTART);
-              t.innerHTML+=(!dD?'<b>':'')+'<span style="font-size:1rem">'+dateString(l[i].DTSTART).slice(0,-3)+'</span>';
-              t.innerHTML+=!dD?' <img class="tImg" style="vertical-align:bottom;background-color:white;"> ':'<span style="opacity:'+(1-Math.abs(dD)/365)+';"> ['+dD+'] </span>';
-              t.innerHTML+=(!dD?'<b>':'')+l[i].SUMMARY+' <span style="font-size:1rem">'+l[i].DESCRIPTION.slice(0,10)+'</span><br>';
-            }
-          }
-        } else if (tickListStatus%3==2){
-          t.innerHTML=t.innerHTML.split('<br>').slice(0,7).join('<br>');
-        } else //tickListStatus%3==0
-          t.innerHTML='<img class="tImg">';
-      }
-      function alarmIcs(tick){
-        var dH=dHour(tick.DTSTART);
-        var d=dMs(tick.DTSTART);
-        tickListAlarm='';
-        setTimeout("tickListAlarm='['+'"+tick.SUMMARY.slice(0,7)+"'+']'", (dH-12)*3600*1000);
-        setTimeout("tickListAlarm=''", (dH+12)*3600*1000);
-        if (d>=-3600*1000){
-          document.getElementById('reminder').innerHTML='['+dateString(tick.DTSTART).slice(0,-3)+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION;
-          setTimeout('displayReminder(true)', d-5*60*1000);
-          setTimeout('displayReminder(false)', d+4*3600*1000)
-        }
-      }
-      function displayReminder(on){
-        document.getElementById("reminder").style.display=on?'block':'none';
-      }
-    </script>
+    }
+    function displayReminder(on){
+      document.getElementById("reminder").style.display=on?'block':'none';
+    }
+  </script>
 </body>
 </html>
