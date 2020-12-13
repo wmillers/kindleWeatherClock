@@ -125,40 +125,38 @@
     <div class='reminder' id='reminder' onclick="displayReminder(false)">REMINDER<br>empty</div>
   </div>
   <script type="text/javascript">
-    if (testStatus) {testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 3*1000);}
+    if (testStatus){testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 3*1000);}
     var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
     var clearCommentTime=0;
-    function comment(s){
+    function comment(s, isJam){
       var basket=document.getElementById('basket');
-      if (s!=undefined){
-        var s=String(s);
-        var lag=30*60*1000;
-        clearCommentTime=new Date().getTime() + lag;
-        setTimeout("comment()", lag);
-        if (basket.innerHTML.length==0)
-          basket.innerHTML=s;
-        else {
-          basket.innerHTML+='|';
-          if (s.length>100){
-            basket.innerHTML+=s;
-            while (basket.scrollHeight>basket.clientHeight*1.25)
-              basket.innerHTML=basket.innerHTML.slice(1);
-          } else
-            for (var i=0;i<s.length;i++){
-              basket.innerHTML+=s[i];
-              if (basket.scrollHeight>basket.clientHeight*1.25)
-                basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
-          }
+      var lag=30*60*1000;
+      s=String(s);
+      setTimeout("clearComment()", lag);
+      if (basket.innerHTML.length==0||isJam)
+        basket.innerHTML=s;
+      else {
+        basket.innerHTML+='|';
+        if (s.length>100){
+          basket.innerHTML+=s;
+          while (basket.scrollHeight>basket.clientHeight*1.25)
+            basket.innerHTML=basket.innerHTML.slice(1);
+        } else
+          for (var i=0;i<s.length;i++){
+            basket.innerHTML+=s[i];
+            if (basket.scrollHeight>basket.clientHeight*1.25)
+              basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
         }
-        return s;
-      } else
-          if (new Date().getTime()<clearCommentTime)
-            return;
-          else
-            basket.innerHTML='';
+      }
+      clearCommentTime=new Date().getTime() + lag;
+      return s;
+    }
+    function clearComment(){
+      if (new Date().getTime()<clearCommentTime) return;
+      document.getElementById('basket').innerHTML='';
     }
     if (!testStatus)
-      window.onbeforeunload = function(e) {
+      window.onbeforeunload = function(e){
         var dialogText = '#preventReload';
         e.returnValue = dialogText;
         return dialogText;
@@ -263,7 +261,7 @@
       return Math.round((future-new Date().getTime())/1000);
     }
     function updateMsg(tom, sliceIndex){
-      if (tom) {
+      if (tom){
         if (sliceIndex){
           tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
         }
@@ -427,11 +425,11 @@
           sum+=averageTimeOffset[i];
         timeOffset=Math.floor(sum/averageTimeOffset.length);
         if (!initTimeOffset && timeOffset) initTimeOffset=timeOffset;
-        if (initTimeOffset) {
+        if (initTimeOffset){
           var uptime=new Date().getTime()-initTime;
-          if (Math.abs(timeOffset-initTimeOffset)>200) {
+          if (Math.abs(timeOffset-initTimeOffset)>200){
             dTimeOffset=timeOffset-initTimeOffset;
-            if (uptime>3600*1000) {
+            if (uptime>3600*1000){
               var newHardwareLagRate=Math.floor((uptime/1000/3600)/(dTimeOffset/1000)*100)/100;
               dOffsetPerSecond="1s/"+newHardwareLagRate+"h"+"("+oldHardwareLagRate+")";
               if (uptime>3*24*3600*1000)
@@ -451,9 +449,9 @@
     function singleDateFromServer(n){
       xmlhttp = new XMLHttpRequest();
       xmlhttp.open("HEAD", noCache(), true);
-      xmlhttp.onreadystatechange=function() {
-        if (xmlhttp.readyState==4) {
-          if (networkFaliure) {
+      xmlhttp.onreadystatechange=function(){
+        if (xmlhttp.readyState==4){
+          if (networkFaliure){
             networkFaliure=false;
             return;
           }
@@ -463,13 +461,13 @@
             initDateFromServer(true);
             return;
           }
-          if (xmlhttp.status!=0) {
+          if (xmlhttp.status!=0){
             var serverTime=new Date(xmlhttp.getResponseHeader("Date")).getTime();
             var clientTime=new Date().getTime();
             timeOffset=serverTime-clientTime+2300;//preset lag==>+1s(screen refresh time)
             averageTimeOffset.push(timeOffset);
             console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e5)+":S"+serverTime%1e5/1000+".:C"+clientTime%1e5/1000+":"+timeOffsetFormat());
-            comment("#"+timeOffsetFormat(3));
+            comment("#"+timeOffsetFormat(3), true);
             //initClockWeather();//immediately after date time got from server
           } else {
             networkFaliure=true;
@@ -817,8 +815,8 @@
     function getIcs(){
       var url = "/ics/";
       var xmlhttp = new XMLHttpRequest();
-      xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == 4) {
+      xmlhttp.onreadystatechange = function(){
+        if (xmlhttp.readyState == 4){
           if(xmlhttp.status == 200){
             var s = xmlhttp.responseText;
             xmlhttp = null;
@@ -843,7 +841,7 @@
         } else if (tag.indexOf(line[0])!=-1&&r.length!=0&&r[r.length-1][line[0]]==undefined){
           if (line[0]==tag[0])
             line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,11)+':'+line[1].slice(11,13)+':'+line[1].slice(13))+(new Date().getTimezoneOffset()+480)*60*1000;
-          else if (line[0]==tag[1]) {
+          else if (line[0]==tag[1]){
             line[0]=tag[0]
             line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
           }
@@ -885,7 +883,7 @@
         return;
       } else
         limit=(tickListStatus%3==1)?tickListMaxLine:6;
-      t.innerHTML='<span style="position: absolute; right: 0; opacity:.3; font-size: .8rem;">'+dateString(0)+'</span>';
+      t.innerHTML='<span style="position: absolute; opacity: .3; top: -.2rem; font-size: .6rem;">'+dateString(0)+'</span>';
       for (var j in tickList){
         var l=tickList[j];
         for (var i in l){
