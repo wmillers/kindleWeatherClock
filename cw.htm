@@ -93,7 +93,7 @@
     }
     .tickList {
       position: absolute;
-      font-size: .7rem;
+      font-size: .5rem;
       color: #404040;
       top: 6rem;
       text-align: left;
@@ -765,7 +765,6 @@
   */
     var tickList={};
     var tickListStatus=0;
-    var initTickListRead=false;
     var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
     var tickListMaxLine=22;
     function dDay(t){return dHour(t, 24);}
@@ -861,34 +860,32 @@
           tickList.noDate.push(r[i]);
       tickList.important.sort(function (a,b){return a.DTSTART-b.DTSTART;});
       tickList.normal.sort(func[1]);
-      initTickListRead=true;
     }
     function showIcs(){
       var t=document.getElementById('tickList');
-      var limit=0;
-      if (!initTickListRead){
-        getIcs();
-        return;
-      }
       t.innerHTML='';
-      if (tickListStatus%3==0){
+      if (tickListStatus%9==1){
+        tickListStatus+=3;
+        getIcs();
+      } else if (tickListStatus%3==0){
         t.innerHTML='<img class="tImg">';
-        return;
-      } else
-        limit=(tickListStatus%3==1)?tickListMaxLine:6;
-      var s='<span style="position: absolute; opacity: .3; top: -.3rem; font-size: .6rem;">'+dateString(0)+'</span><table>';
-      for (var j=0;j<Object.keys(tickList).length;j++){
-        var l=tickList[Object.keys(tickList)[j]];
-        for (var i in l){
-          if (--limit<0) break;
-          var dD=dDay(l[i].DTSTART);
-          s+='<tr'+(!dD?' style="font-weight:bold;"':'')+'><td style="white-space:nowrap">'+dateString(l[i].DTSTART,'Mdhm')+'</td>'
-            +'<td align="right" style="width:3.1rem;font-size:1.5rem;opacity:'+opacity(dD, j)+(dD<0?';text-decoration:line-through':'')+'">'
-            +(!dD?' <img class="tImg"> ':dD)+'</td><td><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>&nbsp'
-            +(l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION).slice(0,40)+'</td></tr>';
+      } else {
+        var limit=(tickListStatus%3==1)?tickListMaxLine:6;
+        var s='<span style="position: absolute; opacity: .3; top: -.3rem; font-size: .6rem;">'+dateString(0)+'</span><table>';
+        for (var j=0;j<Object.keys(tickList).length;j++){
+          var l=tickList[Object.keys(tickList)[j]];
+          for (var i in l){
+            if (--limit<0) break;
+            var dD=dDay(l[i].DTSTART);
+            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td>'
+              +'<td style="text-align:right;font-size:1.5rem;opacity:'+opacity(dD,j)+(dD<0?';text-decoration:line-through':'')+'">'
+              +(!dD?'<img class="tImg">':dD)+'</td><td style="display:block;overflow:hidden;height:1.6rem">'
+              +'<span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>&nbsp'
+              +(l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION)+'</td></tr>';
+          }
         }
+        t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
       }
-      t.innerHTML=s+'</table>';
     }
     function opacity(d, i){return Math.max(1-Math.abs(d)/(i==0?120:480), 0.3);}
     function alarmIcs(tick){
