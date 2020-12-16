@@ -132,7 +132,7 @@
       var basket=document.getElementById('basket');
       var lag=30*60*1000;
       s=String(s);
-      setTimeout("clearComment()", lag);
+      setTimeout("clearComment()", lag+1000);
       if (basket.innerHTML.length==0||isJam)
         basket.innerHTML=s;
       else {
@@ -148,7 +148,7 @@
               basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
         }
       }
-      clearCommentTime=new Date().getTime() + lag;
+      clearCommentTime=new Date().getTime()+lag;
       return s;
     }
     function clearComment(){
@@ -612,37 +612,34 @@
       return o.slice(0,-1)+']';
     }
     function wipe(){document.getElementById('basket').innerHTML='';}
-    function credit(){return JSON.stringify(info).replace(/"/g,'');}
     function test(boole, s){
       testStatus=(boole==undefined)?!testStatus:boole;
-      if (s==undefined) s=58;
       if (testStatus){
         comment(how());
-        testInterval=setInterval('comment(how())', s*1000);
-        update();
-      } else {
+        testInterval=setInterval('comment(how())', (s==undefined?58:s)*1000);
+      } else
         clearInterval(testInterval);
-        update();
-        wipe();
-      }
+      update();
     }
     function loop(){
       test(true, 3);
-      setInterval('timeOffset+=57*1000;update()',  50);
-    }
-    function help(cmd){
-      var func=['help', 'how', 'wipe', 'credit', 'test', 'loop', 'testIcs'];
-      var vari=['who'];
-      return cmd?func:func+','+vari;
+      setInterval('timeOffset+=57*1000;update()', 50);
     }
     function correctPrompt(){
-      var userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *\n'+help());
-      var who=navigator.userAgent;
-      if (help(true).indexOf(userIuput)!=-1)
-        userIuput+='()';
+      var help={vari: ['who', 'credit', 'help'],
+                func: ['how', 'wipe', 'test', 'loop', 'testIcs'],
+                who: navigator.userAgent,
+                credit: JSON.stringify(info).replace(/"/g,'')};
+      [].push.apply(help.help=help.func, help.vari); 
+      var userIuput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *\n'+help.help);
       if (!timeCorrect(userIuput))
         try{
-          comment(eval(userIuput));
+          if (help.vari.indexOf(userIuput)!=-1)
+            userIuput='help.'+userIuput;
+          else if (help.func.indexOf(userIuput)!=-1)
+            userInput+='()';
+          var s=eval(userIuput);
+          comment(s==undefined?'u':s);
         } catch (e){
           comment(e);
         }
@@ -878,7 +875,7 @@
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
             s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td>'
-              +'<td style="text-align:right;font-size:1.5rem;opacity:'+opacity(dD,j)+(dD<0?';text-decoration:line-through':'')+'">'
+              +'<td style="text-align:right;font-size:1.5rem;opacity:'+opacity(dD,!j?90:360)+(dD<0?';text-decoration:line-through':'')+'">'
               +(!dD?'<img class="tImg">':dD)+'</td><td style="display:block;overflow:hidden;height:1.6rem">'
               +'<span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>&nbsp'
               +(l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION)+'</td></tr>';
@@ -887,7 +884,7 @@
         t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
       }
     }
-    function opacity(d, i){return Math.max(1-Math.abs(d)/(i==0?120:480), 0.3);}
+    function opacity(d, i){return Math.floor((1-Math.abs(d)/i)*3)*0.2+0.4;}//0.4,0.6,0.8,1
     function alarmIcs(tick){
       var dH=dHour(tick.DTSTART);
       var d=dMs(tick.DTSTART);
