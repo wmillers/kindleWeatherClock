@@ -64,8 +64,8 @@
       position: fixed;
       margin-top: 4rem;
       padding-left: 7rem;
-      width: 500px;
-      height: 70px;
+      width: 31.3rem;
+      height: 4.4rem;
       -ms-transform: scale(2.7);
       -moz-transform: scale(2.7);
       -o-transform: scale(2.7);
@@ -121,7 +121,7 @@
     <iframe class='weath' id="ifrmid" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
-    <div class='tickList' id='tickList' onclick="tickListStatus++;showIcs();"><img class="tImg"></div>
+    <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg"></div>
     <div class='reminder' id='reminder' onclick="displayReminder(false)">REMINDER<br>empty</div>
   </div>
   <script type="text/javascript">
@@ -794,7 +794,7 @@
         if (xmlhttp.readyState == 4){
           if(xmlhttp.status == 200){
             readIcs(xmlhttp.responseText);
-            showIcs();
+            showIcs(true);
             xmlhttp = null;
           }
         }
@@ -846,9 +846,10 @@
       tickList.important.sort(function (a,b){return a.DTSTART-b.DTSTART;});
       tickList.normal.sort(func[1]);
     }
-    function showIcs(){
+    function showIcs(skip){
       var t=document.getElementById('tickList');
       t.innerHTML='';
+      if (!skip) tickListStatus++;
       if (tickListStatus%9==1){
         tickListStatus+=3;
         getIcs();
@@ -862,7 +863,7 @@
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
-            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg"><div style="height:'+Math.ceil(dD/10*3)/3*2+'rem;width:2rem;background:white;display: inline;margin-left: -2rem;position: absolute;"></div>':'')+dD+'</td><td style="display:block;overflow:hidden;height:1.6rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
+            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="position: absolute;margin-left: -2rem"><div style="height:'+Math.ceil(dD/10*3)/3*2+'rem;width:2rem;background:white;display: inline;margin-left: -2rem;position: absolute;"></div>':'')+dD+'</td><td style="display:block;overflow:hidden;height:1.6rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
           }
         }
         t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
