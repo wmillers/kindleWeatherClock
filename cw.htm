@@ -17,42 +17,40 @@
   <link id='ico' href="" rel="icon" type="image/x-icon" />
 
 	<style>
-    body {
-      font-family: Arial,sans-serif;
-      text-align: center;
-    }
     .cleaner {
         background: black;
         position: fixed;
-        left: 0;
-        top: 0;
         width: 100%;
         height: 100%;
         display: none;
         z-index: 20;
     }
     .app {
-      position: fixed;
-      padding-top: 10rem;
-      padding-left: 2.5rem;
-      overflow: hidden;
-      height: 43.5rem;
-      width: 40.5rem;
+      padding-top: 5.5rem;
+      height: 45rem;
+      width: 41rem;
+      font-family: Arial,sans-serif;
+      text-align: center;
+    }
+    .rotate {
       transform:rotate(270deg);
       -ms-transform:rotate(270deg); /* Internet Explorer 9*/
       -moz-transform:rotate(270deg); /* Firefox */
       -webkit-transform:rotate(270deg); /* Safari 和 Chrome */
       -o-transform:rotate(270deg); /* Opera */
     }
+    .tickList {
+      position: absolute;
+      font-size: .5rem;
+      color: #404040;
+      left: -3.5rem;
+    }
     .time {
-      font-size: 15.5rem;
-      font-family: 'Arial', sans-serif;/*'Lucida Console', 'Monaco', monospace;*/
+      font-size: 16rem;
       font-variant-numeric: tabular-nums;
       font-weight: 900;
     }
     .tomato {
-      overflow: hidden;
-      margin-top: 0rem;
       font-size: 2rem;
       font-weight: bold;
     }
@@ -61,21 +59,19 @@
       font-weight: bold;
     }
     .weath {
-      position: fixed;
-      margin-top: 4rem;
-      padding-left: 7rem;
-      width: 31.3rem;
-      height: 4.4rem;
-      -ms-transform: scale(2.7);
-      -moz-transform: scale(2.7);
-      -o-transform: scale(2.7);
-      -webkit-transform: scale(2.7);
-      transform: scale(2.7);
+      margin-top: 1rem;
+      margin-left: -3rem;
+      width: 22.5rem;
+      height: 2.8rem;
+      display: block;
+      -webkit-transform: scale(2.6);
+      transform: scale(2.6);
+      -webkit-transform-origin: 0 0;
+      transform-origin: 0 0;
     }
     .basket{
+      margin-top: 6rem;
       font-size: 1rem;
-      margin-top: 12rem;
-      padding-bottom: 0.2rem;
       overflow: hidden;
       word-break: break-all;
       height: 2rem;
@@ -91,20 +87,12 @@
       font-size: 1.5rem;
       font-weight: normal;
     }
-    .tickList {
-      position: absolute;
-      font-size: .5rem;
-      color: #404040;
-      top: 6rem;
-      text-align: left;
-      vertical-align:bottom;
-    }
     .reminder {
       display: none;
-      bottom: 30rem;
-      margin: 6rem;
+      margin: -23rem 8.5rem; 
       padding: 1rem;
-      position: relative;
+      width: 22rem;
+      position: absolute;
       border: dotted;
       background-color: rgba(255, 255, 255, 0.8);
       font-size: 1.5rem;
@@ -114,18 +102,18 @@
 </head>
 <body>
   <div class="cleaner" id="cleaner"></div>
-	<div class="app">
+	<div class="app"><div class="rotate">
+    <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg"></div><div id='fakeTick' style='height:6rem;'></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
     <iframe class='weath' id="ifrmid" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class='basket' id="basket"></div>
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
-    <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg"></div>
     <div class='reminder' id='reminder' onclick="displayReminder(false)">REMINDER<br>empty</div>
-  </div>
+  </div></div>
   <script type="text/javascript">
-    if (testStatus){testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 3*1000);}
+    if (testStatus){testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 10*1000);}
     var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
     var clearCommentTime=0;
     function comment(s, isJam){
@@ -775,17 +763,17 @@
         b.push(tickList[i].length);
       return b;
     }
-    function testIcs(m){
+    function testIcs(){
       var s='';
-      var d=new Date();
-      d.setMinutes(d.getMinutes()+d.getTimezoneOffset());
       for (var i=0;i<30;i++)
         s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
-      var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),!m?d.getMinutes()+6:m])+'08Z';
+      var d=new Date();
+      d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+6);
+      var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),d.getMinutes()])+'08Z';
       s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
       readIcs(s);
       tickListStatus+=4;showIcs();
-      return now;
+      console.log(now);
     }
     function getIcs(){
       var url = "/ics/";
@@ -857,13 +845,13 @@
         t.innerHTML='<img class="tImg">';
       } else {
         var limit=(tickListStatus%3==1)?tickListMaxLine:6;
-        var s='<span style="position: absolute; opacity: .3; top: -.3rem; font-size: .6rem;">'+dateString(0)+'</span><table>';
+        var s='<span style="opacity: .3; font-size: .6rem;">'+dateString(0)+'</span><table>';
         for (var j=0;j<Object.keys(tickList).length;j++){
           var l=tickList[Object.keys(tickList)[j]];
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
-            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="position: absolute;margin-left: -2rem"><div style="height:'+Math.ceil(dD/10*3)/3*2+'rem;width:2rem;background:white;display: inline;margin-left: -2rem;position: absolute;"></div>':'')+dD+'</td><td style="display:block;overflow:hidden;height:1.6rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
+            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem;width:1.5rem;background:white;display:inline;margin-left:-1.5rem;position:absolute;"></div>':'')+(dD?dD:'')+'</td><td style="display:block;overflow:hidden;height:1.6rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
           }
         }
         t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
