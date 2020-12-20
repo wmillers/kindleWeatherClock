@@ -44,6 +44,7 @@
       font-size: .5rem;
       color: #404040;
       left: -3.5rem;
+      height: 8rem;
     }
     .time {
       font-size: 16rem;
@@ -665,7 +666,8 @@
       clock[0].innerHTML = frontZero(date.getHours())+':';
       clock[1].innerHTML = frontZero(date.getMinutes());
       clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
-      clock[3].innerHTML = '星期'+['日', '一', '二', '三', '四', '五', '六'][date.getDay()]+(testStatus?' #envTest ':' ')+tickListAlarm;
+      clock[3].innerHTML = '星期'+['日', '一', '二', '三', '四', '五', '六'][date.getDay()]
+      clock[3].innerHTML+= '<span style="font-size:1.5rem;position:absolute;"> '+(testStatus?'#envTest':'')+' '+tickListAlarm+"</span>";
       return date;
     }
     function weatherInterval(){
@@ -851,7 +853,7 @@
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
-            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem;width:1.5rem;background:white;display:inline;margin-left:-1.5rem;position:absolute;"></div>':'')+(dD?dD:'')+'</td><td style="display:block;overflow:hidden;height:1.6rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
+            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem;width:1.5rem;background:white;display:inline;margin-left:-1.5rem;position:absolute;"></div>':'')+(dD?dD:'')+'</td><td style="display:block;overflow:hidden;height:1.58rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
           }
         }
         t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
@@ -861,7 +863,7 @@
       var dH=dHour(tick.DTSTART);
       var d=dMs(tick.DTSTART);
       tickListAlarm='';
-      setTimeout("tickListAlarm='['+'"+tick.SUMMARY.slice(0,7)+"'+']'", (dH-12)*3600*1000);
+      setTimeout("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
       setTimeout("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
         document.getElementById('reminder').innerHTML='['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION;
