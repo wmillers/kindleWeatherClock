@@ -742,7 +742,7 @@
     var tickList={};
     var tickListStatus=0;
     var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
-    var tickListMaxLine=22;
+    var tickListMaxLine=21;
     function dDay(t){return dHour(t, 24);}
     function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
     function dMs(t, ms){return (t-getOffsetTime())/(!ms?1:ms);}
@@ -843,15 +843,22 @@
         t.innerHTML=tickListStatus;
         getIcs();
       } else if (tickListStatus%3==0){
-        t.innerHTML='<img class="tImg">';
+        t.innerHTML='<img class="tImg" style="padding:1rem">';
       } else {
         var limit=(tickListStatus%3==1)?tickListMaxLine:6;
         var s='<span style="opacity: .3; font-size: .6rem;">'+dateString(0)+'</span><table>';
+        var cross30;
         for (var j=0;j<Object.keys(tickList).length;j++){
           var l=tickList[Object.keys(tickList)[j]];
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
+            if (cross30==undefined)
+              cross30=Math.abs(dD);
+            else if (Math.abs(dD)>=30&&cross30<30){
+              cross30=31;
+              s+='<tr style="height:.5rem"></tr>';
+            }
             s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem;width:1.5rem;background:white;display:inline;margin-left:-1.5rem;position:absolute;"></div>':'')+(dD?dD:'')+'</td><td style="display:block;overflow:hidden;height:1.58rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
           }
         }
