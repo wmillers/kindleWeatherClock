@@ -453,18 +453,23 @@
       }
       xmlhttp.send(null);
     }
-    function addTaskOnPageChange(cmd, interval){
+    function addTaskOnPageChange(cmd, interval, isTimeout){
       var t=getOffsetTime(interval);
-      if (cmd<cmdList.length)
+      if (isTimeout) interval=true;
+      if (typeof cmd=='number'&&cmd<cmdList.length)
         cmdList[cmd]=[cmdList[cmd][0], interval, t];
       else {
         if (cmdList[0]==0||t<cmdList[0]) cmdList[0]=t;
         cmdList.push([cmd, interval, t]);
-        return cmdList.length-1;
       }
+      return cmdList.length-1;
+      var tag=[cmd.slice(0,3),cmd.slice(-3)];
+      if (cmdList[tag[0]+tag[1]]!=undefined)
+        for (var i=0;cmdList[tag[0]+i+tag[1]]!=undefined;i++);
+      return tag[0]+i+tag[1]
     }
     function runTaskOnPageChange(){
-      //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000]];
+      //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000], ['',true,1500]];
       var t=getOffsetTime();
       var count=0;
       if (cmdList[0]-10*1000<t){
@@ -472,15 +477,23 @@
         for (var i=1;i<cmdList.length;i++){
           if (cmdList[i][2]-10*1000<t){
             eval(cmdList[i][0]);
-            cmdList[i][2]=getOffsetTime(cmdList[i][1]);
-            for (var j=1;j<cmdList.length;j++)
-              if (cmdList[0]==0||cmdList[j][2]<cmdList[0])
-                cmdList[0]=cmdList[j][2];
-            count++;
+            if (cmdList[i][1]===true)
+              cmdList[i][1]=false
+            else 
+              cmdList[i][2]=getOffsetTime(cmdList[i][1]);
           }
         }
+        refreshTaskOnPageChange();
+        for (var j=1;j<cmdList.length;j++)
+          if (cmdList[0]==0||cmdList[j][2]<cmdList[0])
+            cmdList[0]=cmdList[j][2];
       }
-      return count;
+    }
+    function refreshTaskOnPageChange(){
+      var i=cmdList.length;
+      while (i-->1)
+        if (cmdList[i][1]===false)
+          cmdList.splice(i,1);
     }
     function initBrowserPage(){
       setIcon();
@@ -568,20 +581,20 @@
     }
     function timeOffsetFormat(n){return timeFormat(timeOffset, !n?2:n);}
     function how(){
-      var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate', 'countIcs()', 'tickListStatus'];
+      var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate'];
       var o='';
       var res;
       for (var i in inspect){
         res=eval(inspect[i]);
         if (typeof res=='number'&&res>5*60*1000)
           res=timeFormat(res,2,true);
-        o+=inspect[i].slice(0,6)+':'+res+',';
+        o+=inspect[i].slice(0,5)+':'+res+',';
       }
-      o+='['+dateString(cmdList[0])+',';
+      o+=cmdList.length-1+',['+dateString(cmdList[0])+',';
       for (var i in cmdList)
         if (i!=0){
-          var n=(cmdList[i][0].length>9)?cmdList[i][0].slice(0,7)+'.'+cmdList[i][0].slice(-2):cmdList[i][0];
-          o+=n+','+timeFormat(cmdList[i][1], 2, true)+','+dateString(cmdList[i][2])+';';
+          var n=(cmdList[i][0].length>7)?cmdList[i][0].slice(0,5)+'.'+cmdList[i][0].slice(-2):cmdList[i][0];
+          o+=n+','+(cmdList[i][1]!==true?timeFormat(cmdList[i][1], 2, true):'T')+','+dateString(cmdList[i][2])+'|';
         }
       return o.slice(0,-1)+']';
     }
@@ -761,7 +774,7 @@
       for (var i=0;i<30;i++)
         s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
       var d=new Date();
-      d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+6);
+      d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+15+1);
       var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),d.getMinutes()])+'08Z';
       s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
       readIcs(s);
@@ -854,18 +867,20 @@
       var dH=dHour(tick.DTSTART);
       var d=dMs(tick.DTSTART);
       tickListAlarm='';
-      setTimeout("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
-      setTimeout("tickListAlarm=''", (dH+12)*3600*1000);
+      remindIcs("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
+      remindIcs("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
-        document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION;
-        setTimeout('killShadow(true);displayReminder(true)', d-15*60*1000);
-        setTimeout('killShadow(true)', d-1*60*1000);
+        remindIcs('killShadow(true);'
+                 +"document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'"+('['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION)+"';"
+                 +'displayReminder(true)', d-15*60*1000);
+        remindIcs('killShadow(true)', d-1*60*1000);
       }
     }
     function displayReminder(on){
       if (!on) document.getElementById('reminder').innerHTML='';
       document.getElementById("reminder").style.display=on?'block':'none';
     }
+    function remindIcs(cmd, timeout){addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
   </script>
 </body>
 </html>
