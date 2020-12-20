@@ -772,7 +772,7 @@
       var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),d.getMinutes()])+'08Z';
       s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
       readIcs(s);
-      tickListStatus+=4;showIcs();
+      tickListStatus++;showIcs(true);
       console.log(now);
     }
     function getIcs(){
@@ -834,12 +834,12 @@
       tickList.important.sort(function (a,b){return a.DTSTART-b.DTSTART;});
       tickList.normal.sort(func[1]);
     }
-    function showIcs(skip){
+    function showIcs(keep){
       var t=document.getElementById('tickList');
       t.innerHTML='';
-      if (!skip) tickListStatus++;
-      if (tickListStatus%9==1){
-        tickListStatus+=3;
+      if (!keep) tickListStatus++;
+      if (!keep&&tickListStatus%6==1){
+        t.innerHTML=tickListStatus;
         getIcs();
       } else if (tickListStatus%3==0){
         t.innerHTML='<img class="tImg">';
