@@ -46,6 +46,15 @@
       left: -3.5rem;
       text-align: left;
     }
+    .danmu {
+      position: absolute;
+      font-size: 1rem;
+      left: -3.5rem;
+      text-align: left;
+      height: 10rem;
+      width: 10rem;
+      background: gray;
+    }
     .time {
       font-size: 16rem;
       font-variant-numeric: tabular-nums;
@@ -105,6 +114,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg" style="padding:1rem"></div><div style='height:6rem;'></div>
+    <div class='danmu' id='danmu' onclick="danmuOn()"></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
@@ -883,6 +893,20 @@
       document.getElementById("reminder").style.display=on?'block':'none';
     }
     function remindIcs(cmd, timeout){addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
+  </script>
+  <script type="text/javascript">
+  var danmu=document.getElementById('danmu');
+  var innerIp='';
+  function danmuOn(){
+    window.location='https://chat.bilisc.com/room/16548?minGiftPrice=7&showDanmaku=true&showGift=true&showGiftName=false&mergeSimilarDanmaku=false&mergeGift=true&maxNumber=60&blockGiftDanmaku=true&blockLevel=0&blockNewbie=true&blockNotMobileVerified=true&blockKeywords=&blockUsers=&blockMedalLevel=0&relayMessagesByServer=false&autoTranslate=false&giftUsernamePronunciation=';
+    return;
+    if (innerIp=='')
+      innerIp=prompt('192.168.51.?:(1)');
+    var ws = new WebSocket('ws://'+'192.168.51.'+innerIp+':8080/');
+    ws.onmessage = function(event) {
+      danmu.innerHTML+=event.data+'<br>';
+    };
+  }
   </script>
 </body>
 </html>
