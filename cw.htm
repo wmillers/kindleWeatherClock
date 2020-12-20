@@ -896,13 +896,8 @@
   </script>
   <script type="text/javascript">
   var danmu=document.getElementById('danmu');
-  var innerIp='';
   function danmuOn(){
-    window.location='https://chat.bilisc.com/room/16548?minGiftPrice=7&showDanmaku=true&showGift=true&showGiftName=false&mergeSimilarDanmaku=false&mergeGift=true&maxNumber=60&blockGiftDanmaku=true&blockLevel=0&blockNewbie=true&blockNotMobileVerified=true&blockKeywords=&blockUsers=&blockMedalLevel=0&relayMessagesByServer=false&autoTranslate=false&giftUsernamePronunciation=';
-    return;
-    if (innerIp=='')
-      innerIp=prompt('192.168.51.?:(1)');
-    var ws = new WebSocket('ws://'+'192.168.51.'+innerIp+':8080/');
+    var ws = new WebSocket('wss:///blive/');
     ws.onmessage = function(event) {
       danmu.innerHTML+=event.data+'<br>';
     };
