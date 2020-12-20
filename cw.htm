@@ -338,7 +338,7 @@
               shinningSignal[i].color='#000000';
           }
           if (signalTired==0 || signalTired==toWorkTimer)
-            killShadow(0);
+            killShadow(true);
           signalTired++;
           setTimeout('updateSignal()', 800);
         }
@@ -510,24 +510,16 @@
           }
       return false;
     }
-    function killShadow(number){
-      if (number==undefined)
-        if (preventDecreaseShadow)
-          return;
-        else
-          number=0;
-      else
-        if (!(number>=0 && number<=2)) return;
-      cleaner[0].display=["block", "block", "none"][number];
-      cleaner[0].background=["black", "white", "black"][number];
-      setTimeout("killShadow("+(++number)+")", 600);
+    function killShadow(force){
+      if (force||!preventDecreaseShadow)
+        for (var i=0;i<3;i++)
+          setTimeout('cleaner[0].display="'+["block", "block", "none"][i]+'";'+
+                    'cleaner[0].background="'+["black", "white", "black"][i]+'"', 600*i);
     }
-    function reduceShadow(number){
-      if (preventDecreaseShadow) return;
-      if (number==undefined) number=0;
-      if (!(number>=0 && number<=1)) return;
-      cleaner[1].opacity=[0, 1][number];
-      setTimeout("reduceShadow("+(++number)+")", 600);
+    function reduceShadow(){
+      if (!preventDecreaseShadow)
+        for (var i=0;i<2;i++)
+          setTimeout('cleaner[1].opacity='+[0, 1][i], 600*i);
     }
     function runTime(n){return timeFormat(new Date().getTime()-initTime, n?n:3, true);}
     function noCache(){return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);}
@@ -867,7 +859,8 @@
       setTimeout("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
         document.getElementById('reminder').innerHTML='['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION;
-        setTimeout('killShadow(0);displayReminder(true)', d-5*60*1000);
+        setTimeout('killShadow(true);displayReminder(true)', d-5*60*1000);
+        setTimeout('killShadow(true)', d-1*60*1000);
         setTimeout('displayReminder(false)', d+4*3600*1000)
       }
     }
