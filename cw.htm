@@ -44,6 +44,7 @@
       font-size: .5rem;
       color: #404040;
       left: -3.5rem;
+      text-align: left;
     }
     .time {
       font-size: 16rem;
@@ -113,7 +114,7 @@
     <div class='reminder' id='reminder' onclick="displayReminder(false)"></div>
   </div></div>
   <script type="text/javascript">
-    if (testStatus){testInterval=setInterval('comment(how())', 7*1000);setTimeout('testIcs()', 10*1000);}
+    if (testStatus){testInterval=setInterval('comment(how(), true)', 7*1000);setTimeout('testIcs()', 10*1000);}
     var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
     var clearCommentTime=0;
     function comment(s, isJam){
@@ -378,7 +379,9 @@
     var averageTimeOffset=[];
     var hasClockInit=false;
     var networkFaliure=false;
-    var cmdList=[0];
+    var nextCmdList=0;
+    var cmdListCount=0;
+    var cmdList={};
     var weatherTaskIndex=0;
     var tickListAlarm='';
     initDateFromServer();
@@ -443,7 +446,7 @@
             timeOffset=serverTime-clientTime+2300;//preset lag==>+1s(screen refresh time)
             averageTimeOffset.push(timeOffset);
             console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e5)+":S"+serverTime%1e5/1000+".:C"+clientTime%1e5/1000+":"+timeOffsetFormat());
-            comment("#"+timeOffsetFormat(3), true);
+            comment("Calculating..."+timeOffsetFormat(3), true);
             //initClockWeather();//immediately after date time got from server
           } else {
             networkFaliure=true;
@@ -455,27 +458,24 @@
     }
     function addTaskOnPageChange(cmd, interval, isTimeout){
       var t=getOffsetTime(interval);
+      var tag=cmd;
       if (isTimeout) interval=true;
-      if (typeof cmd=='number'&&cmd<cmdList.length)
+      if (cmdList[cmd]!=undefined)
         cmdList[cmd]=[cmdList[cmd][0], interval, t];
       else {
-        if (cmdList[0]==0||t<cmdList[0]) cmdList[0]=t;
-        cmdList.push([cmd, interval, t]);
+        tag=cmd.slice(0,3)+frontZero(++cmdListCount)+cmd.slice(-2);
+        cmdList[tag]=[cmd, interval, t];
       }
-      return cmdList.length-1;
-      var tag=[cmd.slice(0,3),cmd.slice(-3)];
-      if (cmdList[tag[0]+tag[1]]!=undefined)
-        for (var i=0;cmdList[tag[0]+i+tag[1]]!=undefined;i++);
-      return tag[0]+i+tag[1]
+      refreshTaskOnPageChange();
+      return tag;
     }
     function runTaskOnPageChange(){
-      //var cmdList=[15000000, ['f()', interval, end], ['f()', 86400*1000, 15000000], ['',true,1500]];
+      //nextCmdList=1500, cmdList={tag0:['f()', interval, end], tag1:['f()', 86400*1000, 15000000], tag2:['',true,1500]};
       var t=getOffsetTime();
-      var count=0;
-      if (cmdList[0]-10*1000<t){
-        cmdList[0]=0;
-        for (var i=1;i<cmdList.length;i++){
-          if (cmdList[i][2]-10*1000<t){
+      if (nextCmdList-59*1000<t){
+        nextCmdList=0;
+        for (var i in cmdList){
+          if (cmdList[i][2]-59*1000<t){
             eval(cmdList[i][0]);
             if (cmdList[i][1]===true)
               cmdList[i][1]=false
@@ -484,16 +484,15 @@
           }
         }
         refreshTaskOnPageChange();
-        for (var j=1;j<cmdList.length;j++)
-          if (cmdList[0]==0||cmdList[j][2]<cmdList[0])
-            cmdList[0]=cmdList[j][2];
       }
     }
     function refreshTaskOnPageChange(){
-      var i=cmdList.length;
-      while (i-->1)
+      for (var i in cmdList)
         if (cmdList[i][1]===false)
-          cmdList.splice(i,1);
+          delete cmdList[i];
+        else 
+          if (nextCmdList==0||cmdList[i][2]<nextCmdList)
+            nextCmdList=cmdList[i][2];
     }
     function initBrowserPage(){
       setIcon();
@@ -581,29 +580,25 @@
     }
     function timeOffsetFormat(n){return timeFormat(timeOffset, !n?2:n);}
     function how(){
-      var inspect=['runTime(2)', 'weeklyTomato.length', 'hardwareLagRate'];
+      var inspect=['runTime(2)', 'weeklyTomato.length', 'countIcs()', 'hardwareLagRate'];
       var o='';
       var res;
       for (var i in inspect){
         res=eval(inspect[i]);
         if (typeof res=='number'&&res>5*60*1000)
           res=timeFormat(res,2,true);
-        o+=inspect[i].slice(0,5)+':'+res+',';
+        o+=inspect[i].slice(0,6)+':'+res+',';
       }
-      o+=cmdList.length-1+',['+dateString(cmdList[0])+',';
+      o+='['+(Object.keys(cmdList).length-1)+','+dateString(nextCmdList)+']:';
       for (var i in cmdList)
-        if (i!=0){
-          var n=(cmdList[i][0].length>7)?cmdList[i][0].slice(0,5)+'.'+cmdList[i][0].slice(-2):cmdList[i][0];
-          o+=n+','+(cmdList[i][1]!==true?timeFormat(cmdList[i][1], 2, true):'T')+','+dateString(cmdList[i][2])+'|';
-        }
-      return o.slice(0,-1)+']';
+        o+=i+(cmdList[i][1]!==true?','+timeFormat(cmdList[i][1], 2, true)+',':'T')+dateString(cmdList[i][2])+'|';
+      return o.slice(0,-1);
     }
     function wipe(){document.getElementById('basket').innerHTML='';}
-    function test(boole, s){
-      testStatus=(boole==undefined)?!testStatus:boole;
-      if (testStatus){
+    function test(s){
+      if (testStatus=!testStatus){
         comment(how());
-        testInterval=setInterval('comment(how())', (s==undefined?58:s)*1000);
+        testInterval=setInterval('comment(how(), true)', (s==undefined?58:s)*1000);
       } else
         clearInterval(testInterval);
       update();
@@ -870,8 +865,8 @@
       remindIcs("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
       remindIcs("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
-        remindIcs('killShadow(true);'
-                 +"document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'"+('['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION)+"';"
+        remindIcs("document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'"+('['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION)+"';"
+                 +'killShadow(true);'
                  +'displayReminder(true)', d-15*60*1000);
         remindIcs('killShadow(true)', d-1*60*1000);
       }
