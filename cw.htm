@@ -48,12 +48,13 @@
     }
     .danmu {
       position: absolute;
-      font-size: 1rem;
-      left: -3.5rem;
+      font-size: 1.5rem;
+      margin: 6rem 0 0 -4rem;
       text-align: left;
-      height: 10rem;
-      width: 10rem;
+      height: 25rem;
+      width: 18rem;
       background: gray;
+      overflow: hidden;
     }
     .time {
       font-size: 16rem;
@@ -114,7 +115,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg" style="padding:1rem"></div><div style='height:6rem;'></div>
-    <div class='danmu' id='danmu' onclick="danmuOn()"></div>
+    <div class='danmu' id='danmu' onclick="danmuOn()">--Blive--</div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
@@ -738,7 +739,7 @@
       proxy_http_version 1.1;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection $http_connection;   
+      proxy_set_header Connection $http_connection;
       add_header Access-Control-Allow-Methods *;
       add_header Access-Control-Allow-Credentials true;
       add_header Access-Control-Allow-Origin $http_origin;
@@ -895,12 +896,57 @@
     function remindIcs(cmd, timeout){addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
   </script>
   <script type="text/javascript">
+  /*
+  sudo apt-get install python3-distutils
+  sudo apt-get install python3-pip
+  sudo pip3 install aiohttp [-i https://source]
+  python3 sample.py 92613
+  sudo nano /etc/nginx/nginx.conf
+  sudo systemctl restart nginx
+
+    location /blive/ {
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $http_connection;
+      access_log off;
+      proxy_pass http://localhost:8099;
+    }
+  */
   var danmu=document.getElementById('danmu');
-  function danmuOn(){
-    var ws = new WebSocket('wss:///blive/');
-    ws.onmessage = function(event) {
-      danmu.innerHTML+=event.data+'<br>';
-    };
+  var danmuRefreshRate=0;
+  var buffer='';
+  var danmuReadCount=0;
+  function danmuOn(ms){
+    danmuRefreshRate=(typeof ms=='number')?500:ms;
+  }
+  function danmuOff(){
+    danmuRefreshRate=0;
+  }
+  function danmuShow(s){
+    if (s.trim()!='EMPTY'){
+      danmuReadCount++;
+      buffer=s+'<br>'+buffer;
+      if (buffer.length>600)
+        buffer=buffer.slice(0,300);
+      danmu.innerHTML=buffer;
+    }
+    if (danmuRefreshRate>100){
+      setTimeout('danmuShow()', danmuRefreshRate);
+    }
+  }
+  function danmuRead(){
+    var url = "/blive/";
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function(){
+        if (xmlhttp.readyState == 4){
+          if(xmlhttp.status == 200){
+            danmuShow(xmlhttp.responseText);
+            xmlhttp = null;
+          }
+        }
+      }
+      xmlhttp.open('GET', url);
+      xmlhttp.send();
   }
   </script>
 </body>
