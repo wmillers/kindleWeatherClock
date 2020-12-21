@@ -48,12 +48,11 @@
     }
     .danmu {
       position: absolute;
-      font-size: 1.5rem;
-      margin: 6rem 0 0 -4rem;
+      font-size: 1.2rem;
+      margin: 7rem 0 0 -4rem;
       text-align: left;
       height: 25rem;
       width: 18rem;
-      background: gray;
       overflow: hidden;
     }
     .time {
@@ -115,7 +114,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg" style="padding:1rem"></div><div style='height:6rem;'></div>
-    <div class='danmu' id='danmu' onclick="danmuOn()">--Blive--</div>
+    <div class='danmu' onclick="danmuSwitch()"><span id='danmu_info' style='font-size: .8rem;'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
@@ -916,37 +915,73 @@
   var danmuRefreshRate=0;
   var buffer='';
   var danmuReadCount=0;
-  function danmuOn(ms){
-    danmuRefreshRate=(typeof ms=='number')?500:ms;
+  var clearDanmeTime=0;
+  var streamer=[['pi', 'nc'],
+                [92613, 1220]];
+  function danmuSwitch(){
+    if (danmuRefreshRate>=200)
+      danmuOff(danmuReadCount);
+    else {
+      var up=prompt('Streamer: '+streamer[0]);
+      if (streamer[0].indexOf(up)!=-1)
+        danmuOn(streamer[1][streamer[0].indexOf(up)]);
+      else
+        danmuOn(up);
+    }
   }
-  function danmuOff(){
+  function danmuOn(roomId){
+    danmu.style.background='rgba(255,255,255,0.8)';
+    danmuRefreshRate=1000;
+    clearCommentTime=0;
+    danmuRead(roomId);
+  }
+  function danmuOff(s){
     danmuRefreshRate=0;
+    danmu.innerHTML='--Blive Off--'+'<br>'+(s!=undefined?s:'')+'<br><br><br><br><br>'+buffer.slice(0,80)+'...';
+    danmu.style.background='rgba(255,255,255,0)';
+    clearCommentTime=new Date().getTime()+30*60*1000;
+    setTimeout('danmuClear()', 30*60*1000);
   }
   function danmuShow(s){
-    if (s.trim()!='EMPTY'){
+    if (s!=undefined&&s.trim()!='EMPTY'){
       danmuReadCount++;
+      if (s[0]=='$'){
+        s=s.slice[1];
+        if (s.indexOf('$')!=-1){
+          document.getElementById('danmu_info').innerHTML='当前人气 '+s.slice(0,s.indexOf('$'))+'<br>';
+          s=s.slice(s.indexOf('$')+1);
+        }
+      }
       buffer=s+'<br>'+buffer;
       if (buffer.length>600)
         buffer=buffer.slice(0,300);
       danmu.innerHTML=buffer;
     }
-    if (danmuRefreshRate>100){
-      setTimeout('danmuShow()', danmuRefreshRate);
-    }
   }
-  function danmuRead(){
-    var url = "/blive/";
-      var xmlhttp = new XMLHttpRequest();
-      xmlhttp.onreadystatechange = function(){
-        if (xmlhttp.readyState == 4){
-          if(xmlhttp.status == 200){
-            danmuShow(xmlhttp.responseText);
-            xmlhttp = null;
-          }
-        }
+  function danmuRead(roomId){
+    if (danmuRefreshRate<200){
+      return
+    }
+    var url = "/blive/"
+    if (roomId)
+      url+='?'+roomId;
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function(){
+      if (xmlhttp.readyState == 4){
+        if(xmlhttp.status == 200){
+          danmuShow(xmlhttp.responseText);
+          xmlhttp = null;
+        } else
+          danmuOff('(〃>_<;〃) '+xmlhttp.status);
       }
-      xmlhttp.open('GET', url);
-      xmlhttp.send();
+    }
+    xmlhttp.open('GET', url);
+    xmlhttp.send();
+    setTimeout('danmuRead()', danmuRefreshRate);
+  }
+  function danmuClear(){
+    if (clearDanmeTime!=0&&new Date().getTime()<clearDanmeTime) return;
+    danmu.innerHTML='';
   }
   </script>
 </body>
