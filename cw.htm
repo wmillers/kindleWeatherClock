@@ -930,6 +930,7 @@
                 [92613, 1220]];
   var danmuRoomId=streamer[1][0];
   var danmuPop=0;
+  var danmuMax=800;
   function space(n){
     var s='';
     while (n--)
@@ -938,7 +939,7 @@
   }
   function danmuSwitch(){
     if (danmuRefreshRate>=200)
-      danmuOff(danmuReadCount);
+      danmuOff('+'+danmuReadCount);
     else {
       var up=prompt('Streamer: '+streamer[0]);
       if (streamer[0].indexOf(up)!=-1)
@@ -968,20 +969,13 @@
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='18rem';
-    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+'<br>'+buffer.slice(0,80)+'...';
+    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+'<br>'+buffer.slice(0,danmuMax/4)+'...';
     danmuInfo('◯ OFF');
   }
-  function danmuTimeout(n){
-    if (n==undefined)
-      n=3;
-    if (danmuPop>1)
-      if (n>=0)
-        setTimeout('danmuTimeout('+(--n)+')', 10*60*1000);
-      else
-        danmuOff('TIMEOUT');
-  }
   function danmuShow(s){
-    if (s!=undefined&&s.trim()!='EMPTY'&&s.trim()!='<br>'){
+    if (s.indexOf('[SLEEP]')!=-1)
+      danmuOff(s.trim())
+    else if (s!=undefined&&s.trim()!='<br>'){
       danmuReadCount++;
       if (s[0]=='$'){
         s=s.slice(1);
@@ -990,13 +984,14 @@
           if (!(danmuPop==0&&p==1))
             danmuPop=p;
           if (danmuPop==1)
-            danmuTimeout();
+            setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
           s=s.slice(s.indexOf('$')+1);
         }
       }
-      buffer=s+'<br>'+buffer;
-      if (buffer.length>1500)
-        buffer=buffer.slice(0, 800);
+      if (s)
+        buffer=s+'<br>'+buffer;
+      if (buffer.length>danmuMax*1.5)
+        buffer=buffer.slice(0, danmuMax);
       danmu.innerHTML=buffer;
       danmuInfo(['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'][danmuReadCount%8]+' ON');
     }
@@ -1018,7 +1013,7 @@
           danmuShow(xmlhttp.responseText);
           xmlhttp = null;
         } else
-          danmuOff('(〃>_<;〃) '+xmlhttp.status);
+          danmuOff('(〃>_<;〃)'+xmlhttp.status);
       }
     }
     xmlhttp.open('GET', url);

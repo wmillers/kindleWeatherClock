@@ -4,7 +4,7 @@
 import asyncio
 import sys
 import blivedm
-from time import sleep
+from time import sleep, time
 from multiprocessing import Process, Queue
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -12,6 +12,7 @@ from urllib import parse
 
 
 history=[]
+room_id=0
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -41,8 +42,8 @@ def controlRoom(path):
     if (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
-                res='[success] Valid Room_id: '+cmd
-                cmd_que.put_nowait(room_id)
+                res='[recv] Valid Room_id: '+cmd
+                roomid_que.put_nowait(room_id)
             else:
                 res='[err] Not in safe range: '+cmd
     else:
@@ -54,10 +55,16 @@ def controlRoom(path):
 
 def readFromLive():
     global history
+    global room_id
+    global status_que
+    res=''
     if (que.empty()):
-        res="EMPTY"
+        if (not status_que.empty()):
+            while not status_que.empty():
+                res+=status_que.get_nowait()+'<br>'
+        else:
+            res="<br>"
     else:
-        buffer=[]
         control={'pop':''}
         if (len(history)>100):
             history=history[50:]
@@ -67,17 +74,18 @@ def readFromLive():
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 control['pop']=tmp
                 continue
-            buffer.append(tmp)
-        if (''.join(buffer).strip()):
-            res=''.join(list(control.values()))+'<br>'.join(buffer)
+            res+='<br>'+tmp
+        if (res.strip()):
+            res=''.join(list(control.values()))+res
         else:
-            res='EMPTY'
+            res='<br>'
     return res
 
-def initServer(r, c):
+def initServer(r, c1, c2):
     global que
-    global cmd_que
-    que, cmd_que=r, c
+    global roomid_que
+    global status_que
+    que, roomid_que, status_que=r, c1, c2
     host = ('localhost', 8099)
     server = HTTPServer(host, Resquest)
     print("Starting server, listen at: %s:%s" % host)
@@ -133,15 +141,16 @@ async def initDm(room_id):
 def runDm(s, room_id):
     global que
     que=s
-    aprint('- LIVE '+str(room_id)+'-')
+    aprint('[LIVE] New room: '+str(room_id))
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
 
 if __name__ == '__main__':
     que = Queue()
-    cmd_que=Queue()
-    p = Process(target=initServer, args=(que,cmd_que,))
+    roomid_que=Queue()
+    status_que=Queue()
+    p = Process(target=initServer, args=(que,roomid_que,status_que,))
     p.start()
     room_id=0
     if (len(sys.argv)>1):
@@ -151,13 +160,17 @@ if __name__ == '__main__':
         print('[init] preset room_id: '+str(room_id))
     else:
         print('[wait] No preset room id, wait for client request')
+        status_que.put_nowait('[SLEEP] no preset room id given')
     while True:
-        if (que.qsize()>100):
+        if (que.qsize()==3):
+            stuck_time=time()
+        if (que.qsize()>10 and time()-stuck_time>30*60) or (que.qsize()>100 and time()-stuck_time>10*60) or que.qsize()>500:
             print('[sleep] blive off, request room_id to wake up')
+            status_que.put_nowait('[SLEEP] blive overflow')
             c.terminate()
             c.join()
-        if (not cmd_que.empty()):
-            new_room_id=cmd_que.get_nowait()
+        if (not roomid_que.empty()):
+            new_room_id=roomid_que.get_nowait()
             if (new_room_id!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
@@ -165,6 +178,7 @@ if __name__ == '__main__':
                     c.join()
                 room_id=new_room_id
                 print('[launch] new room id: '+str(room_id))
+                status_que.put_nowait('[LAUNCH] new room id: '+str(room_id))
                 c = Process(target=runDm, args=(que,room_id,))
                 c.start()
         sleep(1)
