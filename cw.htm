@@ -54,7 +54,9 @@
       text-align: left;
       height: 18rem;
       width: 18rem;
-      overflow: hidden;
+      white-space: nowrap;
+      overflow-y: hidden;
+      overflow-x: visible;
     }
     .danmu_info{
       display: block;
@@ -970,7 +972,7 @@
     danmuInfo('◯ OFF');
   }
   function danmuShow(s){
-    if (s!=undefined&&s.trim()!='EMPTY'){
+    if (s!=undefined&&s.trim()!='EMPTY'&&s.trim()!='<br>'){
       danmuReadCount++;
       if (s[0]=='$'){
         s=s.slice(1);
@@ -980,8 +982,8 @@
         }
       }
       buffer=s+'<br>'+buffer;
-      if (buffer.length>600)
-        buffer=buffer.slice(0,300);
+      if (buffer.length>1500)
+        buffer=buffer.slice(0, 800);
       danmu.innerHTML=buffer;
       danmuInfo(['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'][danmuReadCount%8]+' ON');
     }

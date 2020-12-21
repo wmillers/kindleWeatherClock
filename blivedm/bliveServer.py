@@ -68,7 +68,10 @@ def readFromLive():
                 control['pop']=tmp
                 continue
             buffer.append(tmp)
-        res=''.join(list(control.values()))+'<br>'.join(buffer)
+        if (''.join(buffer).strip()):
+            res=''.join(list(control.values()))+'<br>'.join(buffer)
+        else:
+            res='EMPTY'
     return res
 
 def initServer(r, c):
@@ -90,7 +93,7 @@ class MyBLiveClient(blivedm.BLiveClient):
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
 
     async def __on_vip_enter(self, command):
-        aprint(command)
+        print(command)
     _COMMAND_HANDLERS['WELCOME'] = __on_vip_enter  # 老爷入场
 
     async def _on_receive_popularity(self, popularity: int):
@@ -98,17 +101,17 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        aprint(f'<small>{danmaku.uname}：</small>{danmaku.msg}')
+        aprint(f'<small>{danmaku.uname}: </small>{danmaku.msg}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
-            aprint(f'{gift.uname} 赠送{gift.gift_name}x{gift.num}')# （{gift.coin_type}币x{gift.total_coin}）')
+            aprint(f'<small>{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')# （{gift.coin_type}币x{gift.total_coin}）')
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
-        aprint(f'{message.username} 购买{message.gift_name}')
+        aprint(f'<small>{message.username} 购买{message.gift_name}</small>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'醒目留言 ¥{message.price} {message.uname}：<b>{message.message}</b>')
+        aprint(f'<small>SuperChat <b>¥{message.price}</b> {message.uname}: <b>{message.message}</b></small>')
 
 
 async def initDm(room_id):
