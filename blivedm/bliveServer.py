@@ -41,7 +41,7 @@ def controlRoom(path):
     if (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
-                res='[success] Get Room_id Control: '+cmd
+                res='[success] Valid Room_id: '+cmd
                 cmd_que.put_nowait(room_id)
             else:
                 res='[err] Not in safe range: '+cmd
@@ -82,7 +82,8 @@ def initServer(r, c):
 
 
 def aprint(a):
-    que.put_nowait(a)
+    if (a.strip()):
+        que.put_nowait(a)
 
 class MyBLiveClient(blivedm.BLiveClient):
     # 演示如何自定义handler
@@ -97,7 +98,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        aprint(f'{danmaku.uname}：{danmaku.msg}')
+        aprint(f'<small>{danmaku.uname}：</small>{danmaku.msg}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
@@ -107,7 +108,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'{message.username} 购买{message.gift_name}')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'醒目留言 ¥{message.price} {message.uname}：{message.message}')
+        aprint(f'醒目留言 ¥{message.price} {message.uname}：<b>{message.message}</b>')
 
 
 async def initDm(room_id):
@@ -140,13 +141,18 @@ if __name__ == '__main__':
     p = Process(target=initServer, args=(que,cmd_que,))
     p.start()
     room_id=0
-    if (len(sys.argv)>2):
+    if (len(sys.argv)>1):
         room_id=int(sys.argv[1])
         c = Process(target=runDm, args=(que,room_id,))
         c.start()
+        print('[init] preset room_id: '+str(room_id))
     else:
         print('[wait] No preset room id, wait for client request')
     while True:
+        if (que.qsize()>100):
+            print('[sleep] blive off, request room_id to wake up')
+            c.terminate()
+            c.join()
         if (not cmd_que.empty()):
             new_room_id=cmd_que.get_nowait()
             if (new_room_id!=room_id):

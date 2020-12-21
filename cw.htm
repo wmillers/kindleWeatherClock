@@ -926,7 +926,7 @@
   var clearDanmeTime=0;
   var streamer=[['pi', 'nc'],
                 [92613, 1220]];
-  var danmuRoomId=0;
+  var danmuRoomId=streamer[1][0];
   var danmuPop=0;
   function space(n){
     var s='';
@@ -942,7 +942,8 @@
       if (streamer[0].indexOf(up)!=-1)
         danmuRoomId=streamer[1][streamer[0].indexOf(up)];
       else
-        danmuRoomId=up;
+        if (parseInt(up)!=NaN&&parseInt(up)>0)
+          danmuRoomId=up;
       danmuOn(danmuRoomId);
     }
   }
