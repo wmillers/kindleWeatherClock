@@ -925,7 +925,7 @@
   var danmuRefreshRate=0;
   var buffer='';
   var danmuReadCount=0;
-  var clearDanmeTime=0;
+  var cleardanmuTime=0;
   var streamer=[['pi', 'nc'],
                 [92613, 1220]];
   var danmuRoomId=streamer[1][0];
@@ -956,12 +956,12 @@
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='25rem';
     danmuRefreshRate=1000;
-    clearCommentTime=0;
+    cleardanmuTime=0;
     danmuRead(roomId);
   }
   function danmuOff(s){
     danmuRefreshRate=0;
-    clearCommentTime=new Date().getTime()+30*60*1000;
+    cleardanmuTime=new Date().getTime()+30*60*1000;
     setTimeout('danmuClear()', 30*60*1000);
     dInfoStyle.background='';
     danmu.style.background='';
@@ -971,13 +971,26 @@
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+'<br>'+buffer.slice(0,80)+'...';
     danmuInfo('◯ OFF');
   }
+  function danmuTimeout(n){
+    if (n==undefined)
+      n=3;
+    if (danmuPop>1)
+      if (n>=0)
+        setTimeout('danmuTimeout('+(--n)+')', 10*60*1000);
+      else
+        danmuOff('TIMEOUT');
+  }
   function danmuShow(s){
     if (s!=undefined&&s.trim()!='EMPTY'&&s.trim()!='<br>'){
       danmuReadCount++;
       if (s[0]=='$'){
         s=s.slice(1);
         if (s.indexOf('$')!=-1){
-          danmuPop=s.slice(0,s.indexOf('$'));
+          var p=parseInt(s.slice(0,s.indexOf('$')));
+          if (!(danmuPop==0&&p==1))
+            danmuPop=p;
+          if (danmuPop==1)
+            danmuTimeout();
           s=s.slice(s.indexOf('$')+1);
         }
       }
@@ -1013,8 +1026,9 @@
     setTimeout('danmuRead()', danmuRefreshRate);
   }
   function danmuClear(){
-    if (clearDanmeTime!=0&&new Date().getTime()<clearDanmeTime) return;
+    if (cleardanmuTime!=0&&new Date().getTime()<cleardanmuTime) return;
     danmu.innerHTML='';
+    document.getElementById('danmu_info').innerHTML='';
   }
   </script>
 </body>
