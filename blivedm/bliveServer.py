@@ -64,11 +64,10 @@ def readFromLive():
         while not que.empty():
             tmp=que.get_nowait()
             history.append(tmp)
-            if (tmp[0]=='$' and tmp[-1]=='$'):
+            if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 control['pop']=tmp
                 continue
             buffer.append(tmp)
-        print(control,buffer)
         res=''.join(list(control.values()))+'<br>'.join(buffer)
     return res
 
@@ -101,7 +100,8 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'{danmaku.uname}：{danmaku.msg}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        aprint(f'{gift.uname} 赠送{gift.gift_name}x{gift.num}')# （{gift.coin_type}币x{gift.total_coin}）')
+        if (gift.coin_type!='silver'):
+            aprint(f'{gift.uname} 赠送{gift.gift_name}x{gift.num}')# （{gift.coin_type}币x{gift.total_coin}）')
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'{message.username} 购买{message.gift_name}')
@@ -129,7 +129,7 @@ async def initDm(room_id):
 def runDm(s, room_id):
     global que
     que=s
-    aprint("LIVEON: "+str(room_id))
+    aprint('- LIVE '+str(room_id)+'-')
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 

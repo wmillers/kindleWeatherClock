@@ -49,11 +49,17 @@
     .danmu {
       position: absolute;
       font-size: 1.2rem;
-      margin: 7rem 0 0 -4rem;
+      margin-top: 14rem;
+      margin-left: -4rem;
       text-align: left;
-      height: 25rem;
+      height: 18rem;
       width: 18rem;
       overflow: hidden;
+    }
+    .danmu_info{
+      display: block;
+      font-size: .8rem;
+      white-space: pre-wrap;
     }
     .time {
       font-size: 16rem;
@@ -114,7 +120,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg" style="padding:1rem"></div><div style='height:6rem;'></div>
-    <div class='danmu' onclick="danmuSwitch()"><span id='danmu_info' style='font-size: .8rem;'></span><span id='danmu'></span></div>
+    <div class='danmu' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
@@ -911,6 +917,8 @@
       proxy_pass http://localhost:8099;
     }
   */
+  var danmuStyle=document.getElementById('danmu_frame').style;
+  var dInfoStyle=document.getElementById('danmu_info').style;
   var danmu=document.getElementById('danmu');
   var danmuRefreshRate=0;
   var buffer='';
@@ -918,37 +926,55 @@
   var clearDanmeTime=0;
   var streamer=[['pi', 'nc'],
                 [92613, 1220]];
+  var danmuRoomId=0;
+  var danmuPop=0;
+  function space(n){
+    var s='';
+    while (n--)
+      s+=' ';
+    return s;
+  }
   function danmuSwitch(){
     if (danmuRefreshRate>=200)
       danmuOff(danmuReadCount);
     else {
       var up=prompt('Streamer: '+streamer[0]);
       if (streamer[0].indexOf(up)!=-1)
-        danmuOn(streamer[1][streamer[0].indexOf(up)]);
+        danmuRoomId=streamer[1][streamer[0].indexOf(up)];
       else
-        danmuOn(up);
+        danmuRoomId=up;
+      danmuOn(danmuRoomId);
     }
   }
   function danmuOn(roomId){
-    danmu.style.background='rgba(255,255,255,0.8)';
+    dInfoStyle.background='white';
+    danmu.style.background='white';
+    danmuStyle.marginTop='7rem';
+    danmuStyle.marginLeft='-4rem';
+    danmuStyle.height='25rem';
     danmuRefreshRate=1000;
     clearCommentTime=0;
     danmuRead(roomId);
   }
   function danmuOff(s){
     danmuRefreshRate=0;
-    danmu.innerHTML='--Blive Off--'+'<br>'+(s!=undefined?s:'')+'<br><br><br><br><br>'+buffer.slice(0,80)+'...';
-    danmu.style.background='rgba(255,255,255,0)';
     clearCommentTime=new Date().getTime()+30*60*1000;
     setTimeout('danmuClear()', 30*60*1000);
+    dInfoStyle.background='';
+    danmu.style.background='';
+    danmuStyle.marginTop='14rem';
+    danmuStyle.marginLeft='-4rem';
+    danmuStyle.height='18rem';
+    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+'<br>'+buffer.slice(0,80)+'...';
+    danmuInfo('◯ OFF');
   }
   function danmuShow(s){
     if (s!=undefined&&s.trim()!='EMPTY'){
       danmuReadCount++;
       if (s[0]=='$'){
-        s=s.slice[1];
+        s=s.slice(1);
         if (s.indexOf('$')!=-1){
-          document.getElementById('danmu_info').innerHTML='当前人气 '+s.slice(0,s.indexOf('$'))+'<br>';
+          danmuPop=s.slice(0,s.indexOf('$'));
           s=s.slice(s.indexOf('$')+1);
         }
       }
@@ -956,7 +982,11 @@
       if (buffer.length>600)
         buffer=buffer.slice(0,300);
       danmu.innerHTML=buffer;
+      danmuInfo(['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'][danmuReadCount%8]+' ON');
     }
+  }
+  function danmuInfo(status){
+    document.getElementById('danmu_info').innerHTML='人气'+danmuPop+space(10)+'房间'+danmuRoomId+space(20)+status+'<br>';
   }
   function danmuRead(roomId){
     if (danmuRefreshRate<200){
