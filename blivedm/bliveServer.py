@@ -170,7 +170,7 @@ if __name__ == '__main__':
         stuck_time=0
         if (que.qsize()==3 and stuck_time==0):
             stuck_time=time()
-        if stuck_time!=0 and (que.qsize()>10 and time()-stuck_time>30*60) or (que.qsize()>100 and time()-stuck_time>10*60) or que.qsize()>500:
+        if stuck_time!=0 and (que.qsize()>5 and time()-stuck_time>30*60) or (que.qsize()>100 and time()-stuck_time>10*60) or que.qsize()>500:
             print('[sleep] blive off, request room_id to wake up')
             uniquePut(status_que, '[SLEEP] blive overflow')
             c.terminate()

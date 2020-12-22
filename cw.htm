@@ -975,7 +975,7 @@
   function danmuShow(s){
     if (s.indexOf('[SLEEP]')!=-1)
       danmuOff(s.trim())
-    else if (s!=undefined&&s.trim()!='<br>'){
+    else if (s!=undefined&&s.trim()!='<br>'&&s.trim()!=''){
       danmuReadCount++;
       if (s[0]=='$'){
         s=s.slice(1);
