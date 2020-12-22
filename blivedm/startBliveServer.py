@@ -13,6 +13,7 @@ import ctypes
 
 
 history=[]
+info={'pop':0, 'que_size':0}
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -36,8 +37,7 @@ def isEmptyPath(path):
     return False
 
 def controlRoom(path):
-    global new_room_id
-    global que
+    global new_room_id, que, info
     cmd=parse.urlparse(path).query.split('&')[0]
     if (cmd==''):
         return False
@@ -57,14 +57,15 @@ def controlRoom(path):
         elif (cmd=='kick'):
             que.put_nowait('[SLEEP] & [KICK] pong<-')
             res='[SLEEP] & [KCIK] OK'
+        elif (cmd=='info'):
+            info['que_size']=que.qsize()
+            res=info
         else:
             res='[err] Invalid: '+cmd
     return res
 
 def readFromLive():
-    global history
-    global que
-    global status_que
+    global history, que, status_que, info
     res=''
     if (que.empty()):
         if (not status_que.empty()):
@@ -73,20 +74,15 @@ def readFromLive():
         else:
             res="<br>"
     else:
-        control={'pop':''}
         if (len(history)>100):
             history=history[50:]
         while not que.empty():
             tmp=que.get_nowait()
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
-                control['pop']=tmp
+                info['pop']=tmp[1:-1]
                 continue
             res+=('<br>' if res else '')+tmp
-        if (res.strip()):
-            res=''.join(list(control.values()))+res
-        else:
-            res='<br>'
     return res
 
 def initServer(r, c1, c2):

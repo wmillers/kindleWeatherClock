@@ -953,8 +953,10 @@
   var cleardanmuTime=0;
   var streamer=[['pi', 'nc', 'dd'],
                 [92613, 1220, 16548]];
+  var danmuControl=['history','bye', 'kick', 'info'];
   var danmuRoomId='';
   var danmuPop=0;
+  var danmuInfoUpdateIndex=0;
   var danmuMax=800;
   function space(n){
     var s='';
@@ -966,11 +968,11 @@
     if (danmuRefreshRate>=200)
       danmuOff('+'+danmuReadCount);
     else {
-      var up=prompt('Streamer: '+streamer[0]);
+      var up=prompt('Streamer: '+streamer[0]+'\nControl: '+danmuControl);
       if (streamer[0].indexOf(up)!=-1)
         danmuRoomId=streamer[1][streamer[0].indexOf(up)];
       else
-        if (['history','bye'].indexOf(up)!=-1||parseInt(up)!=NaN&&parseInt(up)>0)
+        if (danmuControl.indexOf(up)!=-1||parseInt(up)!=NaN&&parseInt(up)>0)
           danmuRoomId=up;
       danmuOn(danmuRoomId);
     }
@@ -984,9 +986,12 @@
     danmuRefreshRate=1000;
     cleardanmuTime=0;
     danmuRead(roomId);
+    danmuInfoUpdateIndex=setInterval('danmuInfoUpdate()', 30*1000);
   }
   function danmuOff(s){
     danmuRefreshRate=0;
+    clearInterval(danmuInfoUpdateIndex);
+    danmuInfoUpdateIndex=0;
     cleardanmuTime=new Date().getTime()+30*60*1000;
     setTimeout('danmuClear()', 30*60*1000);
     dInfoStyle.background='';
@@ -1001,17 +1006,6 @@
     if (s.indexOf('[SLEEP]')!=-1)
       danmuOff(s.trim())
     else if (s!=undefined&&s.trim()!='<br>'&&s.trim()!=''){
-      if (s[0]=='$'){
-        s=s.slice(1);
-        if (s.indexOf('$')!=-1){
-          var p=parseInt(s.slice(0,s.indexOf('$')));
-          if (!(danmuPop==0&&p==1))
-            danmuPop=p;
-          if (danmuPop==1)
-            setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
-          s=s.slice(s.indexOf('$')+1);
-        }
-      }
       if (s){
         danmuReadCount++;
         buffer=s+'<br>'+buffer;
@@ -1022,10 +1016,20 @@
       danmuInfo(['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'][danmuReadCount%8]+' ON');
     }
   }
+  function danmuInfoUpdate(manually){
+    if (!manually&&danmuInfoUpdateIndex==0)
+      return;
+    var info=JSON.parse(danmuRead('info', true));
+    var p=parseInt(info['pop']);
+    if (!(danmuPop==0&&p==1))
+      danmuPop=p;
+    if (danmuPop==1)
+      setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
+  }
   function danmuInfo(status){
     document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+space(10)+'房间'+danmuRoomId+space(20)+status+'<br>';
   }
-  function danmuRead(roomId){
+  function danmuRead(roomId, isGetByReturn){
     if (danmuRefreshRate<200)
       return
     var url = "/blive/"
@@ -1035,7 +1039,10 @@
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
-          danmuShow(xmlhttp.responseText);
+          if (!isGetByReturn)
+            danmuShow(xmlhttp.responseText);
+          else
+            return xmlhttp.responseText;
           xmlhttp = null;
         } else
           danmuOff('(〃>_<;〃)'+xmlhttp.status);
@@ -1043,7 +1050,8 @@
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
-    setTimeout('danmuRead()', (danmuPop!=1)?danmuRefreshRate:60*1000);
+    if (!isGetByReturn)
+      setTimeout('danmuRead()', (danmuPop!=1)?danmuRefreshRate:60*1000);
   }
   function danmuClear(){
     if (cleardanmuTime!=0&&new Date().getTime()<cleardanmuTime) return;
