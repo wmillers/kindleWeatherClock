@@ -1018,7 +1018,7 @@
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
-    setTimeout('danmuRead()', danmuRefreshRate);
+    setTimeout('danmuRead()', danmuPop>1?danmuRefreshRate:60*1000);
   }
   function danmuClear(){
     if (cleardanmuTime!=0&&new Date().getTime()<cleardanmuTime) return;
