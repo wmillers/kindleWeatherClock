@@ -37,6 +37,7 @@ def isEmptyPath(path):
 
 def controlRoom(path):
     global new_room_id
+    global que
     cmd=parse.urlparse(path).query.split('&')[0]
     if (cmd==''):
         return False
@@ -48,14 +49,21 @@ def controlRoom(path):
             else:
                 res='[err] Not in safe range: '+cmd
     else:
-        if (cmd in ['history']):
+        if (cmd=='history'):
             res=cmd+str(history)
+        elif (cmd=='bye'):
+            new_room_id.value=-1
+            res='[DEACTIVATE] client request turn off'
+        elif (cmd=='kick'):
+            que.put_nowait('[SLEEP] & [KICK] pong<-')
+            res='[SLEEP] & [KCIK] OK'
         else:
             res='[err] Invalid: '+cmd
     return res
 
 def readFromLive():
     global history
+    global que
     global status_que
     res=''
     if (que.empty()):
@@ -106,10 +114,7 @@ class MyBLiveClient(blivedm.BLiveClient):
 
     async def _on_receive_popularity(self, popularity: int):
         #aprint(f'当前人气值：{popularity}')
-        if popularity<10000:
-            aprint(f'${popularity}$')
-        else:
-            aprint(f'${popularity/10000}万$')
+        aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         aprint(f'<small>{danmaku.uname}: </small>{danmaku.msg}')
@@ -179,7 +184,13 @@ if __name__ == '__main__':
             c.terminate()
             c.join()
         if (new_room_id.value!=0):
-            if (new_room_id.value!=room_id):
+            if (new_room_id.value<0):
+                if (new_room_id.value==-1):
+                    print('[deactivate] goodbye')
+                    p.terminate()
+                    c.terminate()
+                    break
+            elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
                     c.terminate()
