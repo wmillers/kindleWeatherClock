@@ -1025,7 +1025,6 @@
       danmuPop=p;
     if (danmuPop==1)
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
-    console.log(danmuPop);
   }
   function danmuInfo(status){
     document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+space(10)+'房间'+danmuRoomId+space(20)+status+'<br>';
@@ -1045,7 +1044,7 @@
           else
             f(xmlhttp.responseText);
           xmlhttp = null;
-        } else
+        } else if (xmlhttp.status>=400&&xmlhttp.status<600)
           danmuOff('(〃>_<;〃)'+xmlhttp.status);
       }
     }

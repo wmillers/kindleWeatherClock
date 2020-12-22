@@ -13,7 +13,7 @@ import ctypes
 
 
 history=[]
-info={'pop':0, 'que_size':0}
+info={'pop':0, 'que_size':0, 'status_code':0, 'room_id':0}
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -37,8 +37,9 @@ def isEmptyPath(path):
     return False
 
 def controlRoom(path):
-    global new_room_id, que, info
+    global new_room_id, que, info, status_code, last_room_id
     cmd=parse.urlparse(path).query.split('&')[0]
+    res=''
     if (cmd==''):
         return False
     if (str(cmd).isdigit()):
@@ -56,22 +57,26 @@ def controlRoom(path):
             res='[DEACTIVATE] client request turn off'
         elif (cmd=='kick'):
             new_room_id.value=-2
-            que.put_nowait('[SLEEP] & [KICK] pong<-')
             res='[SLEEP] & [KCIK] OK'
         elif (cmd=='info'):
             info['que_size']=que.qsize()
+            info['status_code']=status_code.value
+            info['room_id']=last_room_id.value
             res=info
+        elif (cmd=='blive'):
+            new_room_id.value=-3
+            res='[CHECKING] blive process..'
         else:
             res='[err] Invalid: '+cmd
     return res
 
 def readFromLive():
-    global history, que, status_que, info
+    global history, que, status_code, info
+    status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
     res=''
     if (que.empty()):
-        if (not status_que.empty()):
-            while not status_que.empty():
-                res+=status_que.get_nowait()+'<br>'
+        if (status_code.value!=0):
+            res=status[status_code.value]
         else:
             res="<br>"
     else:
@@ -86,11 +91,9 @@ def readFromLive():
             res+=('<br>' if res else '')+tmp
     return res
 
-def initServer(r, c1, c2):
-    global que
-    global new_room_id
-    global status_que
-    que, new_room_id, status_que=r, c1, c2
+def initServer(r, c1, c2, c3):
+    global que, new_room_id, status_code, last_room_id
+    que, new_room_id, status_code, last_room_id=r, c1, c2, c3
     host = ('localhost', 8099)
     server = HTTPServer(host, Resquest)
     print("Starting server, listen at: %s:%s" % host)
@@ -157,29 +160,29 @@ def uniquePut(q, s):
 
 
 if __name__ == '__main__':
+    print('--- START ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
-    status_que=Queue()
-    p = Process(target=initServer, args=(que,new_room_id,status_que,))
+    status_code=Value(ctypes.c_int, 0)
+    last_room_id=Value(ctypes.c_longlong, 0)
+    p = Process(target=initServer, args=(que,new_room_id,status_code,last_room_id,))
     p.start()
     room_id=0
     if (len(sys.argv)>1):
         room_id=int(sys.argv[1])
+        last_room_id.value=room_id
         c = Process(target=runDm, args=(que,room_id,))
         c.start()
         print('[init] preset room_id: '+str(room_id))
+        que.put_nowait('[INIT] new room: '+str(room_id))
     else:
         print('[wait] No preset room id, wait for client request')
-        uniquePut(status_que, '[SLEEP] no preset room id given')
-    stuck_time=0
+        status_code.value=1
     while True:
-        if (que.qsize()==3 and stuck_time==0):
-            stuck_time=time()
-        if stuck_time!=0 and (que.qsize()>5 and time()-stuck_time>30*60) or (que.qsize()>100 and time()-stuck_time>10*60) or que.qsize()>500:
+        if (status_code.value==0 and que.qsize()>200):
             print('[sleep] blive off, request room_id to wake up')
-            stuck_time=0
             uniquePut(que, '[STUCK] at que.qsize() = '+str(que.qsize()))
-            uniquePut(status_que, '[SLEEP] blive overflow')
+            status_code.value=2
             c.terminate()
             c.join()
             room_id=0
@@ -191,17 +194,25 @@ if __name__ == '__main__':
                     c.terminate()
                     break
                 if (new_room_id.value==-2):
-                    print('[kill]')
-                    c.terminate()
-                    c.join()
+                    print('[kick&kill] but no new room')
+                    if (room_id!=0):
+                        status_code.value=3
+                        c.terminate()
+                        c.join()
+                    room_id=0
+                if (new_room_id.value==-3):
+                    print(str(c))
+                    que.put_nowait(str(c))
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
                     c.terminate()
                     c.join()
                 room_id=new_room_id.value
+                last_room_id.value=room_id
                 print('[launch] new room id: '+str(room_id))
-                uniquePut(status_que, '[LAUNCH] new room id: '+str(room_id))
+                status_code.value=0
+                que.put_nowait('[LAUNCH] new room: '+str(room_id))
                 c = Process(target=runDm, args=(que,room_id,))
                 c.start()
             new_room_id.value=0
