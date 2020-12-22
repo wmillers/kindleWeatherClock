@@ -74,7 +74,7 @@ def readFromLive():
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 control['pop']=tmp
                 continue
-            res+='<br>'+tmp
+            res+=('<br>' if res else '')+tmp
         if (res.strip()):
             res=''.join(list(control.values()))+res
         else:
@@ -106,7 +106,10 @@ class MyBLiveClient(blivedm.BLiveClient):
 
     async def _on_receive_popularity(self, popularity: int):
         #aprint(f'当前人气值：{popularity}')
-        aprint(f'${popularity}$')
+        if popularity<10000:
+            aprint(f'${popularity}$')
+        else:
+            aprint(f'${popularity/10000}万$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         aprint(f'<small>{danmaku.uname}: </small>{danmaku.msg}')

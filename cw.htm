@@ -42,11 +42,32 @@
     .tickList {
       position: absolute;
       font-size: .5rem;
-      color: #404040;
       left: -3.5rem;
       text-align: left;
     }
-    .danmu {
+    .tl_to {
+      width:1.5rem;
+      background:white;
+      display:inline;
+      margin-left:-1.5rem;
+      position:absolute;
+    }
+    .tl_co {
+      text-align:right;
+      font-size:1.5rem;
+    }
+    .tl_su {
+      display: block;
+      overflow: hidden;
+      height: 1.58rem;
+    }
+    .tl_de {
+      font-size: 1.5rem;
+      float: left;
+      background: white;
+      color: black;
+    }
+    .danmu_fr {
       position: absolute;
       font-size: 1.2rem;
       margin-top: 14rem;
@@ -54,9 +75,7 @@
       text-align: left;
       height: 18rem;
       width: 18rem;
-      white-space: nowrap;
-      overflow-y: hidden;
-      overflow-x: visible;
+      overflow: hidden;
     }
     .danmu_info{
       display: block;
@@ -122,7 +141,7 @@
   <div class="cleaner" id="cleaner"></div>
 	<div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg" style="padding:1rem"></div><div style='height:6rem;'></div>
-    <div class='danmu' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
+    <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零</span></div>
@@ -877,7 +896,11 @@
               cross30=31;
               s+='<tr style="height:.5rem"></tr>';
             }
-            s+='<tr'+(!dD?' style="font-weight:bold"':'')+'><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td style="text-align:right;font-size:1.5rem;opacity:'+(Math.floor((1-Math.abs(dD)/(!j?90:360))*3)*0.2+0.4)+(dD<0?';text-decoration:line-through':'')+'">'+(Math.abs(dD)<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem;width:1.5rem;background:white;display:inline;margin-left:-1.5rem;position:absolute;"></div>':'')+(dD?dD:'')+'</td><td style="display:block;overflow:hidden;height:1.58rem"><span style="font-size:1.5rem;float:left"> '+l[i].SUMMARY.slice(0,10)+'</span>'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</td></tr>';
+            var adD=Math.abs(dD);
+            s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')
+            +'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')
+            +'</td><td class="tl_su"><span class="tl_de"> '+l[i].SUMMARY.slice(0,10)+'</span>'
+            +'<span style="background:white;">'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</span></td></tr>'+(!dD?'</b>':'');
           }
         }
         t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
@@ -931,6 +954,7 @@
   var danmuRoomId=streamer[1][0];
   var danmuPop=0;
   var danmuMax=800;
+  var danmuLowCount=0;
   function space(n){
     var s='';
     while (n--)
@@ -1018,7 +1042,13 @@
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
-    setTimeout('danmuRead()', danmuPop>1?danmuRefreshRate:60*1000);
+    var r=danmuRefreshRate;
+    if (danmuPop<=1)
+      if (danmuLowCount++>60)
+        r=60*1000;
+    else
+      danmuLowCount=0
+    setTimeout('danmuRead()', r);
   }
   function danmuClear(){
     if (cleardanmuTime!=0&&new Date().getTime()<cleardanmuTime) return;
