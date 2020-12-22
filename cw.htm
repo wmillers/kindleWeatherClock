@@ -958,6 +958,7 @@
   var danmuPop=0;
   var danmuInfoUpdateIndex=0;
   var danmuMax=800;
+  var danmuRetry=0;
   function space(n){
     var s='';
     while (n--)
@@ -1020,6 +1021,7 @@
     if (!manually&&danmuInfoUpdateIndex==0)
       return;
     var info=JSON.parse(s.replace(/'/g,'"'));
+    danmuRoomId=info['room_id'];
     var p=parseInt(info['pop']);
     if (!(danmuPop==0&&p==1))
       danmuPop=p;
@@ -1027,7 +1029,7 @@
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+space(10)+'房间'+danmuRoomId+space(20)+status+'<br>';
+    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+space(10)+'房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId+space(20)+status+'<br>';
   }
   function danmuRead(roomId, f){
     if (danmuRefreshRate<200)
@@ -1045,7 +1047,10 @@
             f(xmlhttp.responseText);
           xmlhttp = null;
         } else if (xmlhttp.status>=400&&xmlhttp.status<600)
-          danmuOff('(〃>_<;〃)'+xmlhttp.status);
+          if (++danmuRetry>3){
+            danmuOff('(〃>_<;〃)'+xmlhttp.status);
+            danmuRetry=0;
+          }
       }
     }
     xmlhttp.open('GET', url);
