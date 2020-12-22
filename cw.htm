@@ -986,7 +986,7 @@
     danmuRefreshRate=1000;
     cleardanmuTime=0;
     danmuRead(roomId);
-    danmuInfoUpdateIndex=setInterval('danmuInfoUpdate()', 30*1000);
+    danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 30*1000);
   }
   function danmuOff(s){
     danmuRefreshRate=0;
@@ -1016,20 +1016,21 @@
       danmuInfo(['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'][danmuReadCount%8]+' ON');
     }
   }
-  function danmuInfoUpdate(manually){
+  function danmuInfoUpdate(s, manually){
     if (!manually&&danmuInfoUpdateIndex==0)
       return;
-    var info=JSON.parse(danmuRead('info', true));
+    var info=JSON.parse(s.replace(/'/g,'"'));
     var p=parseInt(info['pop']);
     if (!(danmuPop==0&&p==1))
       danmuPop=p;
     if (danmuPop==1)
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
+    console.log(danmuPop);
   }
   function danmuInfo(status){
     document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+space(10)+'房间'+danmuRoomId+space(20)+status+'<br>';
   }
-  function danmuRead(roomId, isGetByReturn){
+  function danmuRead(roomId, f){
     if (danmuRefreshRate<200)
       return
     var url = "/blive/"
@@ -1039,10 +1040,10 @@
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
-          if (!isGetByReturn)
+          if (f==undefined)
             danmuShow(xmlhttp.responseText);
           else
-            return xmlhttp.responseText;
+            f(xmlhttp.responseText);
           xmlhttp = null;
         } else
           danmuOff('(〃>_<;〃)'+xmlhttp.status);
@@ -1050,7 +1051,7 @@
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
-    if (!isGetByReturn)
+    if (f==undefined)
       setTimeout('danmuRead()', (danmuPop!=1)?danmuRefreshRate:60*1000);
   }
   function danmuClear(){

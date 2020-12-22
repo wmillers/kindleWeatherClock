@@ -55,6 +55,7 @@ def controlRoom(path):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
         elif (cmd=='kick'):
+            new_room_id.value=-2
             que.put_nowait('[SLEEP] & [KICK] pong<-')
             res='[SLEEP] & [KCIK] OK'
         elif (cmd=='info'):
@@ -179,6 +180,7 @@ if __name__ == '__main__':
             uniquePut(status_que, '[SLEEP] blive overflow')
             c.terminate()
             c.join()
+            room_id=0
         if (new_room_id.value!=0):
             if (new_room_id.value<0):
                 if (new_room_id.value==-1):
@@ -186,6 +188,10 @@ if __name__ == '__main__':
                     p.terminate()
                     c.terminate()
                     break
+                if (new_room_id.value==-2):
+                    print('[kill]')
+                    c.terminate()
+                    c.join()
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
