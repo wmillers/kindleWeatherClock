@@ -171,12 +171,14 @@ if __name__ == '__main__':
     else:
         print('[wait] No preset room id, wait for client request')
         uniquePut(status_que, '[SLEEP] no preset room id given')
+    stuck_time=0
     while True:
-        stuck_time=0
         if (que.qsize()==3 and stuck_time==0):
             stuck_time=time()
         if stuck_time!=0 and (que.qsize()>5 and time()-stuck_time>30*60) or (que.qsize()>100 and time()-stuck_time>10*60) or que.qsize()>500:
             print('[sleep] blive off, request room_id to wake up')
+            stuck_time=0
+            uniquePut(que, '[STUCK] at que.qsize() = '+str(que.qsize()))
             uniquePut(status_que, '[SLEEP] blive overflow')
             c.terminate()
             c.join()
