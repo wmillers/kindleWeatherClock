@@ -78,6 +78,7 @@
       height: 18rem;
       width: 18rem;
       overflow: hidden;
+      z-index: 1;
     }
     .danmu_info{
       display: block;
@@ -884,7 +885,7 @@
       } else if (tickListStatus%3==0){
         t.innerHTML='<img class="tImg" style="padding:1rem">';
       } else {
-        var limit=(tickListStatus%3==1)?tickListMaxLine:6;
+        var limit=(tickListStatus%3==1)?tickListMaxLine:5;
         var s='<span style="opacity: .3; font-size: .6rem;">'+dateString(0)+'</span><table>';
         var cross30;
         for (var j=0;j<Object.keys(tickList).length;j++){
@@ -958,7 +959,7 @@
   var danmuRoomId='';
   var danmuPop=0;
   var danmuInfoUpdateIndex=0;
-  var danmuMax=800;
+  var danmuMax=1200;
   var danmuRetry=0;
   function space(n){
     var s='';
@@ -1011,7 +1012,7 @@
     danmuPop=0;
   }
   function danmuShow(s){
-    if (s.indexOf('[RECV]')!=-1&&s.indexOf('[SLEEP]')!=-1)
+    if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
       danmuOff(s.trim())
     else if (s!=undefined&&s.trim()!='<br>'&&s.trim()!=''){
       if (s){
@@ -1030,6 +1031,8 @@
     var info=JSON.parse(s);
     danmuRoomId=info['room_id'];
     var p=parseInt(info['pop']);
+    if (danmuPop==0&&p>1)
+      killShadow();
     if (!(danmuPop==0&&p==1))
       danmuPop=p;
     if (danmuPop==1)

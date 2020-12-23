@@ -118,7 +118,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        aprint(f'<small>{danmaku.uname}: </small>{danmaku.msg}')
+        aprint(f'<small><small>{danmaku.uname}: </small></small>{danmaku.msg}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
@@ -128,7 +128,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<small>{message.username} 购买{message.gift_name}</small>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'<small>SuperChat <b>¥{message.price}</b> {message.uname}: <b>{message.message}</b></small>')
+        aprint(f'<small><b>SuperChat ¥{message.price}</b> {message.uname}: <b>{message.message}</b></small>')
 
 
 async def initDm(room_id):
@@ -180,7 +180,7 @@ def main():
         print('[wait] No preset room id, wait for client request')
         status_code.value=1
     while True:
-        if (status_code.value==0 and que.qsize()>=200):
+        if (status_code.value==0 and que.qsize()>200):
             print('[sleep] blive off, request room_id to wake up')
             que.put_nowait('[SLEEP] & [STUCK] at que.qsize() = '+str(que.qsize()))
             clear_que(que, 100)
