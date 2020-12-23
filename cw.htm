@@ -17,6 +17,9 @@
   <link id='ico' href="" rel="icon" type="image/x-icon" />
 
 	<style>
+    table {
+      border-spacing: 0;
+    }
     .cleaner {
         background: black;
         position: fixed;
@@ -46,6 +49,7 @@
       font-size: .5rem;
       left: -3.5rem;
       text-align: left;
+      z-index: 1;
     }
     .tl_to {
       width:1.5rem;
@@ -60,18 +64,18 @@
     }
     .tl_su {
       display: block;
-      overflow: hidden;
-      height: 1.58rem;
+      padding: 0;
     }
     .tl_de {
       font-size: 1.5rem;
+      padding: .05rem 0;
       float: left;
       background: white;
       color: black;
     }
     .danmu_fr {
       position: absolute;
-      font-size: 1.2rem;
+      font-size: 1rem;
       margin-top: 14rem;
       margin-left: -4rem;
       text-align: left;
@@ -782,7 +786,7 @@
     var tickList={};
     var tickListStatus=0;
     var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
-    var tickListMaxLine=21;
+    var tickListMaxLine=22;
     function dDay(t){return dHour(t, 24);}
     function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
     function dMs(t, ms){return (t-getOffsetTime())/(!ms?1:ms);}
@@ -885,7 +889,7 @@
       } else if (tickListStatus%3==0){
         t.innerHTML='<img class="tImg" style="padding:1rem">';
       } else {
-        var limit=(tickListStatus%3==1)?tickListMaxLine:5;
+        var limit=(tickListStatus%3==1)?tickListMaxLine:6;
         var s='<span style="opacity: .3; font-size: .6rem;">'+dateString(0)+'</span><table>';
         var cross30;
         for (var j=0;j<Object.keys(tickList).length;j++){
@@ -897,7 +901,7 @@
               cross30=Math.abs(dD);
             else if (Math.abs(dD)>=30&&cross30<30){
               cross30=31;
-              s+='<tr style="height:.5rem"></tr>';
+              s+='<tr><td>---</td></tr>';
             }
             var adD=Math.abs(dD);
             s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')
@@ -985,11 +989,13 @@
     danmuStart=new Date().getTime();
     dInfoStyle.background='white';
     danmu.style.background='white';
+    danmu.style.padding='.15rem 0';
     danmuStyle.marginTop='7rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='25rem';
     danmuRefreshRate=1000;
     cleardanmuTime=0;
+    danmuInfo('▁ ON');
     danmuRead(roomId);
     danmuRead("info", danmuInfoUpdate)
     danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 60*1000);

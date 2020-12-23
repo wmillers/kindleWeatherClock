@@ -122,13 +122,13 @@ class MyBLiveClient(blivedm.BLiveClient):
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
-            aprint(f'{gift.uname} 赠送{gift.gift_name}x{gift.num}')# （{gift.coin_type}币x{gift.total_coin}）')
+            aprint(f'<small>{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')# （{gift.coin_type}币x{gift.total_coin}）')
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
-        aprint(f'{message.username} 购买{message.gift_name}')
+        aprint(f'<big><b>{message.username}</b> 购买<b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'<b>SuperChat ¥{message.price}</b> {message.uname}: <b>{message.message}</b>')
+        aprint(f'<big><b>SuperChat ¥{message.price}</b></big> {message.uname}: <b>{message.message}</b>')
 
 
 async def initDm(room_id):
