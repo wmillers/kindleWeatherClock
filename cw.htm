@@ -951,6 +951,7 @@
   var buffer='';
   var danmuReadCount=0;
   var isDanmuLive=false;
+  var danmuStart=0;
   var streamer=[['pi', 'nc', 'dd'],
                 [92613, 1220, 16548]];
   var danmuControl=['history','bye', 'kick', 'info'];
@@ -980,6 +981,7 @@
   }
   function danmuOn(roomId){
     isDanmuLive=true;
+    danmuStart=new Date().getTime();
     dInfoStyle.background='white';
     danmu.style.background='white';
     danmuStyle.marginTop='7rem';
@@ -1003,7 +1005,7 @@
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='18rem';
-    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+'<br>'+buffer.slice(0,danmuMax/4)+'...';
+    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer.slice(0,danmuMax/4)+'...';
     danmuInfo('◯ OFF');
   }
   function danmuShow(s){

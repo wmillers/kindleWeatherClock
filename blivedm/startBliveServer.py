@@ -4,7 +4,7 @@
 import asyncio
 import sys
 import blivedm
-from time import sleep, time
+from time import sleep, asctime
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -13,7 +13,7 @@ import ctypes
 
 
 history=[]
-info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0}
+info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'last_status_from':''}
 status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -38,12 +38,13 @@ def controlRoom(path):
     cmd=parse.urlparse(path).query.split('&')[0]
     res=''
     if (cmd==''):
-        return False
-    if (str(cmd).isdigit()):
+        res=''
+    elif (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
                 res='[recv] Valid Room_id: '+cmd
                 new_room_id.value=room_id
+                sleep(1)
             else:
                 res='[err] Not in safe range: '+cmd
     else:
@@ -57,6 +58,8 @@ def controlRoom(path):
             res='[SLEEP] & [KCIK] OK'
         elif (cmd=='info'):
             info['que_size']=que.qsize()
+            if (info['last_status_from']=='' or status_code.value!=info['status_code']):
+                info['last_status_from']=asctime
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
             info['room_id']=last_room_id.value
@@ -66,7 +69,7 @@ def controlRoom(path):
             res='[CHECKING] blive process..'
         else:
             res='[err] Invalid: '+cmd
-    return res+'<br>'
+    return str(res)+('<br>' if res else '')
 
 def readFromLive():
     global history, que, status_code, info, status
@@ -150,8 +153,9 @@ def runDm(s, room_id):
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
-def clear_que(q):
-    while (not q.empty()):
+def clear_que(q, n):
+    while (not q.empty() and n):
+        n-=1
         q.get_nowait()
 
 
@@ -175,9 +179,10 @@ if __name__ == '__main__':
         print('[wait] No preset room id, wait for client request')
         status_code.value=1
     while True:
-        if (status_code.value==0 and que.qsize()>200):
+        if (status_code.value==0 and que.qsize()>=200):
             print('[sleep] blive off, request room_id to wake up')
             que.put_nowait('[SLEEP] & [STUCK] at que.qsize() = '+str(que.qsize()))
+            clear_que(que, 100)
             status_code.value=2
             c.terminate()
             c.join()
