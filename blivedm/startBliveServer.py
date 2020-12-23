@@ -13,7 +13,7 @@ import ctypes
 
 
 history=[]
-info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'last_status_from':''}
+info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'last_status_from':''})
 status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -24,7 +24,8 @@ class Resquest(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
-        res=str(controlRoom(self.path))+readFromLive()
+        cmd_res=controlRoom(self.path)
+        res=cmd_res[1]+('<br>' if cmd_res[1] and cmd_res[0] else '')+(readFromLive() if cmd_res[0] else '')
         self.wfile.write(res.encode('utf-8'))
 
 def isEmptyPath(path):
@@ -36,15 +37,14 @@ def isEmptyPath(path):
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
     cmd=parse.urlparse(path).query.split('&')[0]
-    res=''
+    needExtra=True
     if (cmd==''):
         res=''
     elif (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
-                res='[recv] Valid Room_id: '+cmd
+                res='[RECV] Valid Room_id: '+cmd
                 new_room_id.value=room_id
-                sleep(1)
             else:
                 res='[err] Not in safe range: '+cmd
     else:
@@ -59,17 +59,18 @@ def controlRoom(path):
         elif (cmd=='info'):
             info['que_size']=que.qsize()
             if (info['last_status_from']=='' or status_code.value!=info['status_code']):
-                info['last_status_from']=asctime
+                info['last_status_from']=asctime()
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
             info['room_id']=last_room_id.value
-            res=info
+            res=json.dumps(info)
+            needExtra=False
         elif (cmd=='blive'):
             new_room_id.value=-3
             res='[CHECKING] blive process..'
         else:
             res='[err] Invalid: '+cmd
-    return str(res)+('<br>' if res else '')
+    return [needExtra, str(res)]
 
 def readFromLive():
     global history, que, status_code, info, status
@@ -159,7 +160,7 @@ def clear_que(q, n):
         q.get_nowait()
 
 
-if __name__ == '__main__':
+def main():
     print('--- START ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
@@ -220,3 +221,6 @@ if __name__ == '__main__':
         sleep(1)
     p.join()
     c.join()
+
+if __name__ == '__main__':
+    main()

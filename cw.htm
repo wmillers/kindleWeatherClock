@@ -990,7 +990,8 @@
     danmuRefreshRate=1000;
     cleardanmuTime=0;
     danmuRead(roomId);
-    danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 30*1000);
+    danmuRead("info", danmuInfoUpdate)
+    danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 60*1000);
   }
   function danmuOff(s){
     if (!isDanmuLive)
@@ -1007,9 +1008,10 @@
     danmuStyle.height='18rem';
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer.slice(0,danmuMax/4)+'...';
     danmuInfo('◯ OFF');
+    danmuPop=0;
   }
   function danmuShow(s){
-    if (s.indexOf('[SLEEP]')!=-1)
+    if (s.indexOf('[RECV]')!=-1&&s.indexOf('[SLEEP]')!=-1)
       danmuOff(s.trim())
     else if (s!=undefined&&s.trim()!='<br>'&&s.trim()!=''){
       if (s){
@@ -1025,7 +1027,7 @@
   function danmuInfoUpdate(s, manually){
     if (!manually&&danmuInfoUpdateIndex==0)
       return;
-    var info=JSON.parse(s.replace(/'/g,'"'));
+    var info=JSON.parse(s);
     danmuRoomId=info['room_id'];
     var p=parseInt(info['pop']);
     if (!(danmuPop==0&&p==1))
@@ -1052,7 +1054,7 @@
             f(xmlhttp.responseText);
           xmlhttp = null;
         } else if (xmlhttp.status>=400&&xmlhttp.status<600)
-          if (++danmuRetry>3){
+          if (danmuPop<=1||++danmuRetry>=3){
             danmuOff('(〃>_<;〃)'+xmlhttp.status);
             danmuRetry=0;
           }
@@ -1061,7 +1063,7 @@
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuPop!=1)?danmuRefreshRate:60*1000);
+      setTimeout('danmuRead()', danmuPop==0?10*1000:danmuPop==1?60*1000:danmuRefreshRate);
   }
   function danmuClear(){
     if (isDanmuLive) return;
