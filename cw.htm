@@ -950,7 +950,7 @@
   var danmuRefreshRate=0;
   var buffer='';
   var danmuReadCount=0;
-  var cleardanmuTime=0;
+  var isDanmuLive=false;
   var streamer=[['pi', 'nc', 'dd'],
                 [92613, 1220, 16548]];
   var danmuControl=['history','bye', 'kick', 'info'];
@@ -979,6 +979,7 @@
     }
   }
   function danmuOn(roomId){
+    isDanmuLive=true;
     dInfoStyle.background='white';
     danmu.style.background='white';
     danmuStyle.marginTop='7rem';
@@ -990,10 +991,12 @@
     danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 30*1000);
   }
   function danmuOff(s){
+    if (!isDanmuLive)
+      return;
+    isDanmuLive=false;
     danmuRefreshRate=0;
     clearInterval(danmuInfoUpdateIndex);
     danmuInfoUpdateIndex=0;
-    cleardanmuTime=new Date().getTime()+30*60*1000;
     setTimeout('danmuClear()', 30*60*1000);
     dInfoStyle.background='';
     danmu.style.background='';
@@ -1059,7 +1062,7 @@
       setTimeout('danmuRead()', (danmuPop!=1)?danmuRefreshRate:60*1000);
   }
   function danmuClear(){
-    if (cleardanmuTime!=0&&new Date().getTime()<cleardanmuTime) return;
+    if (isDanmuLive) return;
     danmu.innerHTML='';
     document.getElementById('danmu_info').innerHTML='';
   }

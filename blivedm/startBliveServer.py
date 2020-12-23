@@ -13,7 +13,8 @@ import ctypes
 
 
 history=[]
-info={'pop':0, 'que_size':0, 'status_code':0, 'room_id':0}
+info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0}
+status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -23,11 +24,7 @@ class Resquest(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
-        cmd_res=controlRoom(self.path)
-        if (not cmd_res):
-            res=readFromLive()
-        else:
-            res=str(cmd_res)
+        res=str(controlRoom(self.path))+readFromLive()
         self.wfile.write(res.encode('utf-8'))
 
 def isEmptyPath(path):
@@ -37,7 +34,7 @@ def isEmptyPath(path):
     return False
 
 def controlRoom(path):
-    global new_room_id, que, info, status_code, last_room_id
+    global new_room_id, que, info, status_code, last_room_id, status
     cmd=parse.urlparse(path).query.split('&')[0]
     res=''
     if (cmd==''):
@@ -61,6 +58,7 @@ def controlRoom(path):
         elif (cmd=='info'):
             info['que_size']=que.qsize()
             info['status_code']=status_code.value
+            info['status']=status[status_code.value]
             info['room_id']=last_room_id.value
             res=info
         elif (cmd=='blive'):
@@ -68,11 +66,10 @@ def controlRoom(path):
             res='[CHECKING] blive process..'
         else:
             res='[err] Invalid: '+cmd
-    return res
+    return res+'<br>'
 
 def readFromLive():
-    global history, que, status_code, info
-    status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
+    global history, que, status_code, info, status
     res=''
     if (que.empty()):
         if (status_code.value!=0):
@@ -153,10 +150,9 @@ def runDm(s, room_id):
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
-def uniquePut(q, s):
+def clear_que(q):
     while (not q.empty()):
         q.get_nowait()
-    q.put_nowait(s)
 
 
 if __name__ == '__main__':
@@ -181,7 +177,7 @@ if __name__ == '__main__':
     while True:
         if (status_code.value==0 and que.qsize()>200):
             print('[sleep] blive off, request room_id to wake up')
-            uniquePut(que, '[STUCK] at que.qsize() = '+str(que.qsize()))
+            que.put_nowait('[SLEEP] & [STUCK] at que.qsize() = '+str(que.qsize()))
             status_code.value=2
             c.terminate()
             c.join()
