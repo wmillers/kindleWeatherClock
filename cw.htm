@@ -61,6 +61,7 @@
     .tl_co {
       text-align:right;
       font-size:1.5rem;
+      background: white;
     }
     .tl_su {
       display: block;
@@ -962,6 +963,7 @@
   var danmuControl=['history','bye', 'kick', 'info'];
   var danmuRoomId='';
   var danmuPop=0;
+  var danmuPopTrends=0;
   var danmuInfoUpdateIndex=0;
   var danmuMax=1200;
   var danmuRetry=0;
@@ -975,7 +977,7 @@
     if (danmuRefreshRate>=200)
       danmuOff('+'+danmuReadCount);
     else {
-      var up=prompt('Streamer: '+streamer[0]+'\nControl: '+danmuControl);
+      var up=prompt('Current: '+danmuRoomId+'\nStreamer: '+streamer[0]+'\nControl: '+danmuControl);
       if (streamer[0].indexOf(up)!=-1)
         danmuRoomId=streamer[1][streamer[0].indexOf(up)];
       else
@@ -995,9 +997,9 @@
     danmuStyle.height='25rem';
     danmuRefreshRate=1000;
     cleardanmuTime=0;
-    danmuInfo('▁ ON');
+    danmuInfo('  ON');
     danmuRead(roomId);
-    danmuRead("info", danmuInfoUpdate)
+    setTimeout(danmuRead("info", danmuInfoUpdate), 5*1000);
     danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 60*1000);
   }
   function danmuOff(s){
@@ -1013,7 +1015,8 @@
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='18rem';
-    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer.slice(0,danmuMax/4)+'...';
+    buffer=buffer.slice(0,danmuMax/4);
+    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer+'...';
     danmuInfo('◯ OFF');
     danmuPop=0;
   }
@@ -1028,7 +1031,7 @@
       if (buffer.length>danmuMax*1.5)
         buffer=buffer.slice(0, danmuMax);
       danmu.innerHTML=buffer;
-      danmuInfo(['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'][danmuReadCount%8]+' ON');
+      danmuInfo(' ▁▂▃▄▅▆▇█'[danmuReadCount%9]+' ON');
     }
   }
   function danmuInfoUpdate(s, manually){
@@ -1039,13 +1042,15 @@
     var p=parseInt(info['pop']);
     if (danmuPop==0&&p>1)
       killShadow();
-    if (!(danmuPop==0&&p==1))
+    if (!(danmuPop==0&&p==1)){
+      danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;
+    }
     if (danmuPop==1)
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+space(10)+'房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId+space(20)+status+'<br>';
+    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓ ↑'[danmuPopTrends+1]+space(8)+'房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId+space(20)+status+'<br>';
   }
   function danmuRead(roomId, f){
     if (danmuRefreshRate<200)
