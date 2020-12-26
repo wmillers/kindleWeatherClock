@@ -758,6 +758,9 @@
       } else
         document.getElementById('net').innerHTML='无网络连接';
     }
+    function t(){
+      alert(' ▖▞▟⚀');
+    }
   </script>
   <script type="text/javascript">
   /*
@@ -1026,7 +1029,7 @@
     else if (s!=undefined&&s.trim()!='<br>'&&s.trim()!=''){
       if (s){
         danmuReadCount++;
-        buffer=s+'<br>'+buffer;
+        buffer=s+(buffer.slice(0,4)!='<br>'?'<br>':'')+buffer;
       }
       if (buffer.length>danmuMax*1.5)
         buffer=buffer.slice(0, danmuMax);

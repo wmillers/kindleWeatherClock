@@ -78,8 +78,6 @@ def readFromLive():
     if (que.empty()):
         if (status_code.value!=0):
             res=status[status_code.value]
-        else:
-            res="<br>"
     else:
         if (len(history)>100):
             history=history[50:]
@@ -118,7 +116,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        identity=('🔧' if danmaku.admin else '')+' ▇▃▁'[danmaku.privilege_type]
+        identity=('⚀' if danmaku.admin else '')+' ▟▞▖'[danmaku.privilege_type]
         aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
