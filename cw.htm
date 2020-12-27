@@ -902,7 +902,7 @@
       } else if (tickListStatus%3==0){
         t.innerHTML='<img class="tImg" style="padding:1rem">';
       } else {
-        var limit=(tickListStatus%3==1)?tickListMaxLine:6;
+        var limit=(tickListStatus%3==1)?tickListMaxLine:5;
         var s='<span style="opacity: .3; font-size: .6rem;">'+dateString(0)+'</span><table>';
         var cross30;
         for (var j=0;j<Object.keys(tickList).length;j++){
@@ -914,7 +914,7 @@
               cross30=Math.abs(dD);
             else if (Math.abs(dD)>=30&&cross30<30){
               cross30=31;
-              s+='<tr><td>---</td></tr>';
+              s+='<tr style="padding:0"><td>---</td></tr>';
             }
             var adD=Math.abs(dD);
             var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:25%;border:solid">'+l[i].FREQ+'</sup>':'';
@@ -1013,7 +1013,8 @@
     cleardanmuTime=0;
     danmuInfo('  ON');
     danmuRead(roomId);
-    setTimeout(danmuRead("info", danmuInfoUpdate), 5*1000);
+    setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
+    setTimeout('danmuRead("", danmuShow)', 3.5*1000);
     danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 60*1000);
   }
   function danmuOff(s){
@@ -1023,7 +1024,7 @@
     danmuRefreshRate=0;
     clearInterval(danmuInfoUpdateIndex);
     danmuInfoUpdateIndex=0;
-    setTimeout('danmuClear()', 30*60*1000);
+    setTimeout('danmuClear()', 10*60*1000);
     dInfoStyle.background='';
     danmu.style.background='';
     danmuStyle.marginTop='14rem';

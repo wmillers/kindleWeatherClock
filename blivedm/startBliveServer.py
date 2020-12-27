@@ -4,7 +4,7 @@
 import asyncio
 import sys
 import blivedm
-from time import sleep, asctime
+from time import sleep
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -13,7 +13,7 @@ import ctypes
 
 
 history=[]
-info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'last_status_from':''})
+info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0})
 status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -37,7 +37,7 @@ def isEmptyPath(path):
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
     cmd=parse.urlparse(path).query.split('&')[0]
-    needExtra=True
+    needExtra=False
     if (cmd==''):
         res=''
     elif (str(cmd).isdigit()):
@@ -49,22 +49,21 @@ def controlRoom(path):
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res=cmd+str(history)
+            res=cmd+': '+(' '.join(history))
+            needExtra=True
         elif (cmd=='bye'):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
+            needExtra=True
         elif (cmd=='kick'):
             new_room_id.value=-2
             res='[SLEEP] & [KCIK] OK'
         elif (cmd=='info'):
             info['que_size']=que.qsize()
-            if (info['last_status_from']=='' or status_code.value!=info['status_code']):
-                info['last_status_from']=asctime()
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
             info['room_id']=last_room_id.value
             res=json.dumps(info)
-            needExtra=False
         elif (cmd=='blive'):
             new_room_id.value=-3
             res='[CHECKING] blive process..'
@@ -73,7 +72,6 @@ def controlRoom(path):
             que.put_nowait('<b>[CLIENT-CALL] '+req+'</b>')
             print('[call] '+req)
             res='[CALLING]'
-            needExtra=False
         else:
             res='[err] Invalid: '+cmd
     return [needExtra, str(res)]
@@ -93,7 +91,7 @@ def readFromLive():
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 info['pop']=tmp[1:-1]
                 continue
-            res+=('<br>' if res else '')+tmp
+            res=tmp+('<br>' if tmp else '')+res
     return res
 
 def initServer(r, c1, c2, c3):
@@ -122,7 +120,9 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        identity=('⚑' if danmaku.admin else '')+('<span style="border:1px solid;border-radius:25%">'+' ᎯᏰℭ'[danmaku.privilege_type]+'</span>' if danmaku.privilege_type else '')
+        identity=('⚑' if danmaku.admin else '')+(' ᎯᏰℭ'[danmaku.privilege_type] if danmaku.privilege_type else '')
+        if identity:
+            identity+=' '
         aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
