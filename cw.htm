@@ -1043,7 +1043,7 @@
         buffer=s+(buffer.slice(0,4)!='<br>'?'<br>':'')+buffer;
       }
       if (buffer.length>danmuMax*1.5)
-        buffer=buffer.slice(0, danmuMax);
+        buffer=buffer.slice(0, danmuMax)+'...';
       danmu.innerHTML=buffer;
       danmuInfo(' ▁▂▃▄▅▆▇█'[danmuReadCount%9]+' ON');
     }

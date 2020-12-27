@@ -73,6 +73,7 @@ def controlRoom(path):
             que.put_nowait('<b>[CLIENT-CALL] '+req+'</b>')
             print('[call] '+req)
             res='[CALLING]'
+            needExtra=False
         else:
             res='[err] Invalid: '+cmd
     return [needExtra, str(res)]
@@ -121,7 +122,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        identity=('⚑' if danmaku.admin else '')+' ᎯᏰℭ'[danmaku.privilege_type]
+        identity='<b>'+('⚑' if danmaku.admin else '')+' ᎯᏰℭ'[danmaku.privilege_type]+'</b>'
         aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
