@@ -979,7 +979,7 @@
   var danmuPop=0;
   var danmuPopTrends=0;
   var danmuInfoUpdateIndex=0;
-  var danmuMax=1200;
+  var danmuMax=1600;
   var danmuRetry=0;
   function space(n){
     var s='';
@@ -1029,7 +1029,7 @@
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='18rem';
-    buffer=buffer.slice(0,danmuMax/4);
+    buffer=buffer.slice(0,danmuMax/5);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer+'...';
     danmuInfo('◯ OFF');
     danmuPop=0;
