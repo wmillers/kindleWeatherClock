@@ -14,7 +14,7 @@ import ctypes
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] blive overflow', '[SLEEP] & [KICK] pong<-']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -37,7 +37,7 @@ def isEmptyPath(path):
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
     cmd=parse.urlparse(path).query.split('&')[0]
-    needExtra=False
+    needExtra=True
     if (cmd==''):
         res=''
     elif (str(cmd).isdigit()):
@@ -50,28 +50,30 @@ def controlRoom(path):
     else:
         if (cmd=='history'):
             res=cmd+': '+(' '.join(history))
-            needExtra=True
         elif (cmd=='bye'):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
-            needExtra=True
         elif (cmd=='kick'):
             new_room_id.value=-2
             res='[SLEEP] & [KCIK] OK'
+            needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
             info['room_id']=last_room_id.value
             res=json.dumps(info)
+            needExtra=False
         elif (cmd=='blive'):
             new_room_id.value=-3
             res='[CHECKING] blive process..'
+            needExtra=False
         elif (cmd[0:5]=='call:'):
             req=parse.unquote(cmd[5:])
             que.put_nowait('<b>[CLIENT-CALL] '+req+'</b>')
             print('[call] '+req)
             res='[CALLING]'
+            needExtra=False
         else:
             res='[err] Invalid: '+cmd
     return [needExtra, str(res)]
@@ -79,10 +81,7 @@ def controlRoom(path):
 def readFromLive():
     global history, que, status_code, info, status
     res=''
-    if (que.empty()):
-        if (status_code.value!=0):
-            res=status[status_code.value]
-    else:
+    if (not que.empty()):
         if (len(history)>100):
             history=history[50:]
         while not que.empty():
@@ -92,6 +91,8 @@ def readFromLive():
                 info['pop']=tmp[1:-1]
                 continue
             res=tmp+('<br>' if tmp else '')+res
+    if (status_code.value!=0):
+        res=status[status_code.value]+'<br>'+res
     return res
 
 def initServer(r, c1, c2, c3):
@@ -187,7 +188,6 @@ def main():
     while True:
         if (status_code.value==0 and que.qsize()>200):
             print('[sleep] blive off, request room_id to wake up')
-            que.put_nowait('[SLEEP] & [STUCK] at que.qsize() = '+str(que.qsize()))
             clear_que(que, 100)
             status_code.value=2
             c.terminate()
