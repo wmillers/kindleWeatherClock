@@ -50,6 +50,7 @@
       left: -3.5rem;
       text-align: left;
       z-index: 1;
+      white-space: pre-wrap;
     }
     .tl_to {
       width:1.5rem;
@@ -758,9 +759,7 @@
       } else
         document.getElementById('net').innerHTML='无网络连接';
     }
-    function t(){
-      alert(' ▖▞▟⚀');
-    }
+    function t(){alert('³₃');}
   </script>
   <script type="text/javascript">
   /*
@@ -819,7 +818,7 @@
       var d=new Date();
       d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+15+1);
       var now=d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),d.getMinutes()])+'08Z';
-      s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\n';
+      s+="BEGIN:VEVENT\nDTSTART:"+now+'\nSUMMARY:Default\nDESCRIPTION:EMPTY\nRRULE:FREQ=WEEKLY;INTERVAL=3';
       readIcs(s);
       tickListStatus++;showIcs(true);
       console.log(now);
@@ -842,7 +841,7 @@
     function readIcs(s){
       s=s.split('\n');
       var r=[];
-      var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER'];
+      var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER', 'RRULE'];
       for (var i in s){
         var line=s[i].split(':');
         line=[line[0]?line[0].trim():'', line[1]?line[1].trim():''];
@@ -855,6 +854,17 @@
           else if (line[0]==tag[1]){
             line[0]=tag[0]
             line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
+          } else if (line[0]==tag[5]){
+            r[r.length-1]['FREQ']='';
+            line[1]=line[1].split(';');
+            for (var j in line[1]){
+              line[1][j]=line[1][j].split('=');
+              if (line[1][j][0]=='FREQ')
+                r[r.length-1]['FREQ']+='年月周日'[['ANNUALLY','MONTHLY','WEEKLY','DAILY'].indexOf(line[1][j][1])];
+              else if (line[1][j][0]=='INTERVAL')
+                r[r.length-1]['FREQ']='零一二三四五六七八九'[parseInt(line[1][j][1])]+r[r.length-1]['FREQ'];
+            }
+            continue;
           }
           r[r.length-1][line[0]]=line[1];
         }
@@ -866,7 +876,7 @@
       tickList={important:[],normal:[],noDate:[]};
       var func=[[function (d){return d>-14},
                  function (a,b){return b.DTSTART-a.DTSTART}],
-                [function (d){return d>=-14&&d<=90},
+                [function (d, freq){return d>=(freq?-7:-14)&&d<=(freq?14:90)},
                  function (a,b){var c=[a.DTSTART,b.DTSTART];for (var i in c) {c[i]-=getOffsetTime();if (c[i]<0) c[i]=-c[i]*2;}
                                 return c[0]-c[1];}]][sortNum];
       for (var i in r)
@@ -874,7 +884,7 @@
           var dD=dDay(r[i].DTSTART);
           if (!dD)
             alarmIcs(r[i]);
-          if (func[0](dD))
+          if (func[0](dD, r[i].FREQ))
             tickList.important.push(r[i]);
           else
             tickList.normal.push(r[i]);
@@ -908,10 +918,11 @@
               s+='<tr><td>---</td></tr>';
             }
             var adD=Math.abs(dD);
+            var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:25%;border:solid">'+l[i].FREQ+'</sup>':'';
             s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')
             +'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')
-            +'</td><td class="tl_su"><span class="tl_de"> '+l[i].SUMMARY.slice(0,10)+'</span>'
-            +'<span style="background:white;">'+l[i].SUMMARY.slice(10)+'&nbsp'+l[i].DESCRIPTION+'</span></td></tr>'+(!dD?'</b>':'');
+            +'</td><td class="tl_su"><span class="tl_de"> '+freq+l[i].SUMMARY.slice(0,10)+'</span>'
+            +'<span style="background:white;">'+l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION+'</span></td></tr>'+(!dD?'</b>':'');
           }
         }
         t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
@@ -924,7 +935,8 @@
       remindIcs("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
       remindIcs("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
-        remindIcs("document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'"+('['+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION)+"';"
+        var freq=(tick.FREQ)?'<sup style="font-size:small;border-radius:25%;border:solid">'+tick.FREQ+'</sup>':'';
+        remindIcs("document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'"+('['+freq+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION)+"';"
                  +'killShadow(true);'
                  +'displayReminder(true)', d-15*60*1000);
         remindIcs('killShadow(true)', d-1*60*1000);
