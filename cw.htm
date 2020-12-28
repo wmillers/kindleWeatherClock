@@ -917,7 +917,7 @@
               s+='<tr style="padding:0"><td>---</td></tr>';
             }
             var adD=Math.abs(dD);
-            var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:25%;border:solid">'+l[i].FREQ+'</sup>':'';
+            var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
             s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')
             +'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')
             +'</td><td class="tl_su"><span class="tl_de"> '+freq+l[i].SUMMARY.slice(0,10)+'</span>'
@@ -934,7 +934,7 @@
       remindIcs("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
       remindIcs("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
-        var freq=(tick.FREQ)?'<sup style="font-size:small;border-radius:25%;border:solid">'+tick.FREQ+'</sup>':'';
+        var freq=(tick.FREQ)?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'';
         remindIcs("document.getElementById('reminder').innerHTML+=(document.getElementById('reminder').innerHTML!=''?'<br>':'')+'"+('['+freq+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION)+"';"
                  +'killShadow(true);'
                  +'displayReminder(true)', d-15*60*1000);
@@ -976,6 +976,7 @@
                 [92613, 1220, 16548]];
   var danmuControl=['history','bye', 'kick', 'info', 'call'];
   var danmuRoomId='';
+  var danmuQueSize=0;
   var danmuPop=0;
   var danmuPopTrends=0;
   var danmuInfoUpdateIndex=0;
@@ -1006,12 +1007,9 @@
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='25rem';
     danmuRefreshRate=1000;
-    cleardanmuTime=0;
     danmuInfo('  ON');
     danmuRead(roomId);
-    setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
-    setTimeout('danmuRead("info", danmuInfoUpdate)', 30*1000);
-    setTimeout('danmuRead("", danmuShow)', 4*1000);
+    setTimeout('danmuRead("info", danmuInfoUpdate)', 9*1000);
     danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 60*1000);
   }
   function danmuOff(s){
@@ -1035,7 +1033,7 @@
   function danmuShow(s){
     if (s){
       s=s.split('<br>').filter(function (s){return s&&s.trim();}).join("<br>");
-      if (s.indexOf('[SLEEP]')!=-1)
+      if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
         danmuOff(s.trim().slice(0,danmuMax/5))
       else if (s){
         danmuReadCount++;
@@ -1052,6 +1050,7 @@
       return;
     var info=JSON.parse(s);
     danmuRoomId=info['room_id'];
+    danmuQueSize=parseInt(info['que_size']);
     var p=parseInt(info['pop']);
     if (danmuPop==0&&p>1)
       reduceShadow();
@@ -1090,7 +1089,7 @@
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', danmuPop==0?10*1000:danmuPop==1?60*1000:danmuRefreshRate);
+      setTimeout('danmuRead()', (danmuPop>1||danmuQueSize>5)?danmuRefreshRate:danmuPop==0?10*1000:60*1000);
   }
   function danmuClear(){
     if (isDanmuLive) return;

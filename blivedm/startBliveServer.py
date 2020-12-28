@@ -123,7 +123,7 @@ class MyBLiveClient(blivedm.BLiveClient):
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity=('⚑' if danmaku.admin else '')+(' ᎯᏰℭ'[danmaku.privilege_type] if danmaku.privilege_type else '')
         if identity:
-            identity='<big>'+identity+'</big> '
+            identity='<span style="border-radius:20%;border:1px solid;">'+identity+'</span>'
         aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
@@ -134,7 +134,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<big><b>{message.username}</b> 购买 <b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'<b><big>¥{message.price}</big></b> {message.uname}: <b>{message.message}</b>')
+        aprint(f'<span style="border-radius:20%;border:1px solid;">SuperChat ¥{message.price}</span> {message.uname}: <b>{message.message}</b>')
 
 
 async def initDm(room_id):
