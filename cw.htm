@@ -81,7 +81,7 @@
       margin-top: 14rem;
       margin-left: -4rem;
       text-align: left;
-      height: 18rem;
+      height: 15rem;
       width: 18rem;
       overflow: hidden;
       z-index: 1;
@@ -691,14 +691,14 @@
       update();
       return true;
     }
-    function getOffsetDate(offset){
+    function getOffsetDate(offset, noShift){
       var date=new Date();
       if (typeof offset!='number') offset=0;
-      date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
+      if (!noShift) date.setMinutes(date.getMinutes() + date.getTimezoneOffset() + 480);
       date.setMilliseconds(date.getMilliseconds()+timeOffset+offset);
       return date;
     }
-    function getOffsetTime(offset){return getOffsetDate(offset).getTime();}
+    function getOffsetTime(offset, noShift){return getOffsetDate(offset, noShift).getTime();}
     function updateInterval(){
       var mscs=getOffsetTime();
       setTimeout("updateInterval()", lessDisturbUpdateWhenTomato?((599999-mscs%600000)+50):(59999-mscs%60000)+50);//(60*10)*1000+50
@@ -1009,8 +1009,8 @@
     danmuRefreshRate=1000;
     danmuInfo('  ON');
     danmuRead(roomId);
-    setTimeout('danmuRead("info", danmuInfoUpdate)', 9*1000);
-    danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 59*1000);
+    setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
+    danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 29*1000);
   }
   function danmuOff(s){
     if (!isDanmuLive)
@@ -1024,7 +1024,7 @@
     danmu.style.background='';
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
-    danmuStyle.height='18rem';
+    danmuStyle.height='15rem';
     buffer=buffer.slice(0,danmuMax/5);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer+'...';
     danmuInfo('◯ OFF');
@@ -1047,11 +1047,11 @@
   }
   function danmuSC(l){
     danmuSuperChat='';
-    var d=getOffsetTime();
+    var d=getOffsetTime(0, true);
     for (var i in l){
-        l[i][0]=(l[i][0]-d)/(60*1000);
+        l[i][0]=Math.floor((l[i][0]-d)/(60*1000));
         if (l[i][0]>=0)
-          danmuSuperChat+='￥'+l[i][1]+'(+'+l[i][0]+') '+l[i][2]+'<br>';
+          danmuSuperChat+='￥'+l[i][1]+'(+'+l[i][0]+'分) '+l[i][2]+'<br>';
       }
   }
   function danmuInfoUpdate(s, manually){
@@ -1068,6 +1068,7 @@
       danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;
     }
+    danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' ON');
     if (danmuPop==1)
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
