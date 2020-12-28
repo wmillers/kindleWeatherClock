@@ -992,12 +992,8 @@
       danmuOff('+'+danmuReadCount);
     else {
       var up=prompt('Current: '+danmuRoomId+'\nStreamer: '+streamer[0]+'\nControl: '+danmuControl);
-      if (streamer[0].indexOf(up)!=-1)
-        danmuRoomId=streamer[1][streamer[0].indexOf(up)];
-      else
-        if (danmuControl.indexOf(up)!=-1||parseInt(up)!=NaN&&parseInt(up)>0)
-          danmuRoomId=up;
-      danmuOn(danmuRoomId);
+      if (up!=null)
+        danmuOn(streamer[0].indexOf(up)!=-1?streamer[1][streamer[0].indexOf(up)]:up);
     }
   }
   function danmuOn(roomId){
@@ -1014,7 +1010,8 @@
     danmuInfo('  ON');
     danmuRead(roomId);
     setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
-    setTimeout('danmuRead("", danmuShow)', 3.5*1000);
+    setTimeout('danmuRead("info", danmuInfoUpdate)', 30*1000);
+    setTimeout('danmuRead("", danmuShow)', 4*1000);
     danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 60*1000);
   }
   function danmuOff(s){
@@ -1036,17 +1033,18 @@
     danmuPop=0;
   }
   function danmuShow(s){
-    if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
-      danmuOff(s.trim().slice(0,danmuMax/5))
-    else if (s!=undefined&&s.trim()!='<br>'&&s.trim()!=''){
-      if (s){
+    if (s){
+      s=s.split('<br>').filter(function (s){return s&&s.trim();}).join("<br>");
+      if (s.indexOf('[SLEEP]')!=-1)
+        danmuOff(s.trim().slice(0,danmuMax/5))
+      else if (s){
         danmuReadCount++;
-        buffer=s+(buffer.slice(0,4)!='<br>'?'<br>':'')+buffer;
+        buffer=s+(buffer?'<br>':'')+buffer;
+        if (buffer.length>danmuMax*1.5)
+          buffer=buffer.slice(0, danmuMax);
+        danmu.innerHTML=buffer;
+        danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' ON');
       }
-      if (buffer.length>danmuMax*1.5)
-        buffer=buffer.slice(0, danmuMax)+'...';
-      danmu.innerHTML=buffer;
-      danmuInfo(' ▁▂▃▄▅▆▇█'[danmuReadCount%9]+' ON');
     }
   }
   function danmuInfoUpdate(s, manually){
@@ -1056,7 +1054,7 @@
     danmuRoomId=info['room_id'];
     var p=parseInt(info['pop']);
     if (danmuPop==0&&p>1)
-      killShadow();
+      reduceShadow();
     if (!(danmuPop==0&&p==1)){
       danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;

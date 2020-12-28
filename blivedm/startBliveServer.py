@@ -49,7 +49,7 @@ def controlRoom(path):
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res=cmd+': '+(' '.join(history))
+            res=cmd+': '+('<br>'.join(history))
         elif (cmd=='bye'):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
@@ -90,7 +90,7 @@ def readFromLive():
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 info['pop']=tmp[1:-1]
                 continue
-            res=tmp+('<br>' if tmp else '')+res
+            res=tmp+('<br>' if tmp and res else '')+res
     if (status_code.value!=0):
         res=status[status_code.value]+'<br>'+res
     return res
@@ -123,7 +123,7 @@ class MyBLiveClient(blivedm.BLiveClient):
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity=('⚑' if danmaku.admin else '')+(' ᎯᏰℭ'[danmaku.privilege_type] if danmaku.privilege_type else '')
         if identity:
-            identity+=' '
+            identity='<big>'+identity+'</big> '
         aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
@@ -134,7 +134,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<big><b>{message.username}</b> 购买 <b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'<b>SuperChat <big>¥{message.price}</big></b> {message.uname}: <u><b>{message.message}</b></u>')
+        aprint(f'<b><big>¥{message.price}</big></b> {message.uname}: <b>{message.message}</b>')
 
 
 async def initDm(room_id):
