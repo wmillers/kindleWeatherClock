@@ -971,8 +971,8 @@
   var danmuReadCount=0;
   var isDanmuLive=false;
   var danmuStart=0;
-  var streamer=[['pi', 'nc', 'dd'],
-                [92613, 1220, 16548]];
+  var streamer=[['pi', 'nc', 'dd', 'kf'],
+                [92613,1220,16548,22259479]];
   var danmuControl=['history','bye', 'kick', 'info', 'call'];
   var danmuRoomId='';
   var danmuQueSize=0;
@@ -982,9 +982,13 @@
   var danmuInfoUpdateIndex=0;
   var danmuMax=1600;
   var danmuRetry=0;
-  function space(n){
+  function space(n, olds){
     var s='';
-    while (n--)
+    if (typeof olds=="string"){
+      s=olds;
+      n-=olds.length;
+    }
+    while (n-->0)
       s+=' ';
     return s;
   }
@@ -1036,12 +1040,11 @@
       if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
         danmuOff(s.trim().slice(0,danmuMax/5))
       else if (s){
-        danmuReadCount++;
         buffer=s+(buffer?'<br>':'')+buffer;
         if (buffer.length>danmuMax*1.5)
           buffer=buffer.slice(0, danmuMax);
         danmu.innerHTML=buffer;
-        danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' ON');
+        danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' ON');
       }
     }
   }
@@ -1073,7 +1076,7 @@
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓ ↑'[danmuPopTrends+1]+space(8)+'房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId+space(20)+status+'<br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=space(20, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓ ↑'[danmuPopTrends+1])+space(26, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId)+status+'<br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
     if (danmuRefreshRate<200)
