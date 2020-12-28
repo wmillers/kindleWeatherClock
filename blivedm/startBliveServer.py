@@ -4,7 +4,7 @@
 import asyncio
 import sys
 import blivedm
-from time import sleep
+from time import sleep, time
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -13,7 +13,7 @@ import ctypes
 
 
 history=[]
-info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0})
+info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
 status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -70,7 +70,7 @@ def controlRoom(path):
             needExtra=False
         elif (cmd[0:5]=='call:'):
             req=parse.unquote(cmd[5:])
-            que.put_nowait('<b>[CLIENT-CALL] '+req+'</b>')
+            que.put_nowait(req)
             print('[call] '+req)
             res='[CALLING]'
             needExtra=False
@@ -88,7 +88,13 @@ def readFromLive():
             tmp=que.get_nowait()
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
-                info['pop']=tmp[1:-1]
+                if (tmp[1]=='$'):
+                    money, content=tmp[2:-1].split('$')
+                    info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
+                    if (len(info['super_chat'])>9):
+                        info['super_chat']=info['super_chat'][3:]
+                else:
+                    info['pop']=tmp[1:-1]
                 continue
             res=tmp+('<br>' if tmp and res else '')+res
     if (status_code.value!=0):
@@ -134,7 +140,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<big><b>{message.username}</b> 购买 <b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'<b>SuperChat ¥{message.price}</b>| {message.uname}: <b>{message.message}</b>')
+        aprint(f'$${message.price}${message.uname}: <b>{message.message}</b>$')
 
 
 async def initDm(room_id):
