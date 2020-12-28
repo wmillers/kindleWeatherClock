@@ -61,7 +61,9 @@ def controlRoom(path):
             info['que_size']=que.qsize()
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
-            info['room_id']=last_room_id.value
+            if (info['room_id']!=last_room_id.value):
+                info['room_id']=last_room_id.value
+                info['super_chat']=[]
             res=json.dumps(info)
             needExtra=False
         elif (cmd=='blive'):

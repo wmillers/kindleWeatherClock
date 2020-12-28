@@ -1054,7 +1054,7 @@
     for (var i in l){
         l[i][0]=Math.floor((l[i][0]-d)/(60*1000));
         if (l[i][0]>=0)
-          danmuSuperChat+='￥'+l[i][1]+'(+'+l[i][0]+'分) '+l[i][2]+'<br>';
+          danmuSuperChat+='<b>￥'+l[i][1]+'</b><small>[+'+l[i][0]+'分]</small> '+l[i][2]+'<br>';
       }
   }
   function danmuInfoUpdate(s, manually){
@@ -1076,7 +1076,7 @@
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML=space(20, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓ ↑'[danmuPopTrends+1])+space(26, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId)+status+'<br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=space(19, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1])+space(26, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId)+status+'<br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
     if (danmuRefreshRate<200)
