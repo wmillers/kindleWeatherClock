@@ -903,7 +903,7 @@
         t.innerHTML='<img class="tImg" style="padding:1rem">';
       } else {
         var limit=(tickListStatus%3==1)?tickListMaxLine:5;
-        var s='<span style="opacity: .3; font-size: .6rem;">'+dateString(0)+'</span><table>';
+        var s='<table><tr><td style="opacity:.3">'+dateString(0)+'<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
         var cross30;
         for (var j=0;j<Object.keys(tickList).length;j++){
           var l=tickList[Object.keys(tickList)[j]];
@@ -917,14 +917,12 @@
               s+='<tr style="padding:0"><td>---</td></tr>';
             }
             var adD=Math.abs(dD);
+            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
-            s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')
-            +'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')
-            +'</td><td class="tl_su"><span class="tl_de"> '+freq+l[i].SUMMARY.slice(0,10)+'</span>'
-            +'<span style="background:white;">'+l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION+'</span></td></tr>'+(!dD?'</b>':'');
+            s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_su"><span class="tl_de"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>'+(!dD?'</b>':'');
           }
         }
-        t.innerHTML=s+'<tr style="opacity:0"><td>00.00100.00</td><td style="font-size:1.5rem">1000</td></tr></table>';
+        t.innerHTML=s+'</table>';
       }
     }
     function alarmIcs(tick){
