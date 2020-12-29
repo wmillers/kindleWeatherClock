@@ -8,7 +8,7 @@ from time import sleep, time
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
-from urllib import parse
+from urllib import parse, request
 import ctypes
 
 
@@ -34,9 +34,18 @@ def isEmptyPath(path):
         return True
     return False
 
+def crosAccess(url):
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+    'accept-language': 'en-GB,en;q=0.9'}
+    req = request.Request(url, headers=headers)
+    response = request.urlopen(req)
+    return response.read().decode("utf-8")
+
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
-    cmd=parse.urlparse(path).query.split('&')[0]
+    cmd=parse.urlparse(path).query.split('&')[0].lower()
     needExtra=True
     if (cmd==''):
         res=''
@@ -75,6 +84,9 @@ def controlRoom(path):
             que.put_nowait(req)
             print('[call] '+req)
             res='[CALLING]'
+            needExtra=False
+        elif (cmd[0:5]=='cros:'):
+            res=crosAccess(parse.unquote(cmd[5:]))
             needExtra=False
         else:
             res='[err] Invalid: '+cmd
@@ -142,7 +154,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<big><b>{message.username}</b> 购买 <b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'$${message.price}${message.uname}: <b>{message.message}</b>$')
+        aprint(f'$${message.price}${message.uname}: <big><b>{message.message}</b></big>$')
 
 
 async def initDm(room_id):
@@ -168,11 +180,12 @@ def runDm(s, room_id):
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
+
+
 def clear_que(q, n):
     while (not q.empty() and n):
         n-=1
         q.get_nowait()
-
 
 def main():
     print('--- START ---')

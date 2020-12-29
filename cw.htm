@@ -972,8 +972,8 @@
   var isDanmuLive=false;
   var danmuStart=0;
   var streamer=[['pi', 'nc', 'dd', 'kf'],
-                [92613,1220,16548,22259479]];
-  var danmuControl=['history','bye', 'kick', 'info', 'call'];
+                [92613,12962,16548,22259479]];
+  var danmuControl=['history','bye', 'kick', 'info', 'call', 'cros'];
   var danmuRoomId='';
   var danmuQueSize=0;
   var danmuSuperChat='';
@@ -982,6 +982,8 @@
   var danmuInfoUpdateIndex=0;
   var danmuMax=1600;
   var danmuRetry=0;
+  var danmuLiveTime=Array(streamer[1].length);
+  var danmuRoomStatCheck=false;
   function space(n, olds){
     var s='';
     if (typeof olds=="string"){
@@ -1010,11 +1012,17 @@
     danmuStyle.marginTop='7rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='25rem';
-    danmuRefreshRate=1000;
-    danmuInfo('  ON');
-    danmuRead(roomId);
-    setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
-    danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 29*1000);
+    if (roomId=='cros'){
+      danmuInfo('₩₳₸₡₪');
+      danmuRoomStatCheck=true;
+      danmuRoomStatShow()
+    } else {
+      danmuRefreshRate=1000;
+      danmuInfo('  ON');
+      danmuRead(roomId);
+      setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
+      danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 29*1000);
+    }
   }
   function danmuOff(s){
     if (!isDanmuLive)
@@ -1061,10 +1069,10 @@
     if (!manually&&danmuInfoUpdateIndex==0)
       return;
     var info=JSON.parse(s);
-    danmuRoomId=info['room_id'];
-    danmuQueSize=parseInt(info['que_size']);
-    danmuSC(info['super_chat']);
-    var p=parseInt(info['pop']);
+    danmuRoomId=info.room_id;
+    danmuQueSize=parseInt(info.que_size);
+    danmuSC(info.super_chat);
+    var p=parseInt(info.pop);
     if (danmuPop==0&&p>1)
       reduceShadow();
     if (!(danmuPop==0&&p==1)){
@@ -1079,7 +1087,7 @@
     document.getElementById('danmu_info').innerHTML=space(19, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1])+space(26, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?streamer[0][streamer[1].indexOf(danmuRoomId)]+' ':'')+danmuRoomId)+status+'<br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
-    if (danmuRefreshRate<200)
+    if (!danmuRoomStatCheck&&danmuRefreshRate<200)
       return
     var url = "/blive/"
     if (roomId)
@@ -1104,6 +1112,22 @@
     xmlhttp.send();
     if (f==undefined)
       setTimeout('danmuRead()', (danmuPop>1||danmuQueSize>5)?danmuRefreshRate:danmuPop==0?10*1000:60*1000);
+  }
+  function danmuRoomStatShow(n){
+    if (danmuRoomStatCheck){
+      if (n==undefined)
+        n=0;
+      danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
+      setTimeout('danmuRoomStatShow('+n+')', 5*1000);
+    }
+  }
+  function danmuIsLive(s){
+    var stat=JSON.parse(s);
+    if (stat.code==0){
+      stat=stat.data;
+      danmuLiveTime[streamer[1].indexOf(stat.room_id)]=stat.live_time;
+      danmu.innerHTML=danmuLiveTime;
+    }
   }
   function danmuClear(){
     if (isDanmuLive) return;
