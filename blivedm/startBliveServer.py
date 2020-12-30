@@ -43,8 +43,8 @@ def crosAccess(url):
     try:
         response = request.urlopen(req)
         return response.read().decode("utf-8")
-    except Exception as e:
-        que.put_nowait('[EXCEP] cros: '+str(e))
+    except Exception:
+        que.put_nowait('[EXCEP] cros: '+str(sys.exc_info()))
         return ''
 
 def controlRoom(path):
