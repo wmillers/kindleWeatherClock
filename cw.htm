@@ -411,8 +411,7 @@
       updateButton();
       updateSignal();
     }
-  </script>
-  <script type="text/javascript">
+    
     var refreshRate=8*3600*1000;
     var hardwareLagRate=6.66;//+1s/6.66h
     var lastSyncTime;
@@ -441,7 +440,11 @@
       if (hasClockInit) timeOffset+=1000;
       setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
     }
-    function initDateFromServer(calculate){
+    function initDateFromServer(){
+      danmuRead('time', function s(a){averageTimeOffset.push(parseInt(a)-new Date().getTime());sumDateFromServer(true)});//oneTimeDateByBlive
+      setTimeout('if (!averageTimeOffset) sumDateFromServer()', 500);//alternative
+    }
+    function sumDateFromServer(calculate){
       if (calculate){
         if (!averageTimeOffset) return false;
         var oldHardwareLagRate=hardwareLagRate;
@@ -484,7 +487,7 @@
           if (n>0)
             setTimeout('singleDateFromServer('+(--n)+')', 100);
           else {
-            initDateFromServer(true);
+            sumDateFromServer(true);
             return;
           }
           if (xmlhttp.status!=0){
@@ -760,8 +763,7 @@
       } else
         document.getElementById('net').innerHTML='无网络连接';
     }
-  </script>
-  <script type="text/javascript">
+    
   /*
     Note: you need set a Nginx server to proxy the GET method to the
           calendar server to download the .ics file. Add those lines
@@ -873,6 +875,7 @@
       return tickList;
     }
     function sortIcs(r, sortNum){
+      document.getElementById('reminder').innerHTML='';
       tickList={important:[],normal:[],noDate:[]};
       var func=[[function (d){return d>-14},
                  function (a,b){return b.DTSTART-a.DTSTART}],
@@ -918,7 +921,7 @@
               s+='<tr style="padding:0"><td>---</td></tr>';
             }
             var adD=Math.abs(dD);
-            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
+            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION.slice(0,80)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
             s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_su"><span class="tl_de"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>'+(!dD?'</b>':'');
           }
@@ -945,8 +948,7 @@
       document.getElementById("reminder").style.display=on?'block':'none';
     }
     function remindIcs(cmd, timeout){addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
-  </script>
-  <script type="text/javascript">
+
   /*
   sudo apt-get install python3-distutils
   sudo apt-get install python3-pip
@@ -982,7 +984,7 @@
   var danmuPopTrends=0;
   var danmuInfoUpdateIndex=0;
   var danmuMax=1600;
-  var danmuRetry=0;
+  var danmuRetry=1;
   var danmuRoomStatCheck=false;
   function space(n, olds){
     var s='';
@@ -1017,11 +1019,11 @@
     if (String(roomId).slice(0,4)=='cros'){
       if (roomId[4]=='.')
         setTimeout('danmuOrder("'+roomId.split('.')[1]+'")', 3*1000);
-      danmuInfo('₩₳₸ℂℍ');
+      danmuInfo('ᗯατcᏥ');
       setTimeout('danmuRoomStatShow()',2*1000);
     } else {
       danmuRefreshRate=1000;
-      danmuInfo('  Oℕ');
+      danmuInfo('  ōи');
       danmuRead(roomId);
       setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
       danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 29*1000);
@@ -1031,8 +1033,10 @@
     if (danmuRefreshRate<200&&streamer[0].indexOf(up)!=-1)
       if (streamer[2][streamer[0].indexOf(up)][0]!='Z')
         danmuOn(streamer[1][streamer[0].indexOf(up)]);
-      else
-        setTimeout('danmuOrder('+up+')', 60*1000);
+      else{
+        danmu.innerHTML+=up+' is still sleeping..';
+        setTimeout('danmuOrder("'+up+'")', 60*1000);
+      }
   }
   function danmuOff(s){
     if (!isDanmuLive)
@@ -1050,7 +1054,7 @@
     danmuRoomStatCheck=false;
     buffer=buffer.slice(0,danmuMax/5);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(new Date().getTime()-danmuStart,2)+'-<br>'+buffer+'...';
-    danmuInfo('◯ O₣₣');
+    danmuInfo('◯ ōFF');
     danmuPop=0;
   }
   function danmuShow(s){
@@ -1059,13 +1063,16 @@
       if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
         danmuOff(s.trim().slice(0,danmuMax/5))
       else if (s){
-        buffer=s+(buffer?'<br>':'')+buffer;
-        if (buffer.length>danmuMax*1.5)
-          buffer=buffer.slice(0, danmuMax);
-        danmu.innerHTML=buffer;
-        danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' Oℕ');
+        danmuBufferShow(s);
+        danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' ōи');
       }
     }
+  }
+  function danmuBufferShow(s){
+    buffer=s+(buffer?'<br>':'')+buffer;
+    if (buffer.length>danmuMax*1.5)
+      buffer=buffer.slice(0, danmuMax);
+    danmu.innerHTML=buffer;
   }
   function danmuSC(l){
     danmuSuperChat='';
@@ -1090,7 +1097,7 @@
       danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;
     }
-    danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' ON');
+    danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' ōи');
     if (danmuPop==1)
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
@@ -1107,22 +1114,25 @@
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
+          danmuRetry=1;
           if (f==undefined)
             danmuShow(xmlhttp.responseText);
           else
             f(xmlhttp.responseText);
           xmlhttp = null;
-        } else if (xmlhttp.status>=400&&xmlhttp.status<600)
-          if (danmuPop<=1||++danmuRetry>=3){
-            danmuOff('(〃>_<;〃)'+xmlhttp.status);
-            danmuRetry=0;
+        } else if (xmlhttp.status>=400&&xmlhttp.status<600){
+          danmuBufferShow('[local] server return: '+xmlhttp.status+', R'+danmuRetry+'S'+Math.floor(getOffsetTime()/1000)%60);
+          if (++danmuRetry>3){
+            danmuOff('〃>_<;〃'+xmlhttp.status+'R'+(danmuRetry-1));
+            danmuRetry=1;
           }
+        }
       }
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuPop>1||danmuQueSize>5)?danmuRefreshRate:danmuPop==0?10*1000:60*1000);
+      setTimeout('danmuRead()', (danmuRetry==1&&(danmuPop>1||danmuQueSize>5))?danmuRefreshRate:danmuRetry==1&&danmuPop==0?10*1000:60*1000);
   }
   function danmuRoomStatCollect(n){
     if (danmuRoomStatCheck){
@@ -1141,8 +1151,8 @@
     if (danmuRefreshRate<200&&danmuRoomStatCheck){
       danmu.innerHTML='Watching...<br>';
       for (var i in streamer[0])
-        danmu.innerHTML+=streamer[0][i]+' |'+space(10, streamer[1][i])+'|'+space(10, streamer[2][i])+'<br>';
-      setTimeout('danmuRoomStatShow()',45*1000);
+        danmu.innerHTML+=streamer[0][i]+space(3)+space(10, streamer[1][i])+space(10, streamer[2][i])+'<br>';
+      setTimeout('danmuRoomStatShow()',60*1000);
     }
   }
   function danmuClear(){

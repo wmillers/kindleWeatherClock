@@ -40,8 +40,13 @@ def crosAccess(url):
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'accept-language': 'en-GB,en;q=0.9'}
     req = request.Request(url, headers=headers)
-    response = request.urlopen(req)
-    return response.read().decode("utf-8")
+    try:
+        response = request.urlopen(req)
+        response.read().decode("utf-8")
+        return True
+    except Exception as e:
+        que.put_nowait('[EXCEP] cros: '+str(e))
+        return False
 
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
@@ -87,6 +92,8 @@ def controlRoom(path):
             needExtra=False
         elif (cmd[0:5]=='cros:'):
             res=crosAccess(parse.unquote(cmd[5:]))
+        elif (cmd=='time'):
+            res=int(time()*1000+100)
             needExtra=False
         else:
             res='[err] Invalid: '+cmd
