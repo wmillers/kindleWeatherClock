@@ -42,11 +42,10 @@ def crosAccess(url):
     req = request.Request(url, headers=headers)
     try:
         response = request.urlopen(req)
-        response.read().decode("utf-8")
-        return True
+        return response.read().decode("utf-8")
     except Exception as e:
         que.put_nowait('[EXCEP] cros: '+str(e))
-        return False
+        return ''
 
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
@@ -92,6 +91,7 @@ def controlRoom(path):
             needExtra=False
         elif (cmd[0:5]=='cros:'):
             res=crosAccess(parse.unquote(cmd[5:]))
+            needExtra=False
         elif (cmd=='time'):
             res=int(time()*1000+100)
             needExtra=False

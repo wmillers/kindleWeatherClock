@@ -914,16 +914,18 @@
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
-            if (cross30==undefined)
-              cross30=Math.abs(dD);
-            else if (Math.abs(dD)>=30&&cross30<30){
-              cross30=31;
-              s+='<tr style="padding:0"><td>---</td></tr>';
-            }
             var adD=Math.abs(dD);
+            var td_divider='';
+            if (cross30==undefined)
+              cross30=adD;
+            if (adD>=30&&cross30<30){
+              cross30=31;
+              td_divider=' style="border-top:3px dashed;"';
+            } else
+              td_divider='';
             var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION.slice(0,80)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:x-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
-            s+=(!dD?'<b>':'')+'<tr><td>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_su"><span class="tl_de"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>'+(!dD?'</b>':'');
+            s+=(!dD?'<b>':'')+'<tr><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_su"><span class="tl_de"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>'+(!dD?'</b>':'');
           }
         }
         t.innerHTML=s+'</table>';
@@ -984,7 +986,7 @@
   var danmuPopTrends=0;
   var danmuInfoUpdateIndex=0;
   var danmuMax=1600;
-  var danmuRetry=1;
+  var danmuRetry=0;
   var danmuRoomStatCheck=false;
   function space(n, olds){
     var s='';
@@ -1114,7 +1116,7 @@
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
-          danmuRetry=1;
+          danmuRetry=0;
           if (f==undefined)
             danmuShow(xmlhttp.responseText);
           else
@@ -1124,7 +1126,7 @@
           danmuBufferShow('[local] server return: '+xmlhttp.status+', R'+danmuRetry+'S'+Math.floor(getOffsetTime()/1000)%60);
           if (++danmuRetry>3){
             danmuOff('〃>_<;〃'+xmlhttp.status+'R'+(danmuRetry-1));
-            danmuRetry=1;
+            danmuRetry=0;
           }
         }
       }
@@ -1132,7 +1134,7 @@
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuRetry==1&&(danmuPop>1||danmuQueSize>5))?danmuRefreshRate:danmuRetry==1&&danmuPop==0?10*1000:60*1000);
+      setTimeout('danmuRead()', (danmuRetry==0&&(danmuPop>1||danmuQueSize>5))?danmuRefreshRate:danmuRetry==0&&danmuPop==0?10*1000:60*1000);
   }
   function danmuRoomStatCollect(n){
     if (danmuRoomStatCheck){
