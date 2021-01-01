@@ -1001,7 +1001,7 @@
   var danmuPopTrends=0;
   var danmuInfoUpdateIndex=0;
   var danmuMax=1600;
-  var danmuRetry=0;
+  var danmuTryToken=0;
   var danmuOrderId=-1;
   function space(n, s, specific){
     s=s!=undefined?String(s):'';
@@ -1023,6 +1023,7 @@
   }
   function danmuOn(roomId){
     danmuStart=getOffsetTime();
+    danmuTryToken=0;
     dInfoStyle.background='white';
     danmu.style.background='white';
     danmu.style.padding='.15rem 0';
@@ -1115,29 +1116,28 @@
     var url = "/blive/"
     if (roomId)
       url+='?'+roomId;
+    danmuTryToken++;
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
-          danmuRetry=0;
+          danmuTryToken--;
           if (f==undefined)
             danmuShow(xmlhttp.responseText);
           else
             f(xmlhttp.responseText);
           xmlhttp = null;
         } else if (xmlhttp.status>=400&&xmlhttp.status<600){
-          danmuBufferShow('[local] server return: '+xmlhttp.status+', R'+danmuRetry+'S'+Math.floor(getOffsetTime()/1000)%60);
-          if (++danmuRetry>3){
-            danmuOff('〃>_<;〃'+xmlhttp.status+'R'+(danmuRetry-1));
-            danmuRetry=0;
-          }
+          danmuBufferShow('[local] server return: '+xmlhttp.status+', R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%60);
+          if (danmuTryToken>5)
+            danmuOff('〃>_<;〃'+xmlhttp.status+'R'+(danmuTryToken-1));
         }
       }
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuRetry==0&&(danmuPop>1||danmuQueSize>5))?1000:danmuRetry==0&&danmuPop==0?10*1000:60*1000);
+      setTimeout('danmuRead()', (danmuTryToken==0&&(danmuPop>1||danmuQueSize>5))?1000:danmuTryToken==0&&danmuPop==0?10*1000:60*1000);
   }
   function danmuRoomStatCollect(n){
     if (n==undefined)
