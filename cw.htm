@@ -445,11 +445,11 @@
     }
     function initDateFromServer(){
       danmuRead('time', function s(a){averageTimeOffset.push(parseInt(a)-new Date().getTime());sumDateFromServer(true)});//oneTimeDateByBlive
-      setTimeout('if (!averageTimeOffset) sumDateFromServer()', 500);//alternative
+      setTimeout('if (!averageTimeOffset.length) sumDateFromServer()', 500);//alternative
     }
     function sumDateFromServer(calculate){
       if (calculate){
-        if (!averageTimeOffset) return false;
+        if (!averageTimeOffset.length) return false;
         var oldHardwareLagRate=hardwareLagRate;
         var dOffsetPerSecond="";
         var dTimeOffset=0;
@@ -953,9 +953,9 @@
               tr=tr[j].children[0].children;
               break;
             }
-          var baitHeight=tr[0].offsetHeight+(tr[1].offsetHeight)*i;
+          var baitHeight=2*tr[0].offsetHeight+tr[1].offsetHeight*i;
         }
-        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:medium;">▶'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
+        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger;">▌'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
       }
     }
     function stringLine(s){
@@ -1092,7 +1092,12 @@
   }
   function danmuShow(s){
     if (s){
-      s=s.split('<br>').filter(function (s){return s&&s.trim();}).join("<br>");
+      s=s.split('<br>').filter(
+        function (s){
+          if ((s=s.trim()).slice(0,4)=='[JS]')
+            eval(s.slice(4));
+          return s;
+        }).join("<br>");
       if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
         danmuOff(s.trim().slice(0,danmuMax/5))
       else if (s){
@@ -1155,14 +1160,14 @@
           else
             f(xmlhttp.responseText);
           xmlhttp = null;
-        } else if (xmlhttp.status>=400&&xmlhttp.status<600)
+        } else if (isDanmuLive&&xmlhttp.status>=400&&xmlhttp.status<600)
           danmuBufferShow('[local] server return: '+xmlhttp.status+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600);
       }
     }
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuTryToken==0&&(danmuPop>1||danmuQueSize>5))?1000:danmuTryToken==0&&danmuPop==0?10*1000:60*1000);
+      setTimeout('danmuRead()', (danmuTryToken<2&&(danmuPop>1||danmuQueSize>5))?1000:danmuTryToken==0&&danmuPop==0?10*1000:60*1000);
   }
   function danmuRoomStatCollect(n){
     if (n==undefined)

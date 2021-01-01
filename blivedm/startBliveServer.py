@@ -14,7 +14,7 @@ import ctypes
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-', '[CAFFEINE] force awake mode']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-', '[CAFFEINE] keep awake']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -90,7 +90,8 @@ def controlRoom(path):
             needExtra=False
         elif (cmd[0:3]=='js:'):
             new_room_id.value=-4
-            que.put_nowait('js:'+cmd[3:20]+'.<script type="text/javascript">'+cmd[3:]+'</script>')
+            info['pop']='9999'
+            que.put_nowait('[JS]'+cmd[3:20])
             print('[js] '+cmd[5:])
             res='[JS-Executing]'
             needExtra=False
