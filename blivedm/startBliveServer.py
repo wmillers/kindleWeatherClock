@@ -84,10 +84,14 @@ def controlRoom(path):
             res='[CHECKING] blive process..'
             needExtra=False
         elif (cmd[0:5]=='call:'):
-            req=parse.unquote(cmd[5:])
-            que.put_nowait(req)
-            print('[call] '+req)
+            que.put_nowait(parse.unquote(cmd[5:]))
+            print('[call] '+cmd[5:])
             res='[CALLING]'
+            needExtra=False
+        elif (cmd[0:5]=='js:'):
+            que.put_nowait(parse.unquote('<script type="text/javascript">'+cmd[5:]+'</script>'))
+            print('[js] '+cmd[5:])
+            res='[JS-Executing]'
             needExtra=False
         elif (cmd[0:5]=='cros:'):
             res=crosAccess(parse.unquote(cmd[5:]))
