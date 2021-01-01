@@ -14,7 +14,7 @@ import ctypes
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-', '[CAFFEINE] force awake mode']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         if (isEmptyPath(self.path)):
@@ -62,7 +62,7 @@ def controlRoom(path):
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res=cmd+': '+('<br>'.join(history))
+            res=cmd+': '+parse.quote('<br>'.join(history))
         elif (cmd=='bye'):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
@@ -88,8 +88,9 @@ def controlRoom(path):
             print('[call] '+cmd[5:])
             res='[CALLING]'
             needExtra=False
-        elif (cmd[0:5]=='js:'):
-            que.put_nowait(parse.unquote('<script type="text/javascript">'+cmd[5:]+'</script>'))
+        elif (cmd[0:3]=='js:'):
+            new_room_id.value=-4
+            que.put_nowait('js:'+cmd[3:20]+'.<script type="text/javascript">'+cmd[3:]+'</script>')
             print('[js] '+cmd[5:])
             res='[JS-Executing]'
             needExtra=False
@@ -119,7 +120,7 @@ def readFromLive():
                     if (len(info['super_chat'])>9):
                         info['super_chat']=info['super_chat'][3:]
                 else:
-                    info['pop']=tmp[1:-1]
+                    info['pop']=tmp[1:-1] if status_code!=4 else '9999'
                 continue
             res=tmp+('<br>' if tmp and res else '')+res
     if (status_code.value!=0):
@@ -242,6 +243,9 @@ def main():
                 if (new_room_id.value==-3):
                     print(str(c))
                     que.put_nowait(str(c))
+                if (new_room_id.value==-4):
+                    print('[caffeine] change room to stop awake')
+                    status_code.value=4
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))

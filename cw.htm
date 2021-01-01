@@ -795,7 +795,7 @@
     var tickList={};
     var tickListStatus=0;
     var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
-    var tickListMaxLine=21;
+    var tickListMaxLine=20;
     var tickListReminderList={};
     function dDay(t){return dHour(t, 24);}
     function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
@@ -915,8 +915,9 @@
         var limit=(tickListStatus%3==1)?tickListMaxLine:5;
         var s='<table><tr><td style="opacity:.3">'+dateString(0)+'<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
         var cross30;
-        for (var j=0;j<Object.keys(tickList).length;j++){
-          var l=tickList[Object.keys(tickList)[j]];
+        var tickListKeys=Object.keys(tickList);
+        for (var j=0;j<tickListKeys.length;j++){
+          var l=tickList[tickListKeys[j]];
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
@@ -935,7 +936,33 @@
           }
         }
         t.innerHTML=s+'</table>';
+        var dH=0;
+        if (tickList.important.length>0){
+          var height=1.59;
+          for (var i=0;i<5&&i<tickList.important.length-1;i++)
+            if (dHour(tickList.important[i].DTSTART)>=0)
+              break;
+            else if (dHour(tickList.important[i+1].DTSTART)>=0){
+              dH=dHour(tickList.important[i+1].DTSTART);
+              i+=(-dMs(tickList.important[i].DTSTART))/(tickList.important[i+1].DTSTART-tickList.important[i].DTSTART);
+              break;
+            }
+          var tr=document.getElementById('tickList').children;
+          for (var j in tr)
+            if (tr[j].tagName=='TABLE'){
+              tr=tr[j].children[0].children;
+              break;
+            }
+          var baitHeight=tr[0].offsetHeight+(tr[1].offsetHeight)*i;
+        }
+        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:medium;">▶'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
       }
+    }
+    function stringLine(s){
+      var ns='';
+      for (var i in s)
+        ns+='<br>'+s[i];
+      return ns;
     }
     function alarmIcs(tick){
       addIcsReminderList(tick);
@@ -953,7 +980,7 @@
       if (!on){
         if (confirm('Close?')){
           tickListReminderList={};
-          document.getElementById("reminder").style.display='block';
+          document.getElementById("reminder").style.display='none';
         }
       } else {
         var l=Object.keys(tickListReminderList).map(function(e) {return tickListReminderList[e]});
@@ -1113,25 +1140,23 @@
   function danmuRead(roomId, f){
     if (!isDanmuLive&&f==undefined)
       return;
-    var url = "/blive/"
-    if (roomId)
-      url+='?'+roomId;
-    danmuTryToken++;
+    if (++danmuTryToken>5){
+      danmuOff('(〃>_<;〃) R'+danmuTryToken+'>5, Id: '+roomId);
+      return;
+    }
+    var url = "/blive/"+(roomId?'?'+roomId:'');
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
-          danmuTryToken--;
+          danmuTryToken=0;
           if (f==undefined)
             danmuShow(xmlhttp.responseText);
           else
             f(xmlhttp.responseText);
           xmlhttp = null;
-        } else if (xmlhttp.status>=400&&xmlhttp.status<600){
-          danmuBufferShow('[local] server return: '+xmlhttp.status+', R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%60);
-          if (danmuTryToken>5)
-            danmuOff('〃>_<;〃'+xmlhttp.status+'R'+(danmuTryToken-1));
-        }
+        } else if (xmlhttp.status>=400&&xmlhttp.status<600)
+          danmuBufferShow('[local] server return: '+xmlhttp.status+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600);
       }
     }
     xmlhttp.open('GET', url);
@@ -1143,7 +1168,7 @@
     if (n==undefined)
       n=0;
     danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
-    if (isDanmuLive) setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0)?240*1000:10*1000);
+    if (isDanmuLive) setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0||danmuTryToken>3)?240*1000:10*1000);
   }
   function danmuIsLive(s){
     var stat=JSON.parse(s);
@@ -1153,13 +1178,13 @@
         danmu.innerHTML='Watching...<br>';
         for (var i in streamer[0])
           danmu.innerHTML+=streamer[0][i]+space(3)+space(10, streamer[1][i])+space(10, streamer[2][i])+'<br>';
-      if (danmuOrderId!=-1)
-        if (streamer[2][danmuOrderId][0]!='Z'){
-          danmuOn(streamer[1][danmuOrderId]);
-          killShadow();
-        } else
-          danmu.innerHTML+=streamer[0][danmuOrderId]+' is still sleeping'+space(streamer[1].indexOf(stat.data.room_id)*2,'','.');
-      };
+        if (danmuOrderId!=-1)
+          if (streamer[2][danmuOrderId][0]!='Z'){
+            danmuOn(streamer[1][danmuOrderId]);
+            killShadow();
+          } else
+            danmu.innerHTML+=streamer[0][danmuOrderId]+' is still sleeping'+space(streamer[1].indexOf(stat.data.room_id)*2,'','.');
+      }
     }
   }
   function danmuClear(){
