@@ -1129,18 +1129,21 @@
   }
   function danmuShow(s){
     if (s){
+      var isCaffeined=s.indexOf('[CAFFEINE]')!=-1||s.indexOf('[JS]')!=-1;
       s=s.split('<br>').filter(
         function (s){
           if ((s=s.trim()).slice(0,4)=='[JS]')
-            eval(s.slice(4));
+            setTimeout('comment('+s.slice(4)+', true)', 0);
+          else if (s.slice(0,10)=='[CAFFEINE]')
+            return;
           return s;
         }).join("<br>");
       if (s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
         danmuOff(s.trim().slice(0,danmuMax/5))
-      else if (s){
+      else if (s)
         danmuBufferShow(s);
-        danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' oи');
-      }
+      if (s||isCaffeined)
+        danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' oи '+(isCaffeined?'☕':''));
     }
   }
   function danmuBufferShow(s){

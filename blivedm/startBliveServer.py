@@ -49,7 +49,8 @@ def crosAccess(url):
 
 def controlRoom(path):
     global new_room_id, que, info, status_code, last_room_id, status
-    cmd=parse.urlparse(path).query.split('&')[0].lower()
+    ori_cmd=parse.urlparse(path).query.split('&')[0]
+    cmd=ori_cmd.lower()
     needExtra=True
     if (cmd==''):
         res=''
@@ -84,19 +85,19 @@ def controlRoom(path):
             res='[CHECKING] blive process..'
             needExtra=False
         elif (cmd[0:5]=='call:'):
-            que.put_nowait(parse.unquote(cmd[5:]))
-            print('[call] '+cmd[5:])
+            que.put_nowait(parse.unquote(ori_cmd[5:]))
+            print('[call] '+ori_cmd[5:])
             res='[CALLING]'
             needExtra=False
         elif (cmd[0:3]=='js:'):
             new_room_id.value=-4
             info['pop']='9999'
-            que.put_nowait('[JS]'+cmd[3:20])
-            print('[js] '+cmd[5:])
-            res='[JS-Executing]'
+            que.put_nowait('[JS]'+ori_cmd[3:])
+            print('[js] '+ori_cmd[3:])
+            res='[JS-Executing]'+ori_cmd[3:]
             needExtra=False
         elif (cmd[0:5]=='cros:'):
-            res=crosAccess(parse.unquote(cmd[5:]))
+            res=crosAccess(parse.unquote(ori_cmd[5:]))
             needExtra=False
         elif (cmd=='time'):
             res=int(time()*1000+100)
