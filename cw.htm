@@ -205,221 +205,9 @@
         e.returnValue = dialogText;
         return dialogText;
       };
-  </script>
-  <script type="text/javascript">
-    var toStatus, ispaused, weeklyTomato;
-    var timerEntity;
-    var signalTired=0;
-    var toWorkTimer=25*60;//Second
-    var timerEnd, restWhenPaused;
-    var toRestTimer=5*60
-    var expireTomato=30;//Day
-    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
-    var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
-    var shinningSignal=[document.getElementById('ato').style, document.getElementById('inform').style, document.getElementById('allDate').style];
-    prepareTomato();
-    //dumpTomato();gatherTomato(719);
-    function dumpTomato(){rottenTomato(-1);}
-    function gatherTomato(fakeTomatos){
-      if (!weeklyTomato.length) eatTomato();
-      if (fakeTomatos)
-        for (var i=0;i<fakeTomatos;i++)
-          weeklyTomato.push(-1);
-      else
-          weeklyTomato.push(Math.floor(new Date().getTime()/(24*3600*1000)));
-      canTomato();
-      showTomato("Gather");
-    }
-    function canTomato(){document.cookie = "tomato="+compressTomato()+";expires="+ new Date(0x7fffffff * 1e3).toUTCString();}
-    function compressTomato(){
-      var compressed="";
-      for (var i in weeklyTomato){
-        if (i!=0) compressed+='.';
-        compressed+=Math.floor(weeklyTomato[i]).toString(36);
-      }
-      return compressed;
-    }
-    function showTomato(source){
-      var _doc=document.getElementById('basket');
-      _doc.textContent="";
-      var f=[1,2,20,60,180];
-      var res=0;
-      var tomatos=weeklyTomato.length;
-      for (var i=f.length-1;i>=0&&tomatos!=0;i--){
-        res=Math.floor(tomatos/f[i]);
-        tomatos%=f[i];
-        for (var j=0;j<res;j++)
-          enchantTomato(_doc, ['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'][i]);
-      }
-      if (weeklyTomato.length!=0) _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
-      logTomato(source);
-    }
-    function enchantTomato(_doc, magicType){
-        var script=document.createElement('img');
-        script.setAttribute('class','tImg');
-        if (magicType) script.setAttribute('style',magicType);
-        _doc.appendChild(script);
-    }
-    function eatTomato(){
-      var offset=document.cookie.indexOf("tomato=");
-      var end = document.cookie.indexOf(";",offset);
-      if (offset!=-1){
-        offset+="tomato=".length
-        if (end==-1) end=document.cookie.length;
-        var content=document.cookie.substring(offset, end);
-        if (content){
-          weeklyTomato=Array();
-          content=content.split(".");
-          for(var i in content)
-            if (parseInt(content[i], 36))
-              weeklyTomato.push(parseInt(content[i], 36));
-        }
-        logTomato("Read");
-      }
-    }
-    function logTomato(source){
-      if (weeklyTomato.length==0)
-        console.log("Empty >ToMaMaTo< Store from "+source);
-      else
-        console.log("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
-    }
-    function rottenTomato(expire){
-      var date=Math.floor(new Date().getTime()/(24*3600*1000))-(!expire?expireTomato:expire);
-      weeklyTomato.sort(function(a, b){return b-a;});
-      for (var i in weeklyTomato)
-        if (weeklyTomato[i]<date){
-          weeklyTomato=weeklyTomato.slice(0, i);
-          break;
-        }
-      canTomato();
-      setTimeout("rottenTomato()", expireTomato*24*3600*1000/3);
-      showTomato("Rotten");
-    }
-    function secondsUntilNow(future){
-      return Math.round((future-new Date().getTime())/1000);
-    }
-    function updateMsg(tom, sliceIndex){
-      if (tom){
-        if (sliceIndex) tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
-        if (tom.slice(-2)!=": ") tom+=": "
-        tomatoMsg[0].innerHTML=tom;
-      }
-      timerCount=secondsUntilNow(timerEnd);
-      timeString=""+frontZero(Math.floor(timerCount/60))+":"+frontZero(timerCount%60);
-      tomatoMsg[1].innerHTML=timeString;
-      tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
-    }
-    function fridgeTomato(){
-      prepareTomato();
-      tomatoMsg[0].innerHTML="MATO";
-      tomatoMsg[1].innerHTML="TOMA";
-      tomatoMsg[2].innerHTML=initialTitle;
-      killShadow();
-    }
-    function prepareTomato(){
-      //quit from tomato
-      preventDecreaseShadow=false;
-      lessDisturbUpdateWhenTomato=false;
-      toStatus='stop';//work,rest,stop
-      ispaused=false;
-      weeklyTomato=Array();
-      eatTomato();
-      clearTimeout(timerEntity);
-      updateButton();
-    }
-    function switchTomato(){
-      switch (toStatus){
-        case 'stop':
-          toStatus='work';
-          setTimer();
-          preventDecreaseShadow=true;
-          lessDisturbUpdateWhenTomato=true;
-          timerEnd=new Date().getTime()+toWorkTimer*1000;
-          rottenTomato();
-          updateMsg("番茄开始");
-          updateButton();
-          break;
-        case 'work':
-          toStatus='rest';
-          restWhenPaused=toRestTimer*1000;
-          timerEnd=new Date().getTime()+restWhenPaused;
-          clearTimeout(timerEntity);
-          updateMsg("番茄中场");
-          pauseTomato();
-          break;
-        case 'rest':
-          toStatus='work';
-          restWhenPaused=toWorkTimer*1000;
-          timerEnd=new Date().getTime()+restWhenPaused;
-          clearTimeout(timerEntity);
-          updateMsg("番茄工作");
-          pauseTomato();
-          break;
-      }
-    }
-    function setTimer(){
-      clearTimeout(timerEntity);
-      timerEntity=setTimeout('tomatoTimer()',1000);
-    }
-    function tomatoTimer(){
-      if (timerEnd<new Date().getTime()){
-        if (toStatus=='work')
-          gatherTomato();
-        switchTomato();
-      } else {
-        updateMsg();
-        setTimer();
-      }
-    }
-    function updateButton(){
-      buttonStyle[1].color=(ispaused)?'#303030':'#a9a9a9';
-      if (toStatus=='stop') buttonStyle[1].color='#000000';
-      buttonStyle[0].color=['#000000', '#303030', '#a9a9a9'][['stop', 'work', 'rest'].indexOf(toStatus)];
-    }
-    function updateSignal(){
-      if (ispaused && toStatus!='stop'){
-        if (signalTired>toWorkTimer){
-          tomatoMsg[2].innerHTML=initialTitle;
-          for (var i in shinningSignal)
-            shinningSignal[i].color='#000000';
-        } else {
-          if (signalTired%2==0){
-            tomatoMsg[2].innerHTML='✔ * * * ✔';
-            for (var i in shinningSignal)
-              shinningSignal[i].color='#ffffff';
-          } else {
-            tomatoMsg[2].innerHTML='* RELAX *';
-            for (var i in shinningSignal)
-              shinningSignal[i].color='#000000';
-          }
-          if (signalTired==0 || signalTired==toWorkTimer)
-            killShadow(true);
-          signalTired++;
-          setTimeout('updateSignal()', 800);
-        }
-      } else {
-        signalTired=0;
-        tomatoMsg[2].innerHTML=initialTitle;
-        for (var i in shinningSignal)
-          shinningSignal[i].color='#000000';
-      }
-    }
-    function pauseTomato(){
-      if (toStatus=="stop") return;
-      ispaused=!ispaused
-      if (ispaused){
-        clearTimeout(timerEntity);
-        restWhenPaused=timerEnd-new Date().getTime();
-        updateMsg("暂停", -4);
-      } else {
-        setTimer();
-        timerEnd=new Date().getTime()+restWhenPaused;
-        updateMsg("番茄", -4);
-      }
-      updateButton();
-      updateSignal();
-    }
-    
+      
+
+    /*Basic Date and Weather updater*/
     var refreshRate=8*3600*1000;
     var hardwareLagRate=6.66;//+1s/6.66h
     var lastSyncTime;
@@ -441,7 +229,7 @@
     initDateFromServer();
     adjustAgainstHardwareTimeLag();//extra offset cycle
     initBrowserPage();
-    setTimeout("initClockWeather()", 1200);//if server not responsed in 1s, use local time instead
+    setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
     function adjustAgainstHardwareTimeLag(lag){
       if (lag==undefined||lag<hardwareLagRate*3600*1000) lag=hardwareLagRate*3600*1000;//add 1s offset every xxx hour
@@ -450,7 +238,7 @@
     }
     function initDateFromServer(){
       danmuRead('time', function s(a){averageTimeOffset.push(parseInt(a)-new Date().getTime());sumDateFromServer(true)});//oneTimeDateByBlive
-      setTimeout('if (!timeOffset) sumDateFromServer()', 600);//alternative
+      setTimeout('if (!timeOffset) sumDateFromServer()', 500);//alternative
     }
     function sumDateFromServer(calculate){
       if (calculate){
@@ -772,13 +560,227 @@
       } else
         document.getElementById('net').innerHTML='无网络连接';
     }
+
+
+    var toStatus, ispaused, weeklyTomato;
+    var timerEntity;
+    var signalTired=0;
+    var toWorkTimer=25*60;//Second
+    var timerEnd, restWhenPaused;
+    var toRestTimer=5*60
+    var expireTomato=30;//Day
+    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
+    var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
+    var shinningSignal=[document.getElementById('ato').style, document.getElementById('inform').style, document.getElementById('allDate').style];
+    prepareTomato();
+    //dumpTomato();gatherTomato(719);
+    function dumpTomato(){rottenTomato(-1);}
+    function gatherTomato(fakeTomatos){
+      if (!weeklyTomato.length) eatTomato();
+      if (fakeTomatos)
+        for (var i=0;i<fakeTomatos;i++)
+          weeklyTomato.push(-1);
+      else
+          weeklyTomato.push(Math.floor(new Date().getTime()/(24*3600*1000)));
+      canTomato();
+      showTomato("Gather");
+    }
+    function canTomato(){document.cookie = "tomato="+compressTomato()+";expires="+ new Date(0x7fffffff * 1e3).toUTCString();}
+    function compressTomato(){
+      var compressed="";
+      for (var i in weeklyTomato){
+        if (i!=0) compressed+='.';
+        compressed+=Math.floor(weeklyTomato[i]).toString(36);
+      }
+      return compressed;
+    }
+    function showTomato(source){
+      var _doc=document.getElementById('basket');
+      _doc.textContent="";
+      var f=[1,2,20,60,180];
+      var res=0;
+      var tomatos=weeklyTomato.length;
+      for (var i=f.length-1;i>=0&&tomatos!=0;i--){
+        res=Math.floor(tomatos/f[i]);
+        tomatos%=f[i];
+        for (var j=0;j<res;j++)
+          enchantTomato(_doc, ['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'][i]);
+      }
+      if (weeklyTomato.length!=0) _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
+      logTomato(source);
+    }
+    function enchantTomato(_doc, magicType){
+        var script=document.createElement('img');
+        script.setAttribute('class','tImg');
+        if (magicType) script.setAttribute('style',magicType);
+        _doc.appendChild(script);
+    }
+    function eatTomato(){
+      var offset=document.cookie.indexOf("tomato=");
+      var end = document.cookie.indexOf(";",offset);
+      if (offset!=-1){
+        offset+="tomato=".length
+        if (end==-1) end=document.cookie.length;
+        var content=document.cookie.substring(offset, end);
+        if (content){
+          weeklyTomato=Array();
+          content=content.split(".");
+          for(var i in content)
+            if (parseInt(content[i], 36))
+              weeklyTomato.push(parseInt(content[i], 36));
+        }
+        logTomato("Read");
+      }
+    }
+    function logTomato(source){
+      if (weeklyTomato.length==0)
+        console.log("Empty >ToMaMaTo< Store from "+source);
+      else
+        console.log("Len:"+weeklyTomato.length+" "+source+":"+weeklyTomato.slice(0,5));
+    }
+    function rottenTomato(expire){
+      var date=Math.floor(new Date().getTime()/(24*3600*1000))-(!expire?expireTomato:expire);
+      weeklyTomato.sort(function(a, b){return b-a;});
+      for (var i in weeklyTomato)
+        if (weeklyTomato[i]<date){
+          weeklyTomato=weeklyTomato.slice(0, i);
+          break;
+        }
+      canTomato();
+      setTimeout("rottenTomato()", expireTomato*24*3600*1000/3);
+      showTomato("Rotten");
+    }
+    function secondsUntilNow(future){
+      return Math.round((future-new Date().getTime())/1000);
+    }
+    function updateMsg(tom, sliceIndex){
+      if (tom){
+        if (sliceIndex) tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
+        if (tom.slice(-2)!=": ") tom+=": "
+        tomatoMsg[0].innerHTML=tom;
+      }
+      timerCount=secondsUntilNow(timerEnd);
+      timeString=""+frontZero(Math.floor(timerCount/60))+":"+frontZero(timerCount%60);
+      tomatoMsg[1].innerHTML=timeString;
+      tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
+    }
+    function fridgeTomato(){
+      prepareTomato();
+      tomatoMsg[0].innerHTML="MATO";
+      tomatoMsg[1].innerHTML="TOMA";
+      tomatoMsg[2].innerHTML=initialTitle;
+      killShadow();
+    }
+    function prepareTomato(){
+      //quit from tomato
+      preventDecreaseShadow=false;
+      lessDisturbUpdateWhenTomato=false;
+      toStatus='stop';//work,rest,stop
+      ispaused=false;
+      weeklyTomato=Array();
+      eatTomato();
+      clearTimeout(timerEntity);
+      updateButton();
+    }
+    function switchTomato(){
+      switch (toStatus){
+        case 'stop':
+          toStatus='work';
+          setTimer();
+          preventDecreaseShadow=true;
+          lessDisturbUpdateWhenTomato=true;
+          timerEnd=new Date().getTime()+toWorkTimer*1000;
+          rottenTomato();
+          updateMsg("番茄开始");
+          updateButton();
+          break;
+        case 'work':
+          toStatus='rest';
+          restWhenPaused=toRestTimer*1000;
+          timerEnd=new Date().getTime()+restWhenPaused;
+          clearTimeout(timerEntity);
+          updateMsg("番茄中场");
+          pauseTomato();
+          break;
+        case 'rest':
+          toStatus='work';
+          restWhenPaused=toWorkTimer*1000;
+          timerEnd=new Date().getTime()+restWhenPaused;
+          clearTimeout(timerEntity);
+          updateMsg("番茄工作");
+          pauseTomato();
+          break;
+      }
+    }
+    function setTimer(){
+      clearTimeout(timerEntity);
+      timerEntity=setTimeout('tomatoTimer()',1000);
+    }
+    function tomatoTimer(){
+      if (timerEnd<new Date().getTime()){
+        if (toStatus=='work')
+          gatherTomato();
+        switchTomato();
+      } else {
+        updateMsg();
+        setTimer();
+      }
+    }
+    function updateButton(){
+      buttonStyle[1].color=(ispaused)?'#303030':'#a9a9a9';
+      if (toStatus=='stop') buttonStyle[1].color='#000000';
+      buttonStyle[0].color=['#000000', '#303030', '#a9a9a9'][['stop', 'work', 'rest'].indexOf(toStatus)];
+    }
+    function updateSignal(){
+      if (ispaused && toStatus!='stop'){
+        if (signalTired>toWorkTimer){
+          tomatoMsg[2].innerHTML=initialTitle;
+          for (var i in shinningSignal)
+            shinningSignal[i].color='#000000';
+        } else {
+          if (signalTired%2==0){
+            tomatoMsg[2].innerHTML='✔ * * * ✔';
+            for (var i in shinningSignal)
+              shinningSignal[i].color='#ffffff';
+          } else {
+            tomatoMsg[2].innerHTML='* RELAX *';
+            for (var i in shinningSignal)
+              shinningSignal[i].color='#000000';
+          }
+          if (signalTired==0 || signalTired==toWorkTimer)
+            killShadow(true);
+          signalTired++;
+          setTimeout('updateSignal()', 800);
+        }
+      } else {
+        signalTired=0;
+        tomatoMsg[2].innerHTML=initialTitle;
+        for (var i in shinningSignal)
+          shinningSignal[i].color='#000000';
+      }
+    }
+    function pauseTomato(){
+      if (toStatus=="stop") return;
+      ispaused=!ispaused
+      if (ispaused){
+        clearTimeout(timerEntity);
+        restWhenPaused=timerEnd-new Date().getTime();
+        updateMsg("暂停", -4);
+      } else {
+        setTimer();
+        timerEnd=new Date().getTime()+restWhenPaused;
+        updateMsg("番茄", -4);
+      }
+      updateButton();
+      updateSignal();
+    }
     
   /*
     Note: you need set a Nginx server to proxy the GET method to the
           calendar server to download the .ics file. Add those lines
           to your Nginx config file to avoid CROS problem as the
-          request is directly from your browser which has banned the
-          act for some security reason.
+          request directly from your browser is banned for some
+          security reason.
           
     location /ics/ {
       proxy_redirect off;
@@ -794,7 +796,7 @@
         return 200;
       }
       access_log off;
-      proxy_pass https://XXX.com/pub/calendar/feeds/XXXXX/basic.ics;
+      proxy_pass https://XXX/pub/calendar/feeds/XXXXX/basic.ics;
     }
   */
     var tickList={};
@@ -849,7 +851,7 @@
       xmlhttp.send();
     }
     function readIcs(s){
-      s=s.split('\n');
+      s=s.replace(/\g/g,'').split('\n');
       var r=[];
       var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER', 'RRULE'];
       for (var i=0;i<s.length;i++){
@@ -864,10 +866,11 @@
           else if (line[0]==tag[1]){
             line[0]=tag[0]
             line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
+            r[r.length-1]['isDateOnly']=true;
           } else if (line[0]==tag[3]){
             for (var j=i+1;j<s.length&&s[j][0]==' ';j++)
               line[1]+=s[j].slice(1);
-            line[1]=line[1].replace(/\\n/g,'  ').replace(/\\/g,'');
+            line[1]=line[1].replace(/\\n/g,'  ').replace(/[\\\n]/g,'').trim();
           } else if (line[0]==tag[5]){
             r[r.length-1]['FREQ']='';
             line[1]=line[1].split(';');
@@ -891,8 +894,15 @@
       var func=[[function (d){return d>-14},
                  function (a,b){return b.DTSTART-a.DTSTART}],
                 [function (d, freq){return d>=(freq?-7:-14)&&d<=(freq?14:90)},
-                 function (a,b){var c=[a.DTSTART,b.DTSTART];for (var i in c) {c[i]-=getOffsetTime();if (c[i]<0) c[i]=-c[i]*2;}
-                                return c[0]-c[1];}]][sortNum];
+                 function (a,b){
+                    var c=[a.DTSTART,b.DTSTART];
+                    var d=[a, b];
+                    for (var i in c){
+                      c[i]-=getOffsetTime();
+                      c[i]*=(c[i]<0?-2:1)*(d[i].isDateOnly?3.5:1);
+                      }
+                    return c[0]-c[1];
+                 }]][sortNum];
       for (var i in r)
         if (r[i].DTSTART){
           var dD=dDay(r[i].DTSTART);
@@ -934,7 +944,7 @@
               td_divider=' style="border-top:3px dotted;"';
             } else
               td_divider='';
-            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION.slice(0,130)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
+            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+(l[i].SUMMARY.length>10&&l[i].DESCRIPTION?': ':'')+l[i].DESCRIPTION.slice(0,200-Math.min(10, l[i].SUMMARY.length)*6)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:xx-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
             s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
           }
@@ -957,7 +967,7 @@
               tr=tr[j].children[0].children;
               break;
             }
-          var baitHeight=1.65*tr[0].offsetHeight+tr[1].offsetHeight*i;
+          var baitHeight=1.62*tr[0].offsetHeight+tr[1].offsetHeight*i;
         }
         t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger">▌'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
       }
