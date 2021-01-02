@@ -31,11 +31,14 @@
       left: 0;
     }
     .app {
-      padding-top: 5.5rem;
-      height: 45rem;
-      width: 41rem;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      margin-left: -1.5rem;
+      height: 46rem;
+      width: 44rem;
       font-family: Arial,sans-serif;
       text-align: center;
+      overflow: hidden;
     }
     .rotate {
       transform:rotate(270deg);
@@ -47,10 +50,11 @@
     .tickList {
       position: absolute;
       font-size: .5rem;
-      left: -3.5rem;
+      left: -3rem;
       text-align: left;
       z-index: 2;
       white-space: pre-wrap;
+      overflow: hidden;
     }
     .tl_to {
       width:1.5rem;
@@ -64,11 +68,12 @@
       font-size:1.5rem;
       background: white;
     }
-    .tl_su {
+    .tl_sude {
       display: block;
       padding: 0;
+      word-break: break-all;
     }
-    .tl_de {
+    .tl_su {
       font-size: 1.5rem;
       padding: .16rem 0;
       float: left;
@@ -79,7 +84,7 @@
       position: absolute;
       font-size: 1rem;
       margin-top: 14rem;
-      margin-left: -4rem;
+      margin-left: 1rem;
       text-align: left;
       height: 15rem;
       width: 18rem;
@@ -107,7 +112,7 @@
     }
     .weath {
       margin-top: 1rem;
-      margin-left: -3rem;
+      margin-left: -2rem;
       width: 22.5rem;
       height: 2.8rem;
       display: block;
@@ -136,7 +141,7 @@
     }
     .reminder {
       display: none;
-      margin: -28rem 8.5rem; 
+      margin: -28rem 10rem; 
       padding: 1rem;
       max-height: 25.5rem;
       width: 22rem;
@@ -436,7 +441,7 @@
     initDateFromServer();
     adjustAgainstHardwareTimeLag();//extra offset cycle
     initBrowserPage();
-    setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
+    setTimeout("initClockWeather()", 1200);//if server not responsed in 1s, use local time instead
 
     function adjustAgainstHardwareTimeLag(lag){
       if (lag==undefined||lag<hardwareLagRate*3600*1000) lag=hardwareLagRate*3600*1000;//add 1s offset every xxx hour
@@ -445,7 +450,7 @@
     }
     function initDateFromServer(){
       danmuRead('time', function s(a){averageTimeOffset.push(parseInt(a)-new Date().getTime());sumDateFromServer(true)});//oneTimeDateByBlive
-      setTimeout('if (!averageTimeOffset.length) sumDateFromServer()', 500);//alternative
+      setTimeout('if (!timeOffset) sumDateFromServer()', 600);//alternative
     }
     function sumDateFromServer(calculate){
       if (calculate){
@@ -795,7 +800,7 @@
     var tickList={};
     var tickListStatus=0;
     var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
-    var tickListMaxLine=20;
+    var tickListMaxLine=21;
     var tickListReminderList={};
     function dDay(t){return dHour(t, 24);}
     function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
@@ -822,15 +827,11 @@
       var s='';
       var d=new Date();
       d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+15+1);
-      for (var i=0;i<14;i++)
+      for (var i=0;i<16;i++)
         s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:e\n'
-        +"BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),randInt(59, 0)])+'08Z'+'\nSUMMARY:Default\nDESCRIPTION:'+space(20,'','t')+'\nRRULE:FREQ=WEEKLY;INTERVAL=3\n';
+        +"BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),randInt(59, 0)])+'08Z'+'\nSUMMARY:Default\nDESCRIPTION: e'+space(5)+space(20,'','测试')+'\nRRULE:FREQ=WEEKLY;INTERVAL=3\n';
       readIcs(s);
       tickListStatus++;showIcs(true);
-    }
-    function addIcsReminderList(tick){
-      var tickId=Math.floor(tick.DTSTART/1000)+tick.SUMMARY.slice(0,20)+tick.DESCRIPTION.slice(0,40);
-      tickListReminderList[tickId]=tick;
     }
     function getIcs(){
       var url = "/ics/";
@@ -851,9 +852,9 @@
       s=s.split('\n');
       var r=[];
       var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER', 'RRULE'];
-      for (var i in s){
-        var line=s[i].split(':');
-        line=[line[0]?line[0].trim():'', line[1]?line[1].trim():''];
+      for (var i=0;i<s.length;i++){
+        var splitter=s[i].indexOf(':');
+        var line=[s[i].slice(0,splitter).trim(), s[i].slice(splitter+1).trim()];
         if (line[0]=='BEGIN'){
           if (line[1]=='VEVENT')
             r.push({});
@@ -863,6 +864,10 @@
           else if (line[0]==tag[1]){
             line[0]=tag[0]
             line[1]=Date.parse(line[1].slice(0,4)+'-'+line[1].slice(4,6)+'-'+line[1].slice(6,8)+'T08:00:00Z');
+          } else if (line[0]==tag[3]){
+            for (var j=i+1;j<s.length&&s[j][0]==' ';j++)
+              line[1]+=s[j].slice(1);
+            line[1]=line[1].replace(/\\n/g,'  ').replace(/\\/g,'');
           } else if (line[0]==tag[5]){
             r[r.length-1]['FREQ']='';
             line[1]=line[1].split(';');
@@ -915,9 +920,8 @@
         var limit=(tickListStatus%3==1)?tickListMaxLine:5;
         var s='<table><tr><td style="opacity:.3">'+dateString(0)+'<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
         var cross30;
-        var tickListKeys=Object.keys(tickList);
-        for (var j=0;j<tickListKeys.length;j++){
-          var l=tickList[tickListKeys[j]];
+        for (var j in tickList){
+          var l=tickList[j];
           for (var i in l){
             if (--limit<0) break;
             var dD=dDay(l[i].DTSTART);
@@ -930,9 +934,9 @@
               td_divider=' style="border-top:3px dotted;"';
             } else
               td_divider='';
-            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION.slice(0,80)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
+            var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+' '+l[i].DESCRIPTION.slice(0,130)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:xx-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
-            s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_su"><span class="tl_de"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
+            s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
           }
         }
         t.innerHTML=s+'</table>';
@@ -953,9 +957,9 @@
               tr=tr[j].children[0].children;
               break;
             }
-          var baitHeight=2*tr[0].offsetHeight+tr[1].offsetHeight*i;
+          var baitHeight=1.65*tr[0].offsetHeight+tr[1].offsetHeight*i;
         }
-        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger;">▌'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
+        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger">▌'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
       }
     }
     function stringLine(s){
@@ -965,20 +969,42 @@
       return ns;
     }
     function alarmIcs(tick){
-      addIcsReminderList(tick);
       var dH=dHour(tick.DTSTART);
       var d=dMs(tick.DTSTART);
       tickListAlarm='';
       remindIcs("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
       remindIcs("tickListAlarm=''", (dH+12)*3600*1000);
       if (d>=-3600*1000){
-        remindIcs('killShadow(true);displayReminder(true)', d-15*60*1000);
+        remindIcs(icsReminderHtmlString(tick)+';killShadow(true);displayReminder(true)', d-15*60*1000);
         remindIcs('killShadow(true)', d-1*60*1000);
       }
     }
+    function deleteReminder(tickId){
+      event.stopPropagation();
+      if (confirm('Job\'s done?')){
+        delete tickListReminderList[tickId];
+        var i=document.getElementById('tickR'+tickId);
+        var p=i.parentNode;
+        p.removeChild(i);
+        if (!p.hasChildNodes())
+          p.style.display='none';
+      }
+    }
+    function icsReminderHtmlString(tick){
+      var hash=(function(s) {
+          var hash = 0, i;
+          for (i = 0; i < s.length; i++) {
+            hash  = ((hash << 5) - hash) + s.charCodeAt(i);
+            hash |= 0; // Convert to 32bit integer
+          }
+          return hash;
+        })(tick.SUMMARY+tick.DESCRIPTION)+Math.floor(tick.DTSTART/1000);
+      var s='<span id="tickR'+hash+'" onclick="deleteReminder('+hash+')\">['+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'<br></span>';
+      return 'tickListReminderList['+hash+']=\''+s+'\'';
+    }
     function displayReminder(on){
       if (!on){
-        if (confirm('Close?')){
+        if (confirm('Clean all reminding tasks?')){
           tickListReminderList={};
           document.getElementById("reminder").style.display='none';
         }
@@ -987,7 +1013,8 @@
         l.sort(function (a,b){return a.DTSTART-b.DTSTART});
         var s='';
         for (var i in l)
-          s+=(s!=''?'<br>':'')+('['+(l[i].FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'')+dateString(l[i].DTSTART, 'Mdhm')+']<br>'+l[i].SUMMARY+'<br>'+l[i].DESCRIPTION);
+          s+=(s!=''?'<br>':'')+l[i];
+        s=s?s.slice(0,-11)+'</span>':'';
         document.getElementById('reminder').innerHTML=s;
         document.getElementById("reminder").style.display='block';
       }
@@ -1140,7 +1167,7 @@
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML=space(14, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1])+space(20, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+'<br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=space(13, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1])+space(21, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+(danmuTryToken>=3?'⁉':'')+'<br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
     if (!isDanmuLive&&f==undefined)
@@ -1167,13 +1194,13 @@
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuTryToken<2&&(danmuPop>1||danmuQueSize>5))?1000:danmuTryToken==0&&danmuPop==0?10*1000:60*1000);
+      setTimeout('danmuRead()', (danmuTryToken<3&&(danmuPop>1||danmuQueSize>5))?1000:danmuPop==0?10*1000:60*1000);
   }
   function danmuRoomStatCollect(n){
     if (n==undefined)
       n=0;
     danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
-    if (isDanmuLive) setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0||danmuTryToken>3)?240*1000:10*1000);
+    if (isDanmuLive) setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0||danmuTryToken>=3)?240*1000:10*1000);
   }
   function danmuIsLive(s){
     var stat=JSON.parse(s);

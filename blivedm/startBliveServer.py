@@ -4,7 +4,7 @@
 import asyncio
 import sys
 import blivedm
-from time import sleep, time
+from time import sleep, time, asctime
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -201,7 +201,7 @@ def clear_que(q, n):
         q.get_nowait()
 
 def main():
-    print('--- START ---')
+    print('--- START at '+asctime()+' ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
