@@ -85,16 +85,18 @@ def controlRoom(path):
             res='[CHECKING] blive process..'
             needExtra=False
         elif (cmd[0:5]=='call:'):
-            que.put_nowait(parse.unquote(ori_cmd[5:]))
-            print('[call] '+ori_cmd[5:])
+            cmd=ori_cmd
+            que.put_nowait(parse.unquote(cmd[5:]))
+            print('[call] '+cmd[5:])
             res='[CALLING]'
             needExtra=False
         elif (cmd[0:3]=='js:'):
+            cmd=parse.unquote(ori_cmd)
             new_room_id.value=-4
             info['pop']='9999'
-            que.put_nowait('[JS]'+ori_cmd[3:])
-            print('[js] '+ori_cmd[3:])
-            res='[JS-Executing]'+ori_cmd[3:]
+            que.put_nowait('[JS]'+cmd[3:])
+            print('[js] '+cmd[3:])
+            res='[JS-Executing]'+cmd[3:]
             needExtra=False
         elif (cmd[0:5]=='cros:'):
             res=crosAccess(parse.unquote(ori_cmd[5:]))

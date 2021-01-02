@@ -1133,7 +1133,7 @@
       s=s.split('<br>').filter(
         function (s){
           if ((s=s.trim()).slice(0,4)=='[JS]')
-            setTimeout('comment('+s.slice(4)+', true)', 0);
+            setTimeout('comment('+unescape(s.slice(4))+', true)', 0);
           else if (s.slice(0,10)=='[CAFFEINE]')
             return;
           return s;
@@ -1180,7 +1180,7 @@
       setTimeout('if (danmuPop==1) danmuOff("TIMEOUT")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML=space(13, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1])+space(21, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+(danmuTryToken>=3?'⁉':'')+'<br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=space(13, '人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1])+space(21, '房间'+(streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+(danmuTryToken>=3?' ⁉':'')+'<br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
     if (!isDanmuLive&&f==undefined)
