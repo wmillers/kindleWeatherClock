@@ -175,7 +175,7 @@
     function comment(s, isJam){
       var basket=document.getElementById('basket');
       var lag=30*60*1000;
-      s=String(s);
+      s=s==undefined?'und':String(s);
       setTimeout("clearComment()", lag+1000);
       if (basket.innerHTML.length==0||isJam)
         basket.innerHTML=s;
@@ -467,8 +467,7 @@
             userInput='help.'+userInput;
           else if (help.func.indexOf(userInput)!=-1)
             userInput+='()';
-          var s=eval(userInput);
-          comment(s==undefined?'u':s);
+          comment(eval(userInput));
         } catch (e){
           comment(e);
         }
@@ -562,6 +561,7 @@
     }
 
 
+    /*Tomato Timer*/
     var toStatus, ispaused, weeklyTomato;
     var timerEntity;
     var signalTired=0;
@@ -851,7 +851,7 @@
       xmlhttp.send();
     }
     function readIcs(s){
-      s=s.replace(/\g/g,'').split('\n');
+      s=s.replace(/\r/g,'').split('\n');
       var r=[];
       var tag=['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER', 'RRULE'];
       for (var i=0;i<s.length;i++){
@@ -870,7 +870,9 @@
           } else if (line[0]==tag[3]){
             for (var j=i+1;j<s.length&&s[j][0]==' ';j++)
               line[1]+=s[j].slice(1);
-            line[1]=line[1].replace(/\\n/g,'  ').replace(/[\\\n]/g,'').trim();
+            line[1]=line[1].replace(/\\n|\\|\n/g,'').trim();
+            if (line[1].slice(0,2)=='- '&&line[1].indexOf(' - ')!=-1)
+              line[1]=line[1].slice(2).replace(/ - /g,' | ');
           } else if (line[0]==tag[5]){
             r[r.length-1]['FREQ']='';
             line[1]=line[1].split(';');
@@ -879,7 +881,7 @@
               if (line[1][j][0]=='FREQ')
                 r[r.length-1]['FREQ']+='年月周日'[['ANNUALLY','MONTHLY','WEEKLY','DAILY'].indexOf(line[1][j][1])];
               else if (line[1][j][0]=='INTERVAL')
-                r[r.length-1]['FREQ']='零一二三四五六七八九'[parseInt(line[1][j][1])]+r[r.length-1]['FREQ'];
+                r[r.length-1]['FREQ']=(line[1][j][1]>9?line[1][j][1]:'零一二三四五六七八九'[parseInt(line[1][j][1])])+r[r.length-1]['FREQ'];
             }
             continue;
           }
@@ -1057,7 +1059,7 @@
   var streamer=[['pi', 'nc', 'dd', 'kf'],
                 [92613,12962,16548,22259479],
                 ['Zzz','Zzz','Zzz','Zzz']];
-  var danmuControl=['history','bye', 'kick', 'info', 'call[:]', 'cros[.up]', 'js[:]'];
+  var danmuControl=['history', 'bye', 'kick', 'info', 'call[:]', 'cros[.up]', 'js[:]'];
   var danmuRoomId='';
   var danmuQueSize=0;
   var danmuSuperChat='';

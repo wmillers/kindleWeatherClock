@@ -80,10 +80,6 @@ def controlRoom(path):
                 info['super_chat']=[]
             res=json.dumps(info)
             needExtra=False
-        elif (cmd=='blive'):
-            new_room_id.value=-3
-            res='[CHECKING] blive process..'
-            needExtra=False
         elif (cmd[0:5]=='call:'):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
@@ -92,7 +88,7 @@ def controlRoom(path):
             needExtra=False
         elif (cmd[0:3]=='js:'):
             cmd=parse.unquote(ori_cmd)
-            new_room_id.value=-4
+            new_room_id.value=-3
             info['pop']='9999'
             que.put_nowait('[JS]'+cmd[3:])
             print('[js] '+cmd[3:])
@@ -245,10 +241,6 @@ def main():
                         c.join()
                     room_id=0
                 if (new_room_id.value==-3):
-                    print(str(c))
-                    que.put_nowait(str(c))
-                if (new_room_id.value==-4):
-                    print('[caffeine] change room to stop awake')
                     status_code.value=4
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
