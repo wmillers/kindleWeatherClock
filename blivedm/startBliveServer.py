@@ -63,7 +63,7 @@ def controlRoom(path):
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res=cmd+': '+parse.quote('<br>'.join(history))
+            res=cmd+': '+'<br>'.join(history)
         elif (cmd=='bye'):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
