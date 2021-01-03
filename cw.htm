@@ -872,7 +872,7 @@
               line[1]+=s[j].slice(1);
             line[1]=line[1].replace(/\\n|\\|\n/g,'').trim();
             if (line[1].slice(0,2)=='- '&&line[1].indexOf(' - ')!=-1)
-              line[1]=line[1].slice(2).replace(/ - /g,' | ');
+              line[1]=line[1].slice(2).replace(/ - /g,' / ');
           } else if (line[0]==tag[5]){
             r[r.length-1]['FREQ']='';
             line[1]=line[1].split(';');
@@ -881,7 +881,7 @@
               if (line[1][j][0]=='FREQ')
                 r[r.length-1]['FREQ']+='年月周日'[['ANNUALLY','MONTHLY','WEEKLY','DAILY'].indexOf(line[1][j][1])];
               else if (line[1][j][0]=='INTERVAL')
-                r[r.length-1]['FREQ']=(line[1][j][1]>9?line[1][j][1]:'零一二三四五六七八九'[parseInt(line[1][j][1])])+r[r.length-1]['FREQ'];
+                r[r.length-1]['FREQ']=(line[1][j][1]<=9?'零一二三四五六七八九'[parseInt(line[1][j][1])]:line[1][j][1])+r[r.length-1]['FREQ'];
             }
             continue;
           }
@@ -971,7 +971,7 @@
             }
           var baitHeight=1.62*tr[0].offsetHeight+tr[1].offsetHeight*i;
         }
-        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger">▌'+stringLine('+'+dH+'H')+'</div>'+t.innerHTML;
+        t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger">▌'+stringLine('+'+(dH-5)+'H')+'</div>'+t.innerHTML;
       }
     }
     function stringLine(s){
