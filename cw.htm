@@ -158,7 +158,8 @@
 <body>
   <div class="cleaner" id="cleaner"></div>
 	<div class="app"><div class="rotate">
-    <div class='tickList' id='tickList' onclick="showIcs()"><img class="tImg" style="padding:1rem"></div><div style='height:6rem;'></div>
+    <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
+    <div style='height:6rem;'></div>
     <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
@@ -334,8 +335,7 @@
       }
     }
     function deleteTaskOnPageChange(tId){
-      if (tId)
-        delete cmdList[i];
+      if (tId) delete cmdList[tId];
     }
     function refreshTaskOnPageChange(){
       for (var i in cmdList)
@@ -926,17 +926,20 @@
     }
     function showIcs(keep){
       var t=document.getElementById('tickList');
-      t.innerHTML='';
+      var tickTable=t.getElementsByTagName('table')[0];
+      var tickImg=document.getElementById('tickImg');
+      tickTable.innerHTML='';
       if (!keep) tickListStatus++;
       if (!keep&&tickListStatus%6==1){
-        t.innerHTML=tickListStatus;
+        tickTable.innerHTML=tickListStatus;
         getIcs();
       } else if (tickListStatus%3==0){
         deleteTaskOnPageChange(tickListFloatIndex);
-        t.innerHTML='<img class="tImg" style="padding:1rem">';
+        t.innerHTML='<div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table>';
       } else {
+        if (tickImg) t.removeChild(tickImg);
         var limit=(tickListStatus%3==1)?tickListMaxLine:5;
-        var s='<table><tr><td style="opacity:.3">'+dateString(0)+'<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
+        var s='<tr><td style="opacity:.3">'+dateString(0)+'<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
         var cross30;
         for (var j in tickList){
           var l=tickList[j];
@@ -957,7 +960,7 @@
             s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
           }
         }
-        t.innerHTML=s+'</table>';
+        tickTable.innerHTML=s;
         updateIcsFloatBar();
         if (tickListFloatIndex==0)
           tickListFloatIndex=addTaskOnPageChange('updateIcsFloatBar()', 2.5*3600*1000);//2.5*2=5<6<2.5*3=7.5
@@ -967,27 +970,25 @@
     }
     function updateIcsFloatBar(){
       var dH=0;
-      var t=document.getElementById('tickList');
-      if (tickList.important.length>0){
+      var t=document.getElementById('tickList').children[0];
+      var ti=tickList.important.slice(0,5);
+      if (ti.length>0){
         var height=1.59;
-        for (var i=0;i<5&&i<tickList.important.length-1;i++)
-          if (dHour(tickList.important[i].DTSTART)>=0)
+        for (var i=0;i<ti.length-1;i++)
+          if (dHour(ti[i].DTSTART)>=0)
             break;
-          else if (dHour(tickList.important[i+1].DTSTART)>=0){
-            dH=dHour(tickList.important[i+1].DTSTART);
-            i+=(-dMs(tickList.important[i].DTSTART))/(tickList.important[i+1].DTSTART-tickList.important[i].DTSTART);
-            break;
-          }
-        var tr=document.getElementById('tickList').children;
-        for (var j in tr)
-          if (tr[j].tagName=='TABLE'){
-            tr=tr[j].children[0].children;
+          else if (dHour(ti[i+1].DTSTART)>=0){
+            dH=dHour(ti[i+1].DTSTART);
+            i+=(-dMs(ti[i].DTSTART))/(ti[i+1].DTSTART-ti[i].DTSTART);
             break;
           }
-        var baitHeight=1.62*tr[0].offsetHeight+tr[1].offsetHeight*i;
+        var tr=document.getElementById('tickList').getElementsByTagName('table')[0].children[0].children;
+        var baitHeight=1.62*tr[0].offsetHeight+(tr[1].offsetHeight+1)*i;
       }
-      t.innerHTML='<div style="margin-top:'+baitHeight+'px;float:left;font-size:larger">▌'+stringLine('~'+dH+'H')+'</div>'+t.innerHTML;
-    
+      t.style.margin=baitHeight+"px 4.5rem";
+      t.style.position="absolute";//font-size:larger';
+      t.innerHTML='▌'+(dH?stringLine('~'+dH+'H'):'↓');
+      return i;
     }
     function stringLine(s){
       var ns='';
@@ -1026,7 +1027,7 @@
           }
           return hash;
         })(tick.SUMMARY+tick.DESCRIPTION)+Math.floor(tick.DTSTART/1000);
-      var s='<span id="tickR'+hash+'" onclick="deleteReminder('+hash+')\">['+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'</span>';
+      var s='<span style="display:block" id="tickR'+hash+'" onclick="deleteReminder('+hash+')\">['+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+dateString(tick.DTSTART, 'Mdhm')+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'</span>';
       return 'tickListReminderList['+hash+']=\''+s+'\'';
     }
     function displayReminder(on){
