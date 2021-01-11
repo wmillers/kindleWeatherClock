@@ -986,7 +986,7 @@
       }
       t.style.margin=baitHeight+"px 4.5rem";
       t.style.position="absolute";//font-size:larger';
-      t.innerHTML='▌'+(dH?stringLine(dH+'H'):'↓');
+      t.innerHTML='▌'+(dH?dH>24?stringLine(Math.floor(dH/48)+'D'):stringLine(dH+'H'):'↓');
       return i;
     }
     function stringLine(s){
@@ -1027,7 +1027,7 @@
           return hash;
         })(tick.SUMMARY+tick.DESCRIPTION)+Math.floor(tick.DTSTART/1000);
       var dH=dHour(tick.DTSTART);
-      var s='<span style="display:block" id="'+hash+'" onclick="deleteReminder(this)\">'+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+'['+dateString(tick.DTSTART, 'Mdhm')+'+0]<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'</span>';
+      var s='<span style="display:block" id="'+hash+'" onclick="deleteReminder("'+hash+'")\">'+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+'['+dateString(tick.DTSTART, 'Mdhm')+'+0]<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'</span>';
       return 'tickListReminderList['+hash+']=\''+s+'\'';
     }
     function updateIcsReminderDhour(){
@@ -1262,11 +1262,11 @@
         if (!i)
           danmuWrite('---Watching---', true);
         danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+space(10, streamer[2][i]), streamer[2][i]!='');
-        if (danmuOrderId!=-1)
-          if (streamer[2][danmuOrderId]){
-            danmuOn(streamer[1][danmuOrderId]);
-            killShadow();
-          }
+        if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
+          danmuOrderId=-1;
+          danmuOn(streamer[1][danmuOrderId]);
+          killShadow();
+        }
       }
     }
   }
