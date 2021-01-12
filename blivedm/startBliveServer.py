@@ -73,6 +73,8 @@ def controlRoom(path):
             needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
+            if (status_code.value==0 and que.qsize()<5):
+                status_code.value=0
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
             if (info['room_id']!=last_room_id.value):
