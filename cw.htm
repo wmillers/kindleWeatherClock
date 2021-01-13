@@ -157,7 +157,7 @@
 </head>
 <body>
   <div class="cleaner" id="cleaner"></div>
-	<div class="app"><div class="rotate">
+  <div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
     <div style='height:6rem;'></div>
     <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
@@ -1080,13 +1080,12 @@
     }
   */
   var danmuStyle=document.getElementById('danmu_frame').style;
-  var dInfoStyle=document.getElementById('danmu_info').style;
   var danmu=document.getElementById('danmu');
   var danmuReadCount=0;
   var isDanmuLive=0;
   var danmuStart=0;
   var streamer=[['pi', 'nc', 'dd', 'kf'],
-                [92613,12962,16548,22259479],
+                [92613,1220,16548,22259479],
                 []];
   var danmuControl=['history', 'bye', 'kick', 'info', 'call[:]', 'c[.up]', 'js[:]'];
   var danmuRoomId='';
@@ -1121,9 +1120,7 @@
     danmuStart=getOffsetTime();
     danmuTryToken=0;
     streamer[2]=['','','',''];
-    dInfoStyle.background='white';
-    danmu.style.background='white';
-    danmu.style.padding='.15rem 0';
+    danmuStyle.background='white';
     danmuStyle.opacity=1;
     danmuStyle.marginTop='7rem';
     danmuStyle.marginLeft='-4rem';
@@ -1155,8 +1152,7 @@
     clearTimeout(danmuRoomStatIndex);
     danmuInfoUpdateIndex=0;
     setTimeout('danmuClear()', 10*60*1000);
-    dInfoStyle.background='';
-    danmu.style.background='';
+    danmuStyle.background='';
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='15rem';
@@ -1215,7 +1211,7 @@
       setTimeout('if (danmuPop==1) danmuOff("Streamer sleeping")', 10*60*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">房间'+space(20, (streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+'</span><br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">房间'+space(24, (streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+' </span><br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
     if (!isDanmuLive&&f==undefined)
@@ -1230,7 +1226,8 @@
     xmlhttp.onreadystatechange = function(){
       if (xmlhttp.readyState == 4){
         if(xmlhttp.status == 200){
-          danmuTryToken=0;
+          if (xmlhttp.responseText.indexOf('[EXCEP]')==-1)
+            danmuTryToken=0;
           if (f==undefined)
             danmuShow(xmlhttp.responseText);
           else
@@ -1249,24 +1246,25 @@
     if (n==undefined)
       n=0;
     clearTimeout(danmuRoomStatIndex);
-    danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
-    if (isDanmuLive) danmuRoomStatIndex=setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0||danmuTryToken>=3)?240*1000:10*1000);
+    if (isDanmuLive){
+      danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
+      danmuRoomStatIndex=setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0||danmuTryToken>=3)?240*1000:10*1000);
+    }
   }
   function danmuIsLive(s){
     var stat=JSON.parse(s);
     if (stat.code==0){
-      var i=streamer[1].indexOf(stat.data.room_id);
+      var i=streamer[1].indexOf(stat.data.short_id);
+      if (i==-1)
+        i=streamer[1].indexOf(stat.data.room_id);
       if (stat.data.live_time>0)
         streamer[2][i]=Math.floor((getOffsetTime(0,true)-stat.data.live_time*1000)/1000/60)+'m';
-      if (isDanmuLive){
-        if (!i)
-          danmuWrite('---Watching---', true);
-        danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+space(10, streamer[2][i]), streamer[2][i]!='');
-        if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
-          danmuOn(streamer[1][danmuOrderId]);
-          killShadow();
-          danmuOrderId=-1;
-        }
+      if (isDanmuLive==2||!danmuRoomId||i!=streamer[1].indexOf(danmuRoomId))
+        danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+streamer[2][i]+(!i?' ---':''), streamer[2][i]!='');
+      if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
+        danmuOn(streamer[1][danmuOrderId]);
+        killShadow();
+        danmuOrderId=-1;
       }
     }
   }
