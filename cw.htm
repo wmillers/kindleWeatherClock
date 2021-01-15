@@ -200,12 +200,6 @@
       if (new Date().getTime()<clearCommentTime) return;
       document.getElementById('basket').innerHTML='';
     }
-    if (!testStatus)
-      window.onbeforeunload = function(e){
-        var dialogText = '#preventReload';
-        e.returnValue = dialogText;
-        return dialogText;
-      };
       
 
     /*Basic Date and Weather updater*/
@@ -1075,9 +1069,41 @@
       proxy_http_version 1.1;
       proxy_set_header Upgrade $http_upgrade;
       proxy_set_header Connection $http_connection;
+      add_header Access-Control-Allow-Origin *;
+      add_header Access-Control-Allow-Headers X-Requested-With;
+      add_header Access-Control-Allow-Methods GET,POST,OPTIONS;
       access_log off;
       proxy_pass http://localhost:8099;
     }
+
+# USED IN TAMPERMONKEY for auto-change room-id
+// ==UserScript==
+// @name         DANMU_ROOM
+// @match        *://live.bilibili.com/*
+// ==/UserScript==
+
+(function() {
+    'use strict';
+    var r=window.location.pathname.replace(/\//g,'');
+    danmuRead(r, document.title);
+    title('GOTO'+r);
+})();
+function title(s){document.title=s;}
+function danmuRead(roomId, oldT){
+    var url = "https://debian10/blive/?"+roomId;
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function(){
+        if (xmlhttp.readyState == 4){
+            if(xmlhttp.status == 200){
+                title('√ '+oldT);
+                xmlhttp = null;
+            } else
+                title('[ERR]'+xmlhttp.status);
+        }
+    }
+    xmlhttp.open('GET', url);
+    xmlhttp.send();
+}
   */
   var danmuStyle=document.getElementById('danmu_frame').style;
   var danmu=document.getElementById('danmu');
@@ -1113,14 +1139,15 @@
     else {
       var up=prompt('Current: '+danmuRoomId+'\nStreamer:\n'+streamer[0]+'\nControl:\n'+danmuControl);
       if (up!=null)
-        danmuOn(streamer[0].indexOf(up)!=-1?streamer[1][streamer[0].indexOf(up)]:up);
+        danmuOn(up);
     }
   }
   function danmuOn(roomId){
+    if (streamer[0].indexOf(roomId)!=-1)
+      roomId=streamer[1][streamer[0].indexOf(roomId)];
     danmuStart=getOffsetTime();
     danmuTryToken=0;
     streamer[2]=['','','',''];
-    danmuStyle.background='white';
     danmuStyle.opacity=1;
     danmuStyle.marginTop='7rem';
     danmuStyle.marginLeft='-4rem';
@@ -1131,10 +1158,12 @@
       case 'c:':
         danmuOrderId=streamer[0].indexOf(roomId.split('.')[1]);
       case 'c':
+        danmu.style.background='white';
         isDanmuLive=2;
         danmuInfo('ᗯατcᏥ');
         break;
       default:
+        danmuStyle.background='white';
         isDanmuLive=1;
         danmuInfo('  oи');
         danmuRead(roomId);
@@ -1153,6 +1182,7 @@
     danmuInfoUpdateIndex=0;
     setTimeout('danmuClear()', 10*60*1000);
     danmuStyle.background='';
+    danmu.style.background='';
     danmuStyle.marginTop='14rem';
     danmuStyle.marginLeft='-4rem';
     danmuStyle.height='15rem';
@@ -1163,23 +1193,30 @@
   function danmuShow(s){
     if (!s)
       return;
-    s=s.split('<br>').filter(function (s){
-        if ((s=s.trim()).slice(0,4)=='[JS]')
-          setTimeout('comment('+unescape(s.slice(4))+', true)', 0);
-        else if (s.slice(0,10)=='[CAFFEINE]')
-          return;
-        return s;
-      }).join("<br>");
+    var sn=s.split('<br>');
+    var s=[];
+    for (var i in sn){
+        if ((sn[i]=sn[i].trim()).slice(0,4)=='[JS]')
+          setTimeout('comment('+unescape(sn[i].slice(4))+', true)', 0);
+        if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
+          sn[i]=danmuReverse(sn[i]);
+        if (sn[i].indexOf('[CAFFEINE]')!=0)
+          s.push(sn[i]);
+    }
+    s=s.join("<br>");
     if (danmuOrderId==-1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
-      danmuOff(s.trim().slice(0,danmuMax/5))
-    else if (s)
+      danmuOff(s.slice(0,danmuMax/5))
+    if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
       danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' oи '+(danmuPop==9999?'☕':''));
   }
-  function danmuWrite(s, isBold){
-    if (isBold)
-      s='<b>'+s+'</b>';
+  function danmuBold(s){return '<b>'+s+'</b>';}
+  function danmuReverse(s){return '<span style="margin-left:2rem">'+s+'</span>';}
+  function danmuRWrite(s){danmuWrite(s, false, true);}
+  function danmuWrite(s, isBold, isReverse){
+    if (isBold) s=danmuBold(s);
+    if (isReverse) s=danmuReverse(s);
     var buffer=danmu.innerHTML.slice(0, danmuMax);
     danmu.innerHTML=s+(buffer?'<br>':'')+buffer;
   }
@@ -1234,7 +1271,7 @@
             f(xmlhttp.responseText);
           xmlhttp = null;
         } else if (isDanmuLive&&xmlhttp.status>=400&&xmlhttp.status<600)
-          danmuWrite('[local] server return: '+xmlhttp.status+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600);
+          danmuRWrite('[local] server return: '+xmlhttp.status+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600);
       }
     }
     xmlhttp.open('GET', url);
@@ -1260,7 +1297,7 @@
       if (stat.data.live_time>0)
         streamer[2][i]=Math.floor((getOffsetTime(0,true)-stat.data.live_time*1000)/1000/60)+'m';
       if (isDanmuLive==2||!danmuRoomId||i!=streamer[1].indexOf(danmuRoomId))
-        danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+streamer[2][i]+(!i?' ---':''), streamer[2][i]!='');
+        danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+streamer[2][i]+(!i?' ---':''), streamer[2][i]!='', true);
       if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
         danmuOn(streamer[1][danmuOrderId]);
         killShadow();
