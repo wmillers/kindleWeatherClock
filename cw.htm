@@ -448,13 +448,14 @@
         clearInterval(testInterval);
       update();
     }
+    function f5(){location.replace(location);}
     function loop(){
       test(true, 3);
       setInterval('timeOffset+=57*1000;update()', 50);
     }
     function correctPrompt(){
       var help={vari: ['who', 'credit', 'help'],
-                func: ['how', 'wipe', 'test', 'loop', 'testIcs', 't'],
+                func: ['how', 'wipe', 'test', 'loop', 'testIcs', 'f5'],
                 who: navigator.userAgent,
                 credit: JSON.stringify(info).replace(/"/g,'')};
       [].push.apply(help.help=help.func, help.vari); 
@@ -1134,12 +1135,17 @@ function danmuRead(roomId, oldT){
     return s;
   }
   function danmuSwitch(){
-    if (isDanmuLive==1)
-      danmuOff('+'+danmuReadCount);
-    else {
-      var up=prompt('Current: '+danmuRoomId+'\nStreamer:\n'+streamer[0]+'\nControl:\n'+danmuControl);
-      if (up!=null)
-        danmuOn(up);
+    switch (isDanmuLive){
+      case 0:
+        danmuOn('');
+        break;
+      default:
+        if (danmuPop<=1){
+          var up=prompt('Current: '+danmuRoomId+'\nStreamer:\n'+streamer[0]+'\nControl:\n'+danmuControl);
+          if (up!=null)
+            danmuOn(up);
+        } else
+          danmuOff('+'+danmuReadCount);
     }
   }
   function danmuOn(roomId){
@@ -1149,9 +1155,7 @@ function danmuRead(roomId, oldT){
     danmuTryToken=0;
     streamer[2]=['','','',''];
     danmuStyle.opacity=1;
-    danmuStyle.marginTop='7rem';
-    danmuStyle.marginLeft='-4rem';
-    danmuStyle.height='25rem';
+    danmuAlter(false);
     roomId=String(roomId);
     switch (roomId.slice(0,2)){
       case 'c.':
@@ -1172,6 +1176,17 @@ function danmuRead(roomId, oldT){
     }
     danmuRoomStatCollect();
   }
+  function danmuAlter(isLess){
+    if (isLess){
+      danmuStyle.marginTop='14rem';
+      danmuStyle.marginLeft='-4rem';
+      danmuStyle.height='15rem';
+    } else {
+      danmuStyle.marginTop='7rem';
+      danmuStyle.marginLeft='-4rem';
+      danmuStyle.height='25rem';
+    }
+  }
   function danmuOff(s){
     if (!isDanmuLive)
       return;
@@ -1180,12 +1195,10 @@ function danmuRead(roomId, oldT){
     clearInterval(danmuInfoUpdateIndex);
     clearTimeout(danmuRoomStatIndex);
     danmuInfoUpdateIndex=0;
-    setTimeout('danmuClear()', 10*60*1000);
+    setTimeout('if (danmuPop==1) danmuClear()', 10*60*1000);
     danmuStyle.background='';
     danmu.style.background='';
-    danmuStyle.marginTop='14rem';
-    danmuStyle.marginLeft='-4rem';
-    danmuStyle.height='15rem';
+    danmuAlter(true);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-<br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
     danmuInfo('◯ OFF');
     danmuPop=0;
@@ -1200,12 +1213,12 @@ function danmuRead(roomId, oldT){
           setTimeout('comment('+unescape(sn[i].slice(4))+', true)', 0);
         if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
           sn[i]=danmuReverse(sn[i]);
-        if (sn[i].indexOf('[CAFFEINE]')!=0)
+        if (sn[i].indexOf('[CAFFEINE]')==-1)
           s.push(sn[i]);
     }
     s=s.join("<br>");
     if (danmuOrderId==-1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
-      danmuOff(s.slice(0,danmuMax/5))
+      danmuPop=1;
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
@@ -1239,13 +1252,21 @@ function danmuRead(roomId, oldT){
     var p=parseInt(info.pop);
     if (danmuPop==0&&p>1)
       reduceShadow();
+    if (danmuPop>1&&p==1){
+      danmu.style.background='white';
+      danmuStyle.background='';
+      danmuAlter(true);
+    }
+    if (danmuPop==1&&p>1){
+      danmu.style.background='';
+      danmuStyle.background='white';
+      danmuAlter(false);
+    }
     if (!(danmuPop==0&&p==1)){
       danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;
     }
     danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи');
-    if (danmuPop==1)
-      setTimeout('if (danmuPop==1) danmuOff("Streamer sleeping")', 10*60*1000);
   }
   function danmuInfo(status){
     document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">房间'+space(24, (streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+' </span><br>'+danmuSuperChat;
