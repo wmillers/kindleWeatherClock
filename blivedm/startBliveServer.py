@@ -69,6 +69,7 @@ def controlRoom(path):
             res='[DEACTIVATE] client request turn off'
         elif (cmd=='kick'):
             new_room_id.value=-2
+            info['pop']='1'
             res='[SLEEP] & [KCIK] OK'
             needExtra=False
         elif (cmd=='info'):
@@ -237,10 +238,9 @@ def main():
                     break
                 if (new_room_id.value==-2):
                     print('[kick&kill] but no new room')
-                    if (room_id!=0):
-                        status_code.value=3
-                        c.terminate()
-                        c.join()
+                    status_code.value=3
+                    c.terminate()
+                    c.join()
                     room_id=0
                 if (new_room_id.value==-3):
                     status_code.value=4

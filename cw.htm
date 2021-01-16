@@ -1082,29 +1082,24 @@
 // @name         DANMU_ROOM
 // @match        *://live.bilibili.com/*
 // ==/UserScript==
-
 (function() {
     'use strict';
-    var r=window.location.pathname.replace(/\//g,'');
-    danmuRead(r, document.title);
-    title('GOTO'+r);
-})();
-function title(s){document.title=s;}
-function danmuRead(roomId, oldT){
-    var url = "https://debian10/blive/?"+roomId;
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function(){
-        if (xmlhttp.readyState == 4){
-            if(xmlhttp.status == 200){
-                title('√ '+oldT);
-                xmlhttp = null;
-            } else
-                title('[ERR]'+xmlhttp.status);
+    function danmuRead(i, t){
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4){
+                if(xmlhttp.status == 200){
+                    document.title='√ '+t;
+                    xmlhttp = null;
+                } else
+                    document.title='[ERR]'+xmlhttp.status;
+            }
         }
+        xmlhttp.open('GET', "https://debian10/blive/?"+i);
+        xmlhttp.send();
     }
-    xmlhttp.open('GET', url);
-    xmlhttp.send();
-}
+    danmuRead(window.location.pathname.replace(/\//g,''), document.title);
+})();
   */
   var danmuStyle=document.getElementById('danmu_frame').style;
   var danmu=document.getElementById('danmu');
@@ -1116,7 +1111,6 @@ function danmuRead(roomId, oldT){
                 []];
   var danmuControl=['history', 'bye', 'kick', 'info', 'call[:]', 'c[.up]', 'js[:]'];
   var danmuRoomId='';
-  var danmuQueSize=0;
   var danmuSuperChat='';
   var danmuPop=0;
   var danmuPopTrends=0;
@@ -1162,26 +1156,27 @@ function danmuRead(roomId, oldT){
       case 'c:':
         danmuOrderId=streamer[0].indexOf(roomId.split('.')[1]);
       case 'c':
-        danmu.style.background='white';
         isDanmuLive=2;
         danmuInfo('ᗯατcᏥ');
         break;
       default:
-        danmuStyle.background='white';
         isDanmuLive=1;
         danmuInfo('  oи');
         danmuRead(roomId);
         setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
-        danmuInfoUpdateIndex=setInterval('danmuRead("info", danmuInfoUpdate)', 29*1000);
     }
     danmuRoomStatCollect();
   }
-  function danmuAlter(isLess){
-    if (isLess){
+  function danmuAlter(beLess){
+    if (beLess){
+      danmu.style.background='white';
+      danmuStyle.background='';
       danmuStyle.marginTop='14rem';
       danmuStyle.marginLeft='-4rem';
       danmuStyle.height='15rem';
     } else {
+      danmu.style.background='';
+      danmuStyle.background='white';
       danmuStyle.marginTop='7rem';
       danmuStyle.marginLeft='-4rem';
       danmuStyle.height='25rem';
@@ -1196,8 +1191,6 @@ function danmuRead(roomId, oldT){
     clearTimeout(danmuRoomStatIndex);
     danmuInfoUpdateIndex=0;
     setTimeout('if (danmuPop==1) danmuClear()', 10*60*1000);
-    danmuStyle.background='';
-    danmu.style.background='';
     danmuAlter(true);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-<br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
     danmuInfo('◯ OFF');
@@ -1208,17 +1201,21 @@ function danmuRead(roomId, oldT){
       return;
     var sn=s.split('<br>');
     var s=[];
+    if (danmuPop==1&&sn.length>5)
+      danmuPop=2;
     for (var i in sn){
         if ((sn[i]=sn[i].trim()).slice(0,4)=='[JS]')
           setTimeout('comment('+unescape(sn[i].slice(4))+', true)', 0);
         if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
           sn[i]=danmuReverse(sn[i]);
-        if (sn[i].indexOf('[CAFFEINE]')==-1)
+        if (sn[i]&&sn[i].indexOf('[CAFFEINE]')==-1)
           s.push(sn[i]);
     }
     s=s.join("<br>");
-    if (danmuOrderId==-1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
+    if (danmuPop!=1&&danmuOrderId==-1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1){
       danmuPop=1;
+      danmuAlter(true);
+    }
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
@@ -1242,34 +1239,33 @@ function danmuRead(roomId, oldT){
           danmuSuperChat+='<b>￥'+l[i][1]+'</b><small>[+'+l[i][0]+'分]</small> '+l[i][2]+'<br>';
       }
   }
-  function danmuInfoUpdate(s, manually){
-    if (!manually&&danmuInfoUpdateIndex==0)
-      return;
-    var info=JSON.parse(s);
-    danmuRoomId=info.room_id;
-    danmuQueSize=parseInt(info.que_size);
-    danmuSC(info.super_chat);
-    var p=parseInt(info.pop);
-    if (danmuPop==0&&p>1)
-      reduceShadow();
-    if (danmuPop>1&&p==1){
-      danmu.style.background='white';
-      danmuStyle.background='';
-      danmuAlter(true);
+  function danmuInfoUpdate(s){
+    clearTimeout(danmuInfoUpdateIndex);
+    if (s){
+      var info=JSON.parse(s);
+      danmuRoomId=info.room_id;
+      var q=parseInt(info.que_size);
+      danmuSC(info.super_chat);
+      var p=parseInt(info.pop);
+      if (q>5&&p==1)
+        p=2;
+      if (danmuPop==0&&p>1)
+        reduceShadow();
+      if (danmuPop>1&&p==1)
+        danmuAlter(true);
+      if (danmuPop==1&&p>1)
+        danmuAlter(false);
+      if (!(danmuPop==0&&p==1)){
+        danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
+        danmuPop=p;
+      }
+      danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи');
     }
-    if (danmuPop==1&&p>1){
-      danmu.style.background='';
-      danmuStyle.background='white';
-      danmuAlter(false);
-    }
-    if (!(danmuPop==0&&p==1)){
-      danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
-      danmuPop=p;
-    }
-    danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи');
+    if (isDanmuLive)
+      danmuInfoUpdateIndex=setTimeout('danmuRead("info", danmuInfoUpdate)', danmuPop==1?2*60*1000:29*1000);
   }
   function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">房间'+space(24, (streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+' </span><br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">房间'+space(22, (streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+' </span><br>'+danmuSuperChat;
   }
   function danmuRead(roomId, f){
     if (!isDanmuLive&&f==undefined)
@@ -1298,7 +1294,7 @@ function danmuRead(roomId, oldT){
     xmlhttp.open('GET', url);
     xmlhttp.send();
     if (f==undefined)
-      setTimeout('danmuRead()', (danmuTryToken<=3&&(danmuPop>1||danmuQueSize>5))?1000:danmuPop==0?10*1000:60*1000);
+      setTimeout('danmuRead()', danmuTryToken<=3&&danmuPop>1?1000:danmuPop==0?10*1000:2*60*1000);
   }
   function danmuRoomStatCollect(n){
     if (n==undefined)
@@ -1306,7 +1302,7 @@ function danmuRead(roomId, oldT){
     clearTimeout(danmuRoomStatIndex);
     if (isDanmuLive){
       danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
-      danmuRoomStatIndex=setTimeout('danmuRoomStatCollect('+n+')', (n%streamer[1].length==0||danmuTryToken>=3)?240*1000:10*1000);
+      danmuRoomStatIndex=setTimeout('danmuRoomStatCollect('+n+')', danmuPop==1||n%streamer[1].length==0||danmuTryToken>=3?240*1000:10*1000);
     }
   }
   function danmuIsLive(s){
@@ -1315,8 +1311,7 @@ function danmuRead(roomId, oldT){
       var i=streamer[1].indexOf(stat.data.short_id);
       if (i==-1)
         i=streamer[1].indexOf(stat.data.room_id);
-      if (stat.data.live_time>0)
-        streamer[2][i]=Math.floor((getOffsetTime(0,true)-stat.data.live_time*1000)/1000/60)+'m';
+      streamer[2][i]=stat.data.live_time>0?Math.floor((getOffsetTime(0,true)-stat.data.live_time*1000)/1000/60)+'m':'';
       if (isDanmuLive==2||!danmuRoomId||i!=streamer[1].indexOf(danmuRoomId))
         danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+streamer[2][i]+(!i?' ---':''), streamer[2][i]!='', true);
       if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
