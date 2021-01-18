@@ -21,7 +21,8 @@
       border-spacing: 0;
     }
     .cleaner {
-      background: gray;
+      background: black;
+      color: white;
       position: fixed;
       width: 100%;
       height: 100%;
@@ -57,7 +58,6 @@
       overflow: hidden;
     }
     .tl_to {
-      width:1.5rem;
       background:white;
       display:inline;
       margin-left:-1.5rem;
@@ -156,7 +156,7 @@
   </style>
 </head>
 <body>
-  <div class="cleaner" id="cleaner"></div>
+  <div class="cleaner" id="cleaner"><noscript>Javascript NOT support.</noscript></div>
   <div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
     <div style='height:6rem;'></div>
@@ -169,9 +169,10 @@
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
     <div class='reminder' id='reminder' onclick="displayReminder(false)"></div>
   </div></div>
+  <script type="text/javascript">setTimeout('if (!isEnd) document.getElementById("cleaner").innerHTML="JS FAILED on loading"',800)</script>
   <script type="text/javascript">
     if (testStatus){testInterval=setInterval('comment(how(), true)', 7*1000);setTimeout('testIcs()', 10*1000);}
-    var initialTitle=document.getElementsByTagName('title')[0].innerHTML;
+    var initialTitle=document.title;
     var clearCommentTime=0;
     function comment(s, isJam){
       var basket=document.getElementById('basket');
@@ -845,7 +846,7 @@
       d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+15+1);
       for (var i=0;i<16;i++)
         s+="BEGIN:VEVENT\nDTSTART:"+(2018+randInt(3))+frontZero(randInt(12, 1))+'01T020304Z\nSUMMARY:Default\nDESCRIPTION:e\n'
-        +"BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),randInt(59, 0)])+'08Z'+'\nSUMMARY:Default\nDESCRIPTION: e'+space(5)+space(20,'','测试')+'\nRRULE:FREQ=WEEKLY;INTERVAL=3\n';
+        +"BEGIN:VEVENT\nDTSTART:"+d.getFullYear()+frontZero([d.getMonth()+1,d.getDate(),'T',d.getHours(),randInt(59, 0)])+'08Z'+'\nSUMMARY:Default\nDESCRIPTION: e'+space(5)+'测试测试测试测试测试测试测试测试测试测试'+'\nRRULE:FREQ=WEEKLY;INTERVAL=3\n';
       readIcs(s);
       tickListStatus++;showIcs(true);
     }
@@ -901,7 +902,8 @@
                     var d=[a, b];
                     for (var i in c){
                       c[i]-=getOffsetTime();
-                      c[i]*=(c[i]<0?-2:1)*(d[i].isDateOnly?3.5:1);
+                      var isNeg=c[i]!=(c[i]=Math.abs(c[i]));
+                      c[i]*=(isNeg?c[i]>180?3:2:1)*(d[i].isDateOnly?6:1)*(d[i].FREQ?c[i]>30?5:2:1);
                       }
                     return c[0]-c[1];
                  }]][sortNum];
@@ -952,7 +954,7 @@
               td_divider='';
             var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+(l[i].SUMMARY.length>10&&l[i].DESCRIPTION?': ':'')+l[i].DESCRIPTION.slice(0,200-Math.min(10, l[i].SUMMARY.length)*6)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:xx-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
-            s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+(Math.floor(adD/(!j?90:360)*100))+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
+            s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+Math.floor(adD/(!j?120:480)*100)+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
           }
         }
         tickTable.innerHTML=s;
@@ -1087,13 +1089,8 @@
     function danmuRead(i, t){
         var xmlhttp = new XMLHttpRequest();
         xmlhttp.onreadystatechange = function(){
-            if (xmlhttp.readyState == 4){
-                if(xmlhttp.status == 200){
-                    document.title='√ '+t;
-                    xmlhttp = null;
-                } else
-                    document.title='×'+xmlhttp.status;
-            }
+            if (xmlhttp.readyState == 4)
+                document.title=(xmlhttp.status==200?'√ ':'×'+xmlhttp.status)+t;
         }
         xmlhttp.open('GET', "https://debian10/blive/?"+i);
         xmlhttp.send();
@@ -1106,11 +1103,10 @@
   var danmuReadCount=0;
   var isDanmuLive=0;
   var danmuStart=0;
-  var streamer=[['pi', 'nc', 'dd', 'kf'],
-                [92613,1220,16548,22259479],
-                []];
+  var streamer=[['pi', 'nc', 'dd', 'kf'],[92613,1220,16548,22259479],[]];
   var danmuControl=['history', 'bye', 'kick', 'info', 'call[:]', 'c[.up]', 'js[:]'];
   var danmuRoomId='';
+  var danmuStreamer=['','']
   var danmuSuperChat='';
   var danmuPop=0;
   var danmuPopTrends=0;
@@ -1118,13 +1114,10 @@
   var danmuMax=1600;
   var danmuTryToken=0;
   var danmuOrderId=-1;
-  function space(n, s, specific){
+  function space(n, s){
     s=s!=undefined?String(s):'';
-    n-=s.length;
-    if (specific==undefined)
-      specific=' ';
-    while (n-->0)
-      s+=specific;
+    for (n-=s.length*1.8;n-->0;)
+      s+=' ';
     return s;
   }
   function danmuSwitch(){
@@ -1147,6 +1140,7 @@
     danmuStart=getOffsetTime();
     danmuTryToken=0;
     streamer[2]=['','','',''];
+    danmuTaskIndexs=[0,0,0];
     danmuStyle.opacity=1;
     roomId=String(roomId);
     switch (roomId.slice(0,2)){
@@ -1155,12 +1149,12 @@
         danmuOrderId=streamer[0].indexOf(roomId.split('.')[1]);
       case 'c':
         isDanmuLive=2;
-        danmuInfo('ᗯατcᏥ');
+        danmuInfo();
         break;
       default:
         isDanmuLive=1;
         danmuRead(roomId);
-        danmuInfo('  oи');
+        danmuInfo();
     }
     danmuAlter(false);
   }
@@ -1175,7 +1169,7 @@
     setTimeout('if (danmuPop==1) danmuClear()', 10*60*1000);
     danmuAlter(true);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-<br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
-    danmuInfo('◯ OFF');
+    danmuInfo();
     danmuPop=0;
   }
   function danmuAlter(beLess){
@@ -1189,7 +1183,8 @@
       danmuRoomStatCollect();
       if (isDanmuLive==1){
         danmuRead();
-        setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
+        danmuInfoUpdate();
+        danmuParseStreamer();
       }
       danmu.style.background='';
       danmuStyle.background='white';
@@ -1213,7 +1208,6 @@
   }
   function danmuBold(s){return '<b>'+s+'</b>';}
   function danmuReverse(s){return '<span style="margin-left:2rem">'+s+'</span>';}
-  function danmuRWrite(s){danmuWrite(s, false, true);}
   function danmuWrite(s, isBold, isReverse){
     if (isBold) s=danmuBold(s);
     if (isReverse) s=danmuReverse(s);
@@ -1241,7 +1235,7 @@
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
-      danmuInfo('▁▂▃▄▅▆▇█'[++danmuReadCount%8]+' oи '+(danmuPop==9999?'☕':''));
+      danmuInfo();
   }
   function danmuSC(l){
     danmuSuperChat='';
@@ -1256,8 +1250,8 @@
     if (++danmuTryToken>=10){
       danmuOff('(〃>_<;〃) R'+danmuTryToken+'>9, Id: '+roomId);
       return;
-    } else if (danmuTryToken>=3)
-      danmuInfo(' ⁉'+danmuTryToken);
+    } else if (danmuTryToken>3)
+      danmuInfo();
     httpGet("/blive/"+(roomId?'?'+roomId:''), function a(s){
       if (s.indexOf('[EXCEP]')==-1)
         danmuTryToken=0;
@@ -1267,7 +1261,7 @@
         f(s);
     }, function b(n){
       if (isDanmuLive&&n>=400&&n<600)
-        danmuRWrite('[local] server return: '+n+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600);
+        danmuWrite('[local] server return: '+n+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600, false, true);
     });
     if (f==undefined){
       clearTimeout(danmuTaskIndexs[0]);
@@ -1276,40 +1270,66 @@
     }
   }
   function danmuInfoUpdate(s){
-    if (s){
-      var info=JSON.parse(s);
-      danmuRoomId=info.room_id;
-      var q=parseInt(info.que_size);
-      danmuSC(info.super_chat);
-      var p=parseInt(info.pop);
-      if (q>5&&p==1)
-        p=2;
-      setDanmuPop(p);
-      danmuInfo('▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи');
-    }
     clearTimeout(danmuTaskIndexs[1]);
-    if (isDanmuLive) danmuTaskIndexs[1]=setTimeout('danmuRead("info", danmuInfoUpdate)', danmuPop==1?2*60*1000:29*1000);
+    if (isDanmuLive){
+      if (s){
+        var info=JSON.parse(s);
+        danmuRoomId=info.room_id;
+        danmuSC(info.super_chat);
+        var p=parseInt(info.pop);
+        if (parseInt(info.que_size)>5&&p==1)
+          p=2;
+        setDanmuPop(p);
+        danmuInfo();
+        danmuTaskIndexs[1]=setTimeout('danmuRead("info", danmuInfoUpdate)', danmuPop==1?2*60*1000:29*1000);
+      } else
+        setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
+    }
   }
-  function danmuInfo(status){
-    document.getElementById('danmu_info').innerHTML='人气'+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">房间'+space(22, (streamer[1].indexOf(danmuRoomId)!=-1?'▶'+streamer[2][streamer[1].indexOf(danmuRoomId)]+'|'+streamer[0][streamer[1].indexOf(danmuRoomId)]:'')+danmuRoomId)+status+' </span><br>'+danmuSuperChat;
+  function danmuInfo(){
+    var status=['◯ OFF', '▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи'+(danmuPop==9999?'☕':''), 'ᗯατcᏥ'][isDanmuLive];
+    if (danmuTryToken>3)
+      status=' ⁉'+danmuTryToken;
+    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">'+space(24, danmuStreamer[0]?(danmuStreamer[0]+'-'+danmuStreamer[1]).slice(0,12):'')+(streamer[1].indexOf(danmuRoomId)!=-1?' '+status[0]+' '+streamer[2][streamer[1].indexOf(danmuRoomId)]:status)+' </span><br>'+danmuSuperChat;
   }
   function danmuRoomStatCollect(n){
     clearTimeout(danmuTaskIndexs[2]);
     if (isDanmuLive){
       if (n==undefined)
         n=0;
-      danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuIsLive);
+      danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id="+streamer[1][n++%streamer[1].length], danmuParseLive);
       danmuTaskIndexs[2]=setTimeout('danmuRoomStatCollect('+n+')', danmuPop==1||n%streamer[1].length==0||danmuTryToken>=3?240*1000:10*1000);
     }
   }
-  function danmuIsLive(s){
+  function danmuParseStreamer(s){
+    clearTimeout(danmuTaskIndexs[3]);
+    if (isDanmuLive==1){
+      if (s){
+        var stat=JSON.parse(s);
+        danmuRead("cros:https://api.bilibili.com/x/space/acc/info?mid="+stat.data.uid, function a(s){
+          var stat=JSON.parse(s);
+          if (stat.code==0)
+            danmuStreamer=[stat.data.name, stat.data.live_room.title];
+        });
+        danmuTaskIndexs[3]=setTimeout('danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId+'", danmuParseStreamer)', danmuTryToken>=3?600*1000:300*1000);
+      } else {
+        if (danmuRoomId)
+          danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId, danmuParseStreamer);
+        else
+          setTimeout('danmuParseStreamer()', 10*1000);
+      }
+    }
+  }
+  function danmuParseLive(s){
     var stat=JSON.parse(s);
     if (stat.code==0){
-      var i=streamer[1].indexOf(stat.data.short_id);
+      stat=stat.data;
+      var i=streamer[1].indexOf(stat.short_id);
       if (i==-1)
-        i=streamer[1].indexOf(stat.data.room_id);
-      streamer[2][i]=stat.data.live_time>0?Math.floor((getOffsetTime(0,true)-stat.data.live_time*1000)/1000/60)+'m':'';
-      if (isDanmuLive==2||!danmuRoomId||i!=streamer[1].indexOf(danmuRoomId))
+        i=streamer[1].indexOf(stat.room_id);
+      if (i!=-1)
+        streamer[2][i]=stat.live_time>0?Math.floor((getOffsetTime(0,true)-stat.live_time*1000)/1000/60)+'m':'';
+      if (isDanmuLive==2)
         danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+streamer[2][i]+(!i?' ---':''), streamer[2][i]!='', true);
       if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
         danmuOn(streamer[1][danmuOrderId]);
@@ -1323,6 +1343,7 @@
     danmuStyle.opacity=0;
     document.getElementById('danmu_info').innerHTML='';
   }
+  var isEnd=true;
   </script>
 </body>
 </html>

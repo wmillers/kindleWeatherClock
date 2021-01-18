@@ -253,7 +253,6 @@ def main():
                 last_room_id.value=room_id
                 print('[launch] new room id: '+str(room_id))
                 status_code.value=0
-                que.put_nowait('[LAUNCH] new room: '+str(room_id))
                 c = Process(target=runDm, args=(que,room_id,))
                 c.start()
             new_room_id.value=0
