@@ -156,9 +156,9 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        identity=('⚑' if danmaku.admin else '')+(' ᎯᏰℭ'[danmaku.privilege_type] if danmaku.privilege_type else '')
+        identity=('⚑' if danmaku.admin else '')+(' αβc'[danmaku.privilege_type] if danmaku.privilege_type else '')
         if identity:
-            identity=identity+'<b>|</b>'
+            identity='<b>'+identity+' </b>'
         aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
