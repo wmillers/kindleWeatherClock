@@ -95,7 +95,7 @@
     }
     .danmu_info{
       display: block;
-      font-size: .8rem;
+      font-size: .6rem;
     }
     .time {
       font-size: 16rem;
@@ -1110,7 +1110,7 @@
   var danmuSuperChat='';
   var danmuPop=0;
   var danmuPopTrends=0;
-  var danmuTaskIndexs=[0,0,0];//read,info,stat
+  var danmuTaskIndexs=[0,0,0,0];//read,info,stat,title
   var danmuMax=1600;
   var danmuTryToken=0;
   var danmuOrderId=-1;
@@ -1166,6 +1166,7 @@
     clearTimeout(danmuTaskIndexs[0]);
     clearTimeout(danmuTaskIndexs[1]);
     clearTimeout(danmuTaskIndexs[2]);
+    clearTimeout(danmuTaskIndexs[3]);
     setTimeout('if (danmuPop==1) danmuClear()', 10*60*1000);
     danmuAlter(true);
     danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-<br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
@@ -1183,8 +1184,7 @@
       danmuRoomStatCollect();
       if (isDanmuLive==1){
         danmuRead();
-        danmuInfoUpdate();
-        danmuParseStreamer();
+        danmuInfoUpdate();//on danmuRooId change => danmuParseStreamer();
       }
       danmu.style.background='';
       danmuStyle.background='white';
@@ -1194,13 +1194,13 @@
     }
   }
   function setDanmuPop(p){
-    if (p!=danmuPop&&!(danmuPop==0&&p==1)){
+    if (p!=danmuPop&&!(danmuPop==0&&p==1&&getOffsetTime()-danmuStart<2*60*1000)){
       var old=danmuPop;
       danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;
       if (old==0&&p>1)
         reduceShadow();
-      if (old>1&&p==1)
+      if (p==1)
         danmuAlter(true);
       if (old==1&&p>1)
         danmuAlter(false);
@@ -1274,7 +1274,8 @@
     if (isDanmuLive){
       if (s){
         var info=JSON.parse(s);
-        danmuRoomId=info.room_id;
+        if (danmuRoomId!=(danmuRoomId=info.room_id))
+          danmuParseStreamer();
         danmuSC(info.super_chat);
         var p=parseInt(info.pop);
         if (parseInt(info.que_size)>5&&p==1)
@@ -1290,7 +1291,7 @@
     var status=['◯ OFF', '▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи'+(danmuPop==9999?'☕':''), 'ᗯατcᏥ'][isDanmuLive];
     if (danmuTryToken>3)
       status=' ⁉'+danmuTryToken;
-    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">'+space(24, danmuStreamer[0]?(danmuStreamer[0]+'-'+danmuStreamer[1]).slice(0,12):'')+(streamer[1].indexOf(danmuRoomId)!=-1?' '+status[0]+' '+streamer[2][streamer[1].indexOf(danmuRoomId)]:status)+' </span><br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+(streamer[1][danmuRoomId]?status[0]+' '+streamer[2][streamer[1].indexOf(danmuRoomId)]:status)+' </span><br>'+danmuSuperChat;
   }
   function danmuRoomStatCollect(n){
     clearTimeout(danmuTaskIndexs[2]);
@@ -1309,14 +1310,14 @@
         danmuRead("cros:https://api.bilibili.com/x/space/acc/info?mid="+stat.data.uid, function a(s){
           var stat=JSON.parse(s);
           if (stat.code==0)
-            danmuStreamer=[stat.data.name, stat.data.live_room.title];
+            danmuStreamer=(stat.data.name.slice(-3)+stat.data.live_room.title).slice(0,12);
         });
         danmuTaskIndexs[3]=setTimeout('danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId+'", danmuParseStreamer)', danmuTryToken>=3?600*1000:300*1000);
       } else {
         if (danmuRoomId)
           danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId, danmuParseStreamer);
         else
-          setTimeout('danmuParseStreamer()', 10*1000);
+          setTimeout('danmuParseStreamer()', 30*1000);
       }
     }
   }
@@ -1327,8 +1328,9 @@
       var i=streamer[1].indexOf(stat.short_id);
       if (i==-1)
         i=streamer[1].indexOf(stat.room_id);
-      if (i!=-1)
-        streamer[2][i]=stat.live_time>0?Math.floor((getOffsetTime(0,true)-stat.live_time*1000)/1000/60)+'m':'';
+      if (i!=-1&&stat.live_time>0)
+        if (streamer[2][i]!=(streamer[2][i]=Math.floor((getOffsetTime(0,true)/1000-stat.live_time)/60)+'m'))
+          danmuInfo();
       if (isDanmuLive==2)
         danmuWrite('> '+(danmuOrderId==i?'*':'')+streamer[0][i]+space(3)+space(10, streamer[1][i])+streamer[2][i]+(!i?' ---':''), streamer[2][i]!='', true);
       if (danmuOrderId!=-1&&streamer[2][danmuOrderId]){
