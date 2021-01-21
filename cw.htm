@@ -53,7 +53,7 @@
       z-index: 2;
       white-space: pre-wrap;
       overflow: hidden;
-      text-shadow: 2px 2px 0 white, -2px -2px 0 white;
+      text-shadow: 2px 2px 0 white, -2px -2px 0 white, -2px 2px 0 white, 2px -2px 0 white;
     }
     .tl_to {
       display:inline;
@@ -162,7 +162,7 @@
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
     <div class='reminder' id='reminder' onclick="displayReminder(false)"></div>
   </div></div>
-  <script type="text/javascript">setTimeout('if (!isEnd) document.getElementById("cleaner").innerHTML="JS FAILED on loading"',800)</script>
+  <script type="text/javascript">setTimeout('if (typeof loaded=="undefined") document.getElementById("cleaner").innerHTML="js FAILED"',800)</script>
   <script type="text/javascript">
     if (testStatus){testInterval=setInterval('comment(how(), true)', 7*1000);setTimeout('testIcs()', 10*1000);}
     var initialTitle=document.title;
@@ -976,8 +976,8 @@
           }
       }
       t.style.margin=baitHeight+"px 4.5rem";
-      t.style.position="absolute";//font-size:larger';
-      t.innerHTML='▌'+(dH?dH>24?stringLine(Math.floor(dH/48)+'D'):stringLine(dH+'H'):'↓');
+      t.style.position="absolute";
+      t.innerHTML='▌'+(dH?dH>24?stringLine(Math.floor(dH/48)+'D'):stringLine(dH+'H'):'');
       return i;
     }
     function stringLine(s){
@@ -1182,9 +1182,9 @@
       }
       danmu.style.background='';
       danmuStyle.background='white';
-      danmuStyle.marginTop='7rem';
+      danmuStyle.marginTop='9rem';
       danmuStyle.marginLeft='-4rem';
-      danmuStyle.height='25rem';
+      danmuStyle.height='23rem';
     }
   }
   function setDanmuPop(p){
@@ -1221,7 +1221,7 @@
         if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
           sn[i]=danmuReverse(sn[i]);
         if (sn[i]&&sn[i].indexOf('[CAFFEINE]')==-1)
-          s.push(sn[i]);
+          s.push((danmuPop<=1?'<small>'+dateString(false,'hm')+' </small>':'')+sn[i]);
     }
     s=s.join("<br>");
     if (danmuPop!=1&&danmuOrderId==-1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
@@ -1229,7 +1229,7 @@
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
-      danmuInfo();
+      danmuInfo(++danmuReadCount);
   }
   function danmuSC(l){
     danmuSuperChat='';
@@ -1282,10 +1282,17 @@
     }
   }
   function danmuInfo(){
-    var status=['◯ OFF', '▁▂▃▄▅▆▇█'[danmuReadCount%8]+' oи'+(danmuPop==9999?'☕':''), 'ᗯατcᏥ'][isDanmuLive];
+    var status=['◯ OFF', streamer[2][streamer[1].indexOf(danmuRoomId)]?streamer[2][streamer[1].indexOf(danmuRoomId)]:'oи'+(danmuPop==9999?'☕':''), 'ᗯατcᏥ'][isDanmuLive];
+    var dTrends=(danmuPop<1e4?String(danmuPop):(Math.floor(danmuPop/1e3)/10+'万'));
+    if (dTrends.indexOf('.')!=-1){
+      dTrends=dTrends.split('.');
+      var a=['sub', '', 'sup'][danmuPopTrends+1];
+      dTrends[1]='<'+a+'>'+dTrends[1][0]+'</'+a+'>'+dTrends[1].slice(1);
+      dTrends=dTrends.join('');
+    }
     if (danmuTryToken>3)
       status=' ⁉'+danmuTryToken;
-    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+(danmuPop<1e4?danmuPop:Math.floor(danmuPop/1e3)/10+'万')+'↓→↑'[danmuPopTrends+1]+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+(streamer[2][streamer[1].indexOf(danmuRoomId)]?status[0]+' '+streamer[2][streamer[1].indexOf(danmuRoomId)]:status)+' </span><br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+dTrends+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+status+' </span><br>'+danmuSuperChat;
   }
   function danmuRoomStatCollect(n){
     clearTimeout(danmuTaskIndexs[2]);
@@ -1341,7 +1348,7 @@
     danmuStyle.opacity=0;
     document.getElementById('danmu_info').innerHTML='';
   }
-  var isEnd=true;
+  var loaded=true;
   </script>
 </body>
 </html>
