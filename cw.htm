@@ -4,14 +4,25 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <script type="text/javascript">
+    setTimeout('if (typeof loaded=="undefined") document.getElementById("cleaner").innerHTML="js FAILED"', 800);
     var testStatus=false;
-    var testInterval=0;
+    var testInterval=testStatus?setInterval('comment(how(), true)', 7*1000):0;
     var info={
       version: '1.5',
       description: '(bug-fix changes are in commit logs)',
       author: 'wmillers@github',
+      support: ['time',
+          'weather',
+          'tomato',
+          'ticklist',
+          'danmu',
+          'home',
+          //'TO-DISABLE-#COMMENT-THE-LINE',
+        ],
       license: 'LGPL2.1'
     }
+    if (typeof eval!='function')
+      comment('eval not support');
   </script>
   <title>tomatoClock</title>
   <link id='ico' href="" rel="icon" type="image/x-icon" />
@@ -45,6 +56,14 @@
       transform:rotate(270deg);
       -webkit-transform:rotate(270deg);
     }
+    .home {
+      position: absolute;
+      font-size: .5rem;
+      left: 28rem;
+      overflow: hidden;
+      height: 10rem;
+      width: 15rem;
+    }
     .tickList {
       position: absolute;
       font-size: .5rem;
@@ -57,8 +76,10 @@
     }
     .tl_to {
       display:inline;
-      margin-left:-1.5rem;
+      margin-left:-1.6rem;
       position:absolute;
+      background: white;
+      width: 1.5rem;
     }
     .tl_co {
       text-align:right;
@@ -94,7 +115,7 @@
     .time {
       font-size: 16rem;
       font-variant-numeric: tabular-nums;
-      font-weight: 900;
+      font-weight: bold;
     }
     .tomato {
       font-size: 2rem;
@@ -152,6 +173,7 @@
   <div class="cleaner" id="cleaner"><noscript>Javascript NOT support.</noscript></div>
   <div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
+    <div class='home' id='home' onclick="homeSwitch(0)"><img class="tImg"></div>
     <div style='height:6rem;'></div>
     <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
@@ -162,9 +184,7 @@
     <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
     <div class='reminder' id='reminder' onclick="displayReminder(false)"></div>
   </div></div>
-  <script type="text/javascript">setTimeout('if (typeof loaded=="undefined") document.getElementById("cleaner").innerHTML="js FAILED"',800)</script>
   <script type="text/javascript">
-    if (testStatus){testInterval=setInterval('comment(how(), true)', 7*1000);setTimeout('testIcs()', 10*1000);}
     var initialTitle=document.title;
     var clearCommentTime=0;
     function comment(s, isJam){
@@ -210,7 +230,7 @@
     }
       
 
-    /*Basic Date and Weather updater*/
+    /*                Time Display & Weather                */
     var refreshRate=8*3600*1000;
     var hardwareLagRate=6.66;//+1s/6.66h
     var lastSyncTime;
@@ -568,7 +588,7 @@
     }
 
 
-    /*Tomato Timer*/
+    /*                TOMATO: Tomato Timer                */
     var toStatus, ispaused, weeklyTomato;
     var timerEntity;
     var signalTired=0;
@@ -782,7 +802,7 @@
       updateSignal();
     }
     
-  /*
+  /*                TICKLIST: Ticktick Reminder
     Note: you need set a Nginx server to proxy the GET method to the
           calendar server to download the .ics file. Add those lines
           to your Nginx config file to avoid CROS problem as the
@@ -808,7 +828,7 @@
   */
     var tickList={};
     var tickListStatus=0;
-    var tickListTaskIndex=!testStatus?addTaskOnPageChange('getIcs()', 6*3600*1000):0;
+    var tickListTaskIndex=0;
     var tickListMaxLine=21;
     var tickListReminderList={};
     var tickListFloatIndex=0;
@@ -916,6 +936,8 @@
       tickList.normal.sort(func[1]);
     }
     function showIcs(keep){
+      clearInterval(tickListTaskIndex);
+      tickListTaskIndex=addTaskOnPageChange('getIcs()', 6*3600*1000);
       var t=document.getElementById('tickList');
       var tickTable=t.getElementsByTagName('table')[0];
       var tickImg=document.getElementById('tickImg');
@@ -948,7 +970,7 @@
               td_divider='';
             var sude=(l[i].SUMMARY.length+l[i].DESCRIPTION.length>25)?[l[i].SUMMARY.slice(0,10), (l[i].SUMMARY.slice(10)+(l[i].SUMMARY.length>10&&l[i].DESCRIPTION?': ':'')+l[i].DESCRIPTION.slice(0,200-Math.min(10, l[i].SUMMARY.length)*6)).trim()]:[(l[i].SUMMARY+' '+l[i].DESCRIPTION).trim(), ''];
             var freq=(l[i].FREQ)?'<sup style="font-size:xx-small;border-radius:20%;border:solid">'+l[i].FREQ+'</sup>':'';
-            s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+Math.floor(adD/(!j?120:480)*100)+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(dD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
+            s+='<tr style'+(!dD?'="font-weight:bold"':'')+'><td'+td_divider+'>'+dateString(l[i].DTSTART,'Mdhm')+'</td><td class="tl_co" style="color:hsl(0,0%,'+Math.floor(adD/(!j?120:480)*100)+'%)">'+(adD<7?'<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:'+Math.ceil(adD/10*3)/3*1.5+'rem"></div>':'')+(dD?dD:'')+'</td><td class="tl_sude"><span class="tl_su"> '+freq+sude[0]+'</span>'+'<span style="background:white;">'+sude[1]+'</span></td></tr>';
           }
         }
         tickTable.innerHTML=s;
@@ -964,8 +986,8 @@
       var t=document.getElementById('tickList').children[0];
       var tr=document.getElementById('tickList').getElementsByTagName('table')[0].children[0].children;
       var ti=tickList.important.slice(0,5);
-      var baitHeight=tr[0].offsetHeight;
-      if (ti.length>0){
+      var baitHeight=0;//tr[0].offsetHeight;
+      if (ti.length>0)
         for (var i=0;i<ti.length-1;i++)
           if (dHour(ti[i].DTSTART)>=0)
             break;
@@ -974,11 +996,10 @@
             baitHeight=tr[i+1].offsetTop+tr[i+1].offsetHeight/2+(-dMs(ti[i].DTSTART))/(ti[i+1].DTSTART-ti[i].DTSTART)*tr[i].offsetHeight;
             break;
           }
-      }
+      t.style.display=baitHeight?'block':'none';
       t.style.margin=baitHeight+"px 4.5rem";
       t.style.position="absolute";
       t.innerHTML='▌'+(dH?dH>24?stringLine(Math.floor(dH/48)+'D'):stringLine(dH+'H'):'');
-      return i;
     }
     function stringLine(s){
       var ns='';
@@ -1025,7 +1046,8 @@
       var l=tickListReminderList;
       for (var i in l){
         var s=l[i].slice(l[i].indexOf('[')+1, l[i].indexOf(']')).split('+');
-        l[i]=l[i].slice(0, l[i].indexOf('[')+1)+s[0]+'+'+(-dHour(new Date(new Date().getFullYear()+'-'+s[0]).getTime()))+l[i].slice(l[i].indexOf(']'));
+        s[1]=-dHour(new Date(new Date().getFullYear(), s[0].slice(0,2), s[0].slice(3,5), s[0].slice(6,8), s[0].slice(9,11)));
+        l[i]=l[i].slice(0, l[i].indexOf('[')+1)+s[0]+'+'+s[1]+l[i].slice(l[i].indexOf(']'));
       }
       displayReminder(true);
     }
@@ -1054,7 +1076,7 @@
     }
     function remindIcs(cmd, timeout){addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
 
-  /*
+  /*                DANMU: Bilibili Live Danmu
   sudo apt-get install python3-distutils
   sudo apt-get install python3-pip
   sudo pip3 install aiohttp [-i https://source]
@@ -1348,7 +1370,30 @@
     danmuStyle.opacity=0;
     document.getElementById('danmu_info').innerHTML='';
   }
+
+
+  /*                HOME: for Hue
+  http://philips-hue/debug/clip.html
+  https://developers.meethue.com/develop/get-started-2/
+  */
+  function homeSwitch(){
+    ;
+  }
+
+
   var loaded=true;
+  function disabledInfo(n, f){
+    if (info.support.indexOf(n)==-1){
+      if (!Array.isArray(f))
+        f=[f];
+      for (var i in f)
+        eval(f[i]+'='+'function disabled(){comment("'+n+' is DISABLED")}');
+    }
+  }
+  var funcList=[['tomato', 'ticklist', 'danmu', 'home'],
+    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', 'homeSwitch']];
+  for (var i in funcList[0])
+    disabledInfo(funcList[0][i], funcList[1][i]);
   </script>
 </body>
 </html>
