@@ -67,11 +67,11 @@
       font-size: 1rem;
     }
     .h_switch {
-      margin-top: .5rem;
-      padding: 1.5rem 0;
       width: 6rem;
+      height: 5rem;
       border: black 1px solid;
-      display: inline-block;
+      display: table-cell;
+      vertical-align:middle
     }
     .tickList {
       position: absolute;
@@ -1381,7 +1381,7 @@
   var hueBaseUrl="/blive/?cros:"+'http://philips-hue/api/';//Need blive cros server
   var hueUser={"devicetype": 'A 3-switch kindle-based controller.'};
   var hueToken="UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";
-  var switchs={};//{1:{on:false, name:"Somelight"}}
+  var switchs={};//{1:{on:false, name:"Somelight", reachable:true}}
   function hHelp(){
     comment('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
     alert('hueToken around line:1383 is empty');
@@ -1399,7 +1399,7 @@
       } else {
         switchs={};
         for (var i in s)
-          switchs[i]={on:s[i].state.on, name:s[i].name};
+          switchs[i]={on:s[i].state.on, name:s[i].name, reachable:s[i].state.reachable};
         hUpdate();
       }
     }, comment);
@@ -1415,9 +1415,7 @@
   }
   function hSwitch(n){
     event.stopPropagation();
-    document.getElementById('hs'+n).style.border="black 1px dashed";
     hChange(n);
-    hUpdate();
   }
   function hChange(n){
     if (!hueToken){
@@ -1426,10 +1424,9 @@
     }
     httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
       var s=JSON.parse(s)[0];
-      if ("success" in s){
-        switchs[i].on=!switchs[i].on;
-        hUpdate();
-    } else
+      if ("success" in s)
+        hCollect();
+      else
         comment(JSON.stringify(s));
     }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
   }
@@ -1445,14 +1442,14 @@
     for (var i in switchs){
       document.getElementById('home').innerHTML+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+switchs[i].name+"</div>";
       var hs=document.getElementById('hs'+i).style;
-      hs.border="black 1px solid";
+      hs.border="black 1px "+(switchs[i].reachable?"solid":"dashed");
       hs.background=switchs[i].on?"black":"white";
       hs.color=switchs[i].on?"white":"black";
     }
   }
 
 
-  /*Module control*/
+  /*Modules control*/
   var loaded=true;
   function disabledInfo(n, f){
     if (info.support.indexOf(n)==-1){
@@ -1466,6 +1463,8 @@
     [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', ['hSwitch', 'hInit', 'hReg']]];
   for (var i in funcList[0])
     disabledInfo(funcList[0][i], funcList[1][i]);
+  if (info.support.indexOf('home')!=-1)
+    document.getElementById("home").innerHTML='<div style="background: gray;">HOME</div>';
   </script>
 </body>
 </html>
