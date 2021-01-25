@@ -59,10 +59,18 @@
     .home {
       position: absolute;
       font-size: .5rem;
-      left: 28rem;
+      left: 25rem;
       overflow: hidden;
-      height: 10rem;
-      width: 15rem;
+      margin-top: .5rem;
+      z-index: 3;
+      font-size: 1rem;
+    }
+    .h_switch {
+      margin-top: .5rem;
+      padding: 1.5rem 0;
+      width: 6rem;
+      border: black 1px solid;
+      display: inline-block;
     }
     .tickList {
       position: absolute;
@@ -173,7 +181,7 @@
   <div class="cleaner" id="cleaner"><noscript>Javascript NOT support.</noscript></div>
   <div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
-    <div class='home' id='home' onclick="homeSwitch(0)"><img class="tImg"></div>
+    <div class='home' id='home'>HOME</div>
     <div style='height:6rem;'></div>
     <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
@@ -194,19 +202,8 @@
       setTimeout("clearComment()", lag+1000);
       if (basket.innerHTML.length==0||isJam)
         basket.innerHTML=s;
-      else {
-        basket.innerHTML+='|';
-        if (s.length>100){
-          basket.innerHTML+=s;
-          while (basket.scrollHeight>basket.clientHeight*1.25)
-            basket.innerHTML=basket.innerHTML.slice(1);
-        } else
-          for (var i=0;i<s.length;i++){
-            basket.innerHTML+=s[i];
-            if (basket.scrollHeight>basket.clientHeight*1.25)
-              basket.innerHTML=basket.innerHTML.slice(-Math.floor(basket.innerHTML.length/2));
-        }
-      }
+      else
+        basket.innerHTML=(basket.innerHTML+'|'+s).slice(0, 150);
       clearCommentTime=new Date().getTime()+lag;
       return s;
     }
@@ -214,7 +211,7 @@
       if (new Date().getTime()<clearCommentTime) return;
       document.getElementById('basket').innerHTML='';
     }
-    function httpGet(path, f, fOnfailed){
+    function httpReq(path, f, fOnfailed, post){
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function(){
         if (xmlhttp.readyState == 4){
@@ -225,8 +222,10 @@
             fOnfailed(xmlhttp.status);
         }
       }
-      xmlhttp.open('GET', path);
-      xmlhttp.send();
+      xmlhttp.open(post?'POST':'GET', path);
+      if (post)
+        xmlhttp.setRequestHeader("Content-type", "application/json");
+      xmlhttp.send(post);
     }
       
 
@@ -260,7 +259,7 @@
       setTimeout("adjustAgainstHardwareTimeLag("+lag+")", lag);
     }
     function initDateFromServer(){
-      httpGet('/blive/?time', function s(a){averageTimeOffset.push(parseInt(a)-new Date().getTime());sumDateFromServer(true)});//oneTimeDateByBlive
+      httpReq('/blive/?time', function s(a){averageTimeOffset.push(parseInt(a)-new Date().getTime());sumDateFromServer(true)});//oneTimeDateByBlive
       setTimeout('if (!timeOffset) sumDateFromServer()', 500);//alternative
     }
     function sumDateFromServer(calculate){
@@ -412,7 +411,7 @@
       if (typeof a!='object')
         a=[a];
       for (var i in a)
-        if (typeof a[i]=='number'){
+        if (typeof a[i]=='number'||!isNaN(parseInt(a[i]))){
           a[i]=a[i].toString();
           for (var j=n-a[i].length;j>0;j--)
             a[i]='0'+a[i];
@@ -864,7 +863,7 @@
       readIcs(s);
       tickListStatus++;showIcs(true);
     }
-    function getIcs(){httpGet("/ics/", function a(s){readIcs(s);showIcs(true);});}
+    function getIcs(){httpReq("/ics/", function a(s){readIcs(s);showIcs(true);});}
     function readIcs(s){
       s=s.replace(/\r/g,'').split('\n');
       var r=[];
@@ -1216,8 +1215,10 @@
       danmuPop=p;
       if (old==0&&p>1)
         reduceShadow();
-      if (p==1)
+      if (p==1){
         danmuAlter(true);
+        danmuWrite('TRANSMIT'+dateString(getOffsetTime(), 'hm'));
+      }
       if (old==1&&p>1)
         danmuAlter(false);
     }
@@ -1268,7 +1269,7 @@
       return;
     } else if (danmuTryToken>3)
       danmuInfo();
-    httpGet("/blive/"+(roomId?'?'+roomId:''), function a(s){
+    httpReq("/blive/"+(roomId?'?'+roomId:''), function a(s){
       if (s.indexOf('[EXCEP]')==-1)
         danmuTryToken=0;
       if (f==undefined)
@@ -1376,11 +1377,46 @@
   http://philips-hue/debug/clip.html
   https://developers.meethue.com/develop/get-started-2/
   */
-  function homeSwitch(){
-    ;
+  var hueBaseUrl='http://philips-hue/api/';
+  var hueUser={"devicetype": 'A 3-switch kindle-based controller.'};
+  var hueToken='';
+  var switchs=[[false,{}],[false,{}],[false,{}]];
+  function hInit(){
+    if (!hueToken){
+      comment('Please record the token return from hReg().');
+    }
+    var s='';
+    for (var i in switchs)
+      s+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+frontZero(i)+"</div>";
+    document.getElementById('home').innerHTML=s;
+    hUpdate();
   }
+  function hReg(){
+    httpReq("/blive/?cros:"+hueBaseUrl, function hParse(s){
+      switchs=JSON.parse(s);
+      return s;
+    }, comment, JSON.stringify(hueUser));
+  }
+  function hSwitch(n){
+    document.getElementById('hs'+n).style.border="black 1px dashed";
+    hChange(n);
+    hUpdate();
+  }
+  function hChange(n){
+    switchs[n][0]=!switchs[n][0];
+  }
+  function hUpdate(){
+    for (var i in switchs){
+      var hs=document.getElementById('hs'+i).style;
+      hs.border="black 1px solid";
+      hs.background=switchs[i][0]?"black":"white";
+      hs.color=switchs[i][0]?"white":"black";
+    }
+  }
+  hInit();
 
 
+  /*Module control*/
   var loaded=true;
   function disabledInfo(n, f){
     if (info.support.indexOf(n)==-1){
@@ -1391,7 +1427,7 @@
     }
   }
   var funcList=[['tomato', 'ticklist', 'danmu', 'home'],
-    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', 'homeSwitch']];
+    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', 'hSwitch']];
   for (var i in funcList[0])
     disabledInfo(funcList[0][i], funcList[1][i]);
   </script>
