@@ -59,9 +59,10 @@
     .home {
       position: absolute;
       font-size: .5rem;
-      left: 25rem;
-      overflow: hidden;
+      left: 24rem;
       margin-top: .5rem;
+      width: 20rem;
+      height: 5rem;
       z-index: 3;
       font-size: 1rem;
     }
@@ -181,7 +182,7 @@
   <div class="cleaner" id="cleaner"><noscript>Javascript NOT support.</noscript></div>
   <div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
-    <div class='home' id='home'>HOME</div>
+    <div class='home' id='home' onclick="hUpdate()"></div>
     <div style='height:6rem;'></div>
     <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
@@ -211,7 +212,7 @@
       if (new Date().getTime()<clearCommentTime) return;
       document.getElementById('basket').innerHTML='';
     }
-    function httpReq(path, f, fOnfailed, post){
+    function httpReq(path, f, fOnfailed, post, method){
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function(){
         if (xmlhttp.readyState == 4){
@@ -222,7 +223,7 @@
             fOnfailed(xmlhttp.status);
         }
       }
-      xmlhttp.open(post?'POST':'GET', path);
+      xmlhttp.open(method?method:post?'POST':'GET', path);
       if (post)
         xmlhttp.setRequestHeader("Content-type", "application/json");
       xmlhttp.send(post);
@@ -1089,7 +1090,7 @@
       proxy_set_header Connection $http_connection;
       add_header Access-Control-Allow-Origin *;
       add_header Access-Control-Allow-Headers X-Requested-With;
-      add_header Access-Control-Allow-Methods GET,POST,OPTIONS;
+      add_header Access-Control-Allow-Methods GET,POST,PUT,OPTIONS;
       access_log off;
       proxy_pass http://localhost:8099;
     }
@@ -1377,43 +1378,78 @@
   http://philips-hue/debug/clip.html
   https://developers.meethue.com/develop/get-started-2/
   */
-  var hueBaseUrl='http://philips-hue/api/';
+  var hueBaseUrl="/blive/?cros:"+'http://philips-hue/api/';//Need blive cros server
   var hueUser={"devicetype": 'A 3-switch kindle-based controller.'};
-  var hueToken='';
-  var switchs=[[false,{}],[false,{}],[false,{}]];
-  function hInit(){
+  var hueToken="UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";
+  var switchs={};//{1:{on:false, name:"Somelight"}}
+  function hHelp(){
+    comment('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
+    alert('hueToken around line:1383 is empty');
+  }
+  function hCollect(){
     if (!hueToken){
-      comment('Please record the token return from hReg().');
+      hHelp();
+      return;
     }
-    var s='';
-    for (var i in switchs)
-      s+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+frontZero(i)+"</div>";
-    document.getElementById('home').innerHTML=s;
-    hUpdate();
+    httpReq(hueBaseUrl+hueToken+'/lights/', function hParse(s){
+      var s=JSON.parse(s);
+      if (Array.isArray(s)){
+        comment(JSON.stringify(s[0]));
+        hueToken='';
+      } else {
+        switchs={};
+        for (var i in s)
+          switchs[i]={on:s[i].state.on, name:s[i].name};
+        hUpdate();
+      }
+    }, comment);
   }
   function hReg(){
-    httpReq("/blive/?cros:"+hueBaseUrl, function hParse(s){
-      switchs=JSON.parse(s);
-      return s;
+    httpReq(hueBaseUrl, function hParse(s){
+      var s=JSON.parse(s)[0];
+      if ("success" in s)
+        hueToken=JSON.parse(s)[0].success.username;
+      else
+        comment(JSON.stringify(s));
     }, comment, JSON.stringify(hueUser));
   }
   function hSwitch(n){
+    event.stopPropagation();
     document.getElementById('hs'+n).style.border="black 1px dashed";
     hChange(n);
     hUpdate();
   }
   function hChange(n){
-    switchs[n][0]=!switchs[n][0];
+    if (!hueToken){
+      hHelp();
+      return;
+    }
+    httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
+      var s=JSON.parse(s)[0];
+      if ("success" in s){
+        switchs[i].on=!switchs[i].on;
+        hUpdate();
+    } else
+        comment(JSON.stringify(s));
+    }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
   }
   function hUpdate(){
+    if (!hueToken){
+      hHelp();
+      return;
+    } else if (!Object.keys(switchs).length){
+      hCollect();
+      return;
+    }
+    document.getElementById('home').innerHTML='';
     for (var i in switchs){
+      document.getElementById('home').innerHTML+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+switchs[i].name+"</div>";
       var hs=document.getElementById('hs'+i).style;
       hs.border="black 1px solid";
-      hs.background=switchs[i][0]?"black":"white";
-      hs.color=switchs[i][0]?"white":"black";
+      hs.background=switchs[i].on?"black":"white";
+      hs.color=switchs[i].on?"white":"black";
     }
   }
-  hInit();
 
 
   /*Module control*/
@@ -1427,7 +1463,7 @@
     }
   }
   var funcList=[['tomato', 'ticklist', 'danmu', 'home'],
-    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', 'hSwitch']];
+    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', ['hSwitch', 'hInit', 'hReg']]];
   for (var i in funcList[0])
     disabledInfo(funcList[0][i], funcList[1][i]);
   </script>
