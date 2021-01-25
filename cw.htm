@@ -4,23 +4,25 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <script type="text/javascript">
-    setTimeout('if (typeof loaded=="undefined") document.getElementById("cleaner").innerHTML="js FAILED"', 800);
+    //**************Basic settings***************
     var testStatus=false;
-    var testInterval=testStatus?setInterval('comment(how(), true)', 7*1000):0;
     var info={
       version: '1.5',
       description: '(bug-fix changes are in commit logs)',
       author: 'wmillers@github',
-      support: ['time',
-          'weather',
+      support: ['time', 'weather',//those two are default modules
           'tomato',
           'ticklist',
           'danmu',
           'home',
-          //'TO-DISABLE-#COMMENT-THE-LINE',
+          //'TO-DISABLE-//COMMENT-THE-LINE',
         ],
       license: 'LGPL2.1'
     }
+    var autostart=['ticklist', 'danmu', 'home'];//delete unwanted auto-start modules
+    //********************************************
+    setTimeout('if (typeof loaded=="undefined") document.getElementById("cleaner").innerHTML="js FAILED"', 800);
+    var testInterval=testStatus?setInterval('comment(how(), true)', 7*1000):0;
     if (typeof eval!='function')
       comment('eval not support');
   </script>
@@ -69,7 +71,7 @@
     .h_switch {
       width: 6rem;
       height: 5rem;
-      border: black 1px solid;
+      border: black 5px solid;
       display: table-cell;
       vertical-align:middle
     }
@@ -864,7 +866,7 @@
       readIcs(s);
       tickListStatus++;showIcs(true);
     }
-    function getIcs(){httpReq("/ics/", function a(s){readIcs(s);showIcs(true);});}
+    function getIcs(){httpReq("/ics/", function a(s){readIcs(s);showIcs(true);}, comment);}
     function readIcs(s){
       s=s.replace(/\r/g,'').split('\n');
       var r=[];
@@ -951,7 +953,7 @@
         t.innerHTML='<div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table>';
       } else {
         if (tickImg) t.removeChild(tickImg);
-        var limit=(tickListStatus%3==1)?tickListMaxLine:5;
+        var limit=(tickListStatus%3==1)?5:tickListMaxLine;
         var s='<tr><td style="opacity:.3">'+dateString(0)+'<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
         var cross30;
         for (var j in tickList){
@@ -1145,7 +1147,10 @@
         if (danmuPop<=1){
           var up=prompt('Current: '+danmuRoomId+'\nStreamer:\n'+streamer[0]+'\nControl:\n'+danmuControl);
           if (up!=null)
-            danmuOn(up);
+            if (up==''&&danmuPop==1)
+              danmuOff('quit');
+            else
+              danmuOn(up);
         } else
           danmuOff('+'+danmuReadCount);
     }
@@ -1422,6 +1427,7 @@
       hHelp();
       return;
     }
+    document.getElementById('hs'+n).style.borderColor="white";
     httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
       var s=JSON.parse(s)[0];
       if ("success" in s)
@@ -1442,29 +1448,29 @@
     for (var i in switchs){
       document.getElementById('home').innerHTML+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+switchs[i].name+"</div>";
       var hs=document.getElementById('hs'+i).style;
-      hs.border="black 1px "+(switchs[i].reachable?"solid":"dashed");
+      hs.borderColor=switchs[i].reachable?"black":"gray";
       hs.background=switchs[i].on?"black":"white";
       hs.color=switchs[i].on?"white":"black";
     }
   }
 
 
-  /*Modules control*/
   var loaded=true;
-  function disabledInfo(n, f){
-    if (info.support.indexOf(n)==-1){
-      if (!Array.isArray(f))
-        f=[f];
-      for (var i in f)
-        eval(f[i]+'='+'function disabled(){comment("'+n+' is DISABLED")}');
-    }
-  }
+  /*Modules control*/
   var funcList=[['tomato', 'ticklist', 'danmu', 'home'],
-    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', ['hSwitch', 'hInit', 'hReg']]];
+    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', ['hSwitch', 'hUpdate', 'hReg']]];
   for (var i in funcList[0])
-    disabledInfo(funcList[0][i], funcList[1][i]);
+    if (info.support.indexOf(funcList[0][i])==-1){
+      if (!Array.isArray(funcList[1][i]))
+        funcList[1][i]=[funcList[1][i]];
+      for (var j in funcList[1][i])
+        eval(funcList[1][i][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED")}');
+    }
   if (info.support.indexOf('home')!=-1)
     document.getElementById("home").innerHTML='<div style="background: gray;">HOME</div>';
+  //Autostart
+  for (var i in autostart)
+    [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
   </script>
 </body>
 </html>
