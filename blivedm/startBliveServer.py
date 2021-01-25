@@ -14,9 +14,9 @@ import ctypes
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 200', '[SLEEP] & [KICK] pong<-', '[CAFFEINE] keep awake']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[CAFFEINE] keep awake']
 class Resquest(BaseHTTPRequestHandler):
-    def do_GET(self, data=None):
+    def do_GET(self, data=None, method=None):
         if (isEmptyPath(self.path)):
             self.send_response(404)
             self.end_headers()
@@ -24,13 +24,17 @@ class Resquest(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
-        cmd_res=controlRoom(self.path, data)
+        cmd_res=controlRoom(self.path, data, method)
         res=cmd_res[1]+('<br>' if cmd_res[1] and cmd_res[0] else '')+(readFromLive() if cmd_res[0] else '')
         self.wfile.write(res.encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
-        self.do_GET(data)
+        self.do_GET(data, method="POST")
+
+    def do_PUT(self):
+        data=self.rfile.read(int(self.headers['content-length']))
+        self.do_GET(data, method="PUT")
 
 def isEmptyPath(path):
     block=['/favicon.ico']
@@ -38,13 +42,13 @@ def isEmptyPath(path):
         return True
     return False
 
-def crosAccess(url, data=None):
+def crosAccess(url, data=None, method=None):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
         'accept-language': 'en-GB,en;q=0.9'
     }
-    req = request.Request(url, headers=headers, data=data, method="POST" if data else None)
+    req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
         response = request.urlopen(req)
         return response.read().decode("utf-8")
@@ -52,7 +56,7 @@ def crosAccess(url, data=None):
         que.put_nowait('[EXCEP] cros: '+str(sys.exc_info()))
         return ''
 
-def controlRoom(path, data=None):
+def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
     ori_cmd=parse.urlparse(path).query.split('&')[0]
     cmd=ori_cmd.lower()
@@ -103,7 +107,7 @@ def controlRoom(path, data=None):
             res='[JS-Executing]'+cmd[3:]
             needExtra=False
         elif (cmd[0:5]=='cros:'):
-            res=crosAccess(parse.unquote(ori_cmd[5:]), data)
+            res=crosAccess(parse.unquote(ori_cmd[5:]), data, method)
             needExtra=False
         elif (cmd=='time'):
             res=int(time()*1000+100)
@@ -227,7 +231,7 @@ def main():
         print('[wait] No preset room id, wait for client request')
         status_code.value=1
     while True:
-        if (status_code.value==0 and que.qsize()>200):
+        if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
             clear_que(que, 100)
             status_code.value=2
