@@ -11,7 +11,7 @@ Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu. Display
 |滴答清单|Ticktick Reminder|×|tickList (top left tomato icon)|左上角番茄图标|
 |B站直播弹幕|Bilibili Live Danmu|×|danmu (the blank area left to the 5月26日)|5月26日左侧的空白处|
 |智能家居Hue|Home Smart for Philips-Hue|×|home (top right blank corner)|右上角的空白区域|
-|额外（1.校准时间 2.获取运行时长 3.运行命令/手动调时）|Extra (1.get time from server 2.uptime 3.run Cmd/calibrate time manually)|×|1.TOMA 2.MATO 3.5月26日 星期一|-|
+|额外（1.校准时间 2.获取运行时长 3.运行命令/手动调时 4.禁用模块）|Extra (1.get time from server 2.uptime 3.run Cmd/calibrate time manually 4.disable modules)|√|1.TOMA 2.MATO 3.5月26日 星期一 4.在cw.htm文件第14行Line14~起注释Comment模块以禁用Disable|-|
 
 ## 排版(Demo):  
 tickList  home  
@@ -38,5 +38,7 @@ Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/b
 Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
 
 ### 智能家居Hue(Home Smart for Philips-Hue)
-适配飞利浦Hue智能家居的开关。本功能需要前一项B站直播弹幕功能中跨域请求的支持。
-
+适配飞利浦Hue智能家居的开关。本功能需要前一项B站直播弹幕功能中跨域请求的支持。  
+首先按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件1383行左右的变量hueToken为该值。  
+Smart home switch for Philips-Hue products. Also this module need the former module of Bilibili Live Danmu module's function for CROS request support.  
+Press the Hue Link button 2. Run hReg() 3. Change the hueToken VAR in this page file Line1383~  
