@@ -8,16 +8,17 @@ Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu. Display
 |时间显示|Time Display|√|-|-|
 |天气预报|Weather|√|-|-|
 |番茄时钟|Tomato Clock|√|05: run/relax, 40: pause, 同步时间: quit|05：工作/休息模式切换， 40：暂停，同步时间：退出|
-|滴答清单|Ticktick Reminder|×|tickList (the tomato icon)|左上角番茄图标|
+|滴答清单|Ticktick Reminder|×|tickList (top left tomato icon)|左上角番茄图标|
 |B站直播弹幕|Bilibili Live Danmu|×|danmu (the blank area left to the 5月26日)|5月26日左侧的空白处|
-|额外（1.校准时间 2.获取运行时长 3.运行命令/手动调时）|Extra (1.get time from server 2.uptime 3.run Cmd/calibrate time manually)|√|1.TOMA 2.MATO 3.5月26日 星期一|-|
+|智能家居Hue|Home Smart for Philips-Hue|×|home (top right blank corner)|右上角的空白区域|
+|额外（1.校准时间 2.获取运行时长 3.运行命令/手动调时）|Extra (1.get time from server 2.uptime 3.run Cmd/calibrate time manually)|×|1.TOMA 2.MATO 3.5月26日 星期一|-|
 
 ## 排版(Demo):  
-tickList  
+tickList  home  
 <font size=7>05:40</font><br>
 danmu <b>TOMAMATO<br>
 5月26日 星期一</b><br>
-<font size=5>======weather======</font><br>
+<font size=5>====weather====</font><br>
 同步时间：2019-05-26 03:54:00 完成上一次同步</font>
 
 ## 可选-部署(Optional-Install):
@@ -35,3 +36,7 @@ Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/b
 ### B站直播弹幕(Bilibili Live Danmu)
 根据`cw.htm`文件弹幕功能代码段前的注释安装依赖。将`location /blive/ {..}`中内容复制到Nginx配置文件中。进入`blivedm`文件夹，`python3 startBliveServer.py`运行弹幕获取服务端。  
 Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
+
+### 智能家居Hue(Home Smart for Philips-Hue)
+适配飞利浦Hue智能家居的开关。本功能需要前一项B站直播弹幕功能中跨域请求的支持。
+
