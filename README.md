@@ -1,6 +1,6 @@
 ## 介绍(Introduce):  
-功能包括时间显示、天气预报、番茄时钟、滴答清单、B站直播弹幕。屏幕尺寸适配KPW3，如有需要可以自行调整css。  
-Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu. Display For KPW3, but you can change it by edit css.
+功能包括时间显示、天气预报、番茄时钟、滴答清单、B站直播弹幕、智能家居Hue。屏幕尺寸适配KPW3，如有需要可以自行调整css。  
+Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu & Home Smart for Philips-Hue. Display For KPW3, but you can change it by edit css.
 
 ## 功能(Function):
 |ZH|EN|Default|How to run|使用按钮|
@@ -10,7 +10,7 @@ Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu. Display
 |番茄时钟|Tomato Clock|√|05: run/relax, 40: pause, 同步时间: quit|05：工作/休息模式切换， 40：暂停，同步时间：退出|
 |滴答清单|Ticktick Reminder|×|tickList (top left tomato icon)|左上角番茄图标|
 |B站直播弹幕|Bilibili Live Danmu|×|danmu (the blank area left to the 5月26日)|5月26日左侧的空白处|
-|智能家居Hue|Home Smart for Philips-Hue|×|home (top right blank corner)|右上角的空白区域|
+|智能家居Hue|Home Smart for Philips-Hue|√×|home (top right blank corner)|右上角的空白区域|
 |额外（1.校准时间 2.获取运行时长 3.运行命令/手动调时 4.禁用模块）|Extra (1.get time from server 2.uptime 3.run Cmd/calibrate time manually 4.disable modules)|√|1.TOMA 2.MATO 3.5月26日 星期一 4.在cw.htm文件第14行Line14~起注释Comment模块以禁用Disable|-|
 
 ## 排版(Demo):  
@@ -21,7 +21,7 @@ danmu <b>TOMAMATO<br>
 <font size=5>====weather====</font><br>
 同步时间：2019-05-26 03:54:00 完成上一次同步</font>
 
-## 可选-部署(Optional-Install):
+## 可选-需要手动部署(Optional-How-to-Install):
 上功能表中打勾项表示无需额外安装，在Kindle中打开网页即可，打叉项表示该功能需要额外安装（需要一个Nginx服务端）。  
 需要在服务端配置文件中添加的代码在每个功能块的注释中。  
 Checked functions in the table above mean these are standalone, otherwise means these are relied on a running Nginx server with a proper config.  
@@ -38,7 +38,7 @@ Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/b
 Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
 
 ### 智能家居Hue(Home Smart for Philips-Hue)
-适配飞利浦Hue智能家居的开关。本功能需要前一项B站直播弹幕功能中跨域请求的支持。  
-首先按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件1383行左右的变量hueToken为该值。  
-Smart home switch for Philips-Hue products. Also this module need the former module of Bilibili Live Danmu module's function for CROS request support.  
-Press the Hue Link button 2. Run hReg() 3. Change the hueToken VAR in this page file Line1383~  
+适配飞利浦Hue智能家居的开关。Hue中继桥的api带CROS跨域操作头，所以不需要手动代理。  
+为获取api授权操作码，按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件1383行左右的变量hueToken为该值。  
+Smart home switch for Philips-Hue products. Response Header returned from Hue bridge api contains allow CROS *, therefore need to proxy the request.  
+To get Hue api token: 1.Press the Hue Link button 2. Run hReg() 3. Change the hueToken variable in this page file Line1383~  

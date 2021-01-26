@@ -1383,7 +1383,7 @@
   http://philips-hue/debug/clip.html
   https://developers.meethue.com/develop/get-started-2/
   */
-  var hueBaseUrl="/blive/?cros:"+'http://philips-hue/api/';//Need blive cros server
+  var hueBaseUrl='//philips-hue/api/';//No need CROS Access-Control-Allow-Origin *
   var hueUser={"devicetype": 'A 3-switch kindle-based controller.'};
   var hueToken="UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";
   var switchs={};//{1:{on:false, name:"Somelight", reachable:true}}
@@ -1469,8 +1469,12 @@
   if (info.support.indexOf('home')!=-1)
     document.getElementById("home").innerHTML='<div style="background: gray;">HOME</div>';
   //Autostart
-  for (var i in autostart)
-    [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
+  if (!testStatus)
+    if (navigator.userAgent.indexOf('Windows')!=-1)
+      comment('Autostart disabled in Windows');
+    else
+      for (var i in autostart)
+        [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
   </script>
 </body>
 </html>
