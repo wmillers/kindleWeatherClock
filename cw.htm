@@ -10,13 +10,12 @@
       version: '1.5',
       description: '(bug-fix changes are in commit logs)',
       author: 'wmillers@github',
-      support: ['time', 'weather',//those two are default modules
-          'tomato',
+      support: ['time', 'weather', 'tomato',//those three are default modules
+          //'TO-DISABLE-//COMMENT-THE-LINE',
           'ticklist',
           'danmu',
           'home',
-          //'TO-DISABLE-//COMMENT-THE-LINE',
-        ],
+      ],
       license: 'LGPL2.1'
     }
     var autostart=['ticklist', 'danmu', 'home'];//delete unwanted auto-start modules
@@ -60,17 +59,14 @@
     }
     .home {
       position: absolute;
-      font-size: .5rem;
       left: 24rem;
-      margin-top: .5rem;
       width: 20rem;
-      height: 5rem;
       z-index: 3;
-      font-size: 1rem;
+      font-size: 1.5rem;
     }
     .h_switch {
-      width: 6rem;
-      height: 5rem;
+      height: 6rem;
+      width: 8rem;
       border: black 5px solid;
       display: table-cell;
       vertical-align:middle
@@ -1296,6 +1292,7 @@
     clearTimeout(danmuTaskIndexs[1]);
     if (isDanmuLive){
       if (s){
+        danmuTaskIndexs[1]=setTimeout('danmuRead("info", danmuInfoUpdate)', danmuPop==1?2*60*1000:29*1000);
         var info=JSON.parse(s);
         if (danmuRoomId!=(danmuRoomId=info.room_id))
           danmuParseStreamer();
@@ -1305,7 +1302,6 @@
           p=2;
         setDanmuPop(p);
         danmuInfo();
-        danmuTaskIndexs[1]=setTimeout('danmuRead("info", danmuInfoUpdate)', danmuPop==1?2*60*1000:29*1000);
       } else
         setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
     }
@@ -1336,6 +1332,7 @@
     clearTimeout(danmuTaskIndexs[3]);
     if (isDanmuLive==1){
       if (s){
+        danmuTaskIndexs[3]=setTimeout('danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId+'", danmuParseStreamer)', danmuTryToken>=3?600*1000:300*1000);
         var stat=JSON.parse(s);
         danmuRead("cros:https://api.bilibili.com/x/space/acc/info?mid="+stat.data.uid, function a(s){
           var stat=JSON.parse(s);
@@ -1344,7 +1341,6 @@
             danmuStreamer=s[0].length+s[1].length>14?(s[0].slice(-3)+s[1]).slice(0,14):s[0]+s[1];
           }
         });
-        danmuTaskIndexs[3]=setTimeout('danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId+'", danmuParseStreamer)', danmuTryToken>=3?600*1000:300*1000);
       } else {
         if (danmuRoomId)
           danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/room_init?id='+danmuRoomId, danmuParseStreamer);
@@ -1391,7 +1387,7 @@
     comment('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
     alert('hueToken around line:1383 is empty');
   }
-  function hCollect(){
+  function hCollect(f){
     if (!hueToken){
       hHelp();
       return;
@@ -1405,7 +1401,10 @@
         switchs={};
         for (var i in s)
           switchs[i]={on:s[i].state.on, name:s[i].name, reachable:s[i].state.reachable};
-        hUpdate();
+        if (typeof f=="function")
+          f();
+        else
+          hUpdate();
       }
     }, comment);
   }
@@ -1420,31 +1419,34 @@
   }
   function hSwitch(n){
     event.stopPropagation();
-    hChange(n);
-  }
-  function hChange(n){
     if (!hueToken){
       hHelp();
       return;
     }
     document.getElementById('hs'+n).style.borderColor="white";
-    httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
-      var s=JSON.parse(s)[0];
-      if ("success" in s)
-        hCollect();
-      else
-        comment(JSON.stringify(s));
-    }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
+    hCollect(function hChange(){
+      httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
+        var s=JSON.parse(s)[0];
+        if ("success" in s)
+          hCollect();
+        else
+          comment(JSON.stringify(s));
+      }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
+    });
   }
   function hUpdate(){
+    var l=Object.keys(switchs).length;
     if (!hueToken){
       hHelp();
       return;
-    } else if (!Object.keys(switchs).length){
+    } else if (!l){
       hCollect();
       return;
     }
-    document.getElementById('home').innerHTML='';
+    var home=document.getElementById('home');
+    home.innerHTML='';
+    home.style.left=l>=3?"20rem":"24rem";
+    home.style.width=l>=3?"24rem":"20rem";
     for (var i in switchs){
       document.getElementById('home').innerHTML+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+switchs[i].name+"</div>";
       var hs=document.getElementById('hs'+i).style;
@@ -1467,7 +1469,7 @@
         eval(funcList[1][i][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED")}');
     }
   if (info.support.indexOf('home')!=-1)
-    document.getElementById("home").innerHTML='<div style="background: gray;">HOME</div>';
+    document.getElementById("home").innerHTML='<div style="padding-top: 4rem;">HOME</div>';
   //Autostart
   if (!testStatus)
     if (navigator.userAgent.indexOf('Windows')!=-1)
