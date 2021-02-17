@@ -10,7 +10,11 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from urllib import parse, request
 import ctypes
+from socketserver import ThreadingMixIn
 
+
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
@@ -28,7 +32,7 @@ class Resquest(BaseHTTPRequestHandler):
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
             count=0
-            while count<90:
+            while count<60:
                 count+=1
                 danmu=readFromLive()
                 if (danmu and danmu!='<br>'):
@@ -79,6 +83,7 @@ def controlRoom(path, data=None, method=None):
                 new_room_id.value=room_id
             else:
                 res='[err] Not in safe range: '+cmd
+            needExtra=False
     else:
         if (cmd=='history'):
             res=cmd+': '+'<br>'.join(history)
@@ -109,7 +114,8 @@ def controlRoom(path, data=None, method=None):
             needExtra=False
         elif (cmd[0:3]=='js:'):
             cmd=parse.unquote(ori_cmd)
-            info['pop']='9999'
+            if info['pop']=='1':
+                info['pop']='9999'
             que.put_nowait('[CAFFEINE] keep awake')
             que.put_nowait('[JS]'+cmd[3:])
             print('[js] '+cmd[3:])
@@ -152,9 +158,12 @@ def initServer(r, c1, c2, c3):
     global que, new_room_id, status_code, last_room_id
     que, new_room_id, status_code, last_room_id=r, c1, c2, c3
     host = ('localhost', 8099)
-    server = HTTPServer(host, Resquest)
     print("Starting server, listen at: %s:%s" % host)
-    server.serve_forever()
+    server = ThreadedHTTPServer(host, Resquest)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
 
 
 def aprint(a):
@@ -246,11 +255,12 @@ def main():
     while True:
         if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
-            clear_que(que, 100)
-            setSleep(que, status_code, 2)
             c.terminate()
             c.join()
             room_id=0
+            last_room_id.value=0
+            clear_que(que, 50)
+            setSleep(que, status_code, 2)
         if (new_room_id.value!=0):
             if (new_room_id.value<0):
                 if (new_room_id.value==-1):
