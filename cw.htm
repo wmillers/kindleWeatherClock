@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <script type="text/javascript">
     //**************Basic settings***************
+    var fixBugButCanAddMoreBugs=true;//If you not sure, please change this to false
     var testStatus=false;
     var info={
       version: '1.5',
@@ -66,10 +67,12 @@
     }
     .h_switch {
       height: 20rem;
-      width: 12rem;
+      width: 8rem;
       border: black 5px solid;
       display: table-cell;
-      vertical-align:middle
+      vertical-align:middle;
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
     }
     .tickList {
       position: absolute;
@@ -180,7 +183,7 @@
   <div class="cleaner" id="cleaner"><noscript>Javascript NOT support.</noscript></div>
   <div class="app"><div class="rotate">
     <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
-    <div class='home' id='home' onclick="hUpdate()"></div>
+    <div class='home' id='home' onclick="hUpdate()"><div style="padding-top: 3rem;">HOME</div></div>
     <div style='height:6rem;'></div>
     <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
     <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
@@ -210,7 +213,7 @@
       if (new Date().getTime()<clearCommentTime) return;
       document.getElementById('basket').innerHTML='';
     }
-    function httpReq(path, f, fOnfailed, post, method){
+    function httpReq(path, f, fOnfailed, post, method, fOnBoth){
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function(){
         if (xmlhttp.readyState == 4){
@@ -219,6 +222,8 @@
               f(xmlhttp.responseText);
           } else if (fOnfailed)
             fOnfailed(xmlhttp.status);
+          if (fOnBoth)
+            fOnBoth();
         }
       }
       xmlhttp.open(method?method:post?'POST':'GET', path);
@@ -474,7 +479,7 @@
         clearInterval(testInterval);
       update();
     }
-    function f5(p){if (p) location.hostname=p; else location.replace(location);}
+    function f5(p, g){location.replace(location.protocol+'//'+(p?p:location.hostname)+location.pathname+(location.search?"":"?1")+(g?g:''));}
     function loop(){
       test(true, 3);
       setInterval('timeOffset+=57*1000;update()', 50);
@@ -690,9 +695,11 @@
       tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
     }
     function fridgeTomato(){
+      killShadow();
+      tomatoMsg[0].innerHTML=toStatus&&toStatus!='stop'?'MATO':'TOMA';
+      tomatoMsg[1].innerHTML=toStatus&&toStatus!='stop'?'TOMA':'MATO';
       prepareTomato();
       tomatoMsg[2].innerHTML=initialTitle;
-      killShadow();
     }
     function prepareTomato(){
       //quit from tomato
@@ -1098,16 +1105,17 @@
 // ==/UserScript==
 (function() {
     'use strict';
-    function danmuRead(i, t){
+    var i=location.pathname.split('/')[1];
+    if (!isNaN(parseInt(i))){
         var xmlhttp = new XMLHttpRequest();
         xmlhttp.onreadystatechange = function(){
             if (xmlhttp.readyState == 4)
-                document.title=(xmlhttp.status==200?'√ ':'×'+xmlhttp.status)+t;
+                document.title=(xmlhttp.status==200?'√ ':'×'+xmlhttp.status)+document.title;
         }
         xmlhttp.open('GET', "https://debian10/blive/?"+i);
         xmlhttp.send();
+        console.log(i);
     }
-    danmuRead(window.location.pathname.split('/').filter(a=>{return a;})[0], document.title);
 })();
   */
   var danmuStyle=document.getElementById('danmu_frame').style;
@@ -1179,7 +1187,7 @@
     clearTimeout(danmuTaskIndexs[3]);
     setTimeout('if (danmuPop==1) danmuClear()', 10*60*1000);
     danmuAlter(true);
-    danmu.innerHTML='--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-<br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
+    danmu.innerHTML='<b>--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-</b><br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
     danmuInfo();
     danmuPop=0;
   }
@@ -1202,7 +1210,7 @@
     }
   }
   function setDanmuPop(p){
-    if (p!=danmuPop&&!(danmuPop==0&&p==1&&getOffsetTime()-danmuStart<2*60*1000)){
+    if (p!=danmuPop&&!(danmuPop==0&&p==1&&getOffsetTime()-danmuStart<2*60*1000)||(danmuPop==9999&&p!=1)){
       var old=danmuPop;
       danmuPopTrends=p<danmuPop?-1:(p==danmuPop?0:1);
       danmuPop=p;
@@ -1210,7 +1218,7 @@
         reduceShadow();
       if (p==1||p==9999){
         danmuAlter(true);
-        danmuWrite('TRANSMIT'+dateString(getOffsetTime(), 'hm'));
+        danmuWrite('TRANSMIT'+dateString(getOffsetTime(), 'hm'), true);
       } else if (old==9999||(old==1&&p>1))
         danmuAlter(false);
     }
@@ -1231,8 +1239,19 @@
     if (danmuPop==1&&sn.length>5)
       setDanmuPop(2);
     for (var i in sn){
-        if ((sn[i]=sn[i].trim()).slice(0,4)=='[JS]')
-          setTimeout('comment('+unescape(sn[i].slice(4))+', true)', 0);
+        if ((sn[i]=sn[i].trim()).slice(0,4)=='[JS]'){
+          var r=unescape(sn[i].slice(4)).split(';');
+          setTimeout(function run(){
+            comment('', true);
+            try {
+              for (var j in r)
+                if (r[j])
+                  comment(eval(r[j]));
+            } catch (e){
+              comment(e);
+            }
+          }, 0);
+        }
         if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
           sn[i]=danmuReverse(sn[i]);
         if (sn[i]&&sn[i].indexOf('[CAFFEINE]')==-1)
@@ -1240,7 +1259,7 @@
     }
     s=s.join("<br>");
     if (danmuPop!=1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
-      setDanmuPop(1);
+      danmuOff('SLEEP');//setDanmuPop(1);
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
@@ -1271,18 +1290,17 @@
     }, function b(n){
       if (isDanmuLive&&n>=400&&n<600)
         danmuWrite('[local] server return: '+n+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600, false, true);
-    });
-    if (f==undefined){
+    }, '', '', f==undefined?function c(){
       clearTimeout(danmuTaskIndexs[0]);
       if (isDanmuLive)
-        danmuTaskIndexs[0]=setTimeout('danmuRead()', danmuTryToken<=3&&danmuPop>1?1000:danmuPop==0?10*1000:2*60*1000);
-    }
+        danmuTaskIndexs[0]=setTimeout('danmuRead()', danmuTryToken>3||danmuPop==1?2*60e3:danmuPop>5e4?2e3:10e3);
+    }:undefined);
   }
   function danmuInfoUpdate(s){
     clearTimeout(danmuTaskIndexs[1]);
     if (isDanmuLive){
+      danmuTaskIndexs[1]=setTimeout('danmuRead("info", danmuInfoUpdate)', !s?3*1000:danmuPop==1?2*60*1000:29*1000);
       if (s){
-        danmuTaskIndexs[1]=setTimeout('danmuRead("info", danmuInfoUpdate)', danmuPop==1?2*60*1000:29*1000);
         var info=JSON.parse(s);
         if (danmuRoomId!=(danmuRoomId=info.room_id))
           danmuParseStreamer();
@@ -1290,8 +1308,7 @@
         var p=parseInt(info.pop);
         setDanmuPop(parseInt(info.que_size)>5&&p==1?2:p);
         danmuInfo();
-      } else
-        setTimeout('danmuRead("info", danmuInfoUpdate)', 3*1000);
+      }
     }
   }
   function danmuInfo(){
@@ -1305,7 +1322,7 @@
     }
     if (danmuTryToken>3)
       status=' ⁉'+danmuTryToken;
-    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+dTrends+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+status+' </span><br>'+danmuSuperChat;
+    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+dTrends+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+'<b>'+status+' </b></span><br>'+danmuSuperChat;
   }
   function danmuRoomStatCollect(n){
     clearTimeout(danmuTaskIndexs[2]);
@@ -1369,6 +1386,7 @@
   var hueUser={"devicetype": 'A 3-switch kindle-based controller.'};
   var hueToken="UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";
   var switchs={};//{1:{on:false, name:"Somelight", reachable:true}}
+  var hLast=0;
   function hHelp(){
     comment('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
     alert('hueToken around line:1383 is empty');
@@ -1378,7 +1396,7 @@
       hHelp();
       return;
     }
-    httpReq('', console.log, comment);//may solve kindle's display bug on network failure?
+    hLast=new Date().getTime();
     httpReq(hueBaseUrl+hueToken+'/lights/', function hParse(s){
       var s=JSON.parse(s);
       if (Array.isArray(s)){
@@ -1404,13 +1422,17 @@
         comment(JSON.stringify(s));
     }, comment, JSON.stringify(hueUser));
   }
-  function hSwitch(n){
-    event.stopPropagation();
+  function hSwitch(n, t){
+    if (event)
+      event.stopPropagation();
     if (!hueToken){
       hHelp();
       return;
     }
-    document.getElementById('hs'+n).style.borderColor="white";
+    if (t)
+      t.style.background="rgba(128,128,128,.2)";
+    if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000)
+      f5('', '#hSwitch(1)');
     hCollect(function hChange(){
       httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
         var s=JSON.parse(s)[0];
@@ -1435,40 +1457,47 @@
     home.style.left=l>=3?"20rem":"24rem";
     home.style.width=l>=3?"24rem":"20rem";
     for (var i in switchs){
-      document.getElementById('home').innerHTML+="<div class='h_switch' id='hs"+i+"' onclick='hSwitch("+i+")'>"+switchs[i].name+"</div>";
-      var hs=document.getElementById('hs'+i).style;
+      var hs=document.createElement('div');
+      hs.setAttribute('class', 'h_switch');
+      hs.setAttribute('onclick', 'hSwitch('+i+', this)');
+      hs.appendChild(document.createTextNode(switchs[i].name));
+      document.getElementById('home').appendChild(hs);
+      hs=hs.style;
+      hs.fontSize="";
       hs.borderColor=switchs[i].reachable?"":"gray";
-      hs.width=switchs[i].reachable?"":"8rem";
+      hs.width=switchs[i].reachable?"12rem":"4rem";
       hs.height=toStatus&&toStatus!='stop'?"8rem":"";
-      hs.background="rgba("+(switchs[i].on?"255,255,255":"0,0,0")+",.2)";
-      hs.color=switchs[i].on?"black":"white";
+      hs.background="rgba("+(switchs[i].on?"255,255,255":"")+",.2)";
+      hs.color=switchs[i].on?"black":"";
     }
+    if (fixBugButCanAddMoreBugs)
+      document.getElementById('home').innerHTML+="<div class='h_switch' onclick=\"f5(\'\', \'#hSwitch(1)\')\">F5</div>";
   }
 
 
   var loaded=true;
   /*Modules control*/
   var funcList=[['tomato', 'ticklist', 'danmu', 'home'],
-    [['switchTomato', 'pauseTomato'], 'showIcs', 'danmuSwitch', ['hSwitch', 'hUpdate', 'hReg']]];
+    [['switchTomato', 'pauseTomato'], ['showIcs'], ['danmuSwitch'], ['hSwitch', 'hUpdate', 'hReg']]];
   for (var i in funcList[0])
-    if (info.support.indexOf(funcList[0][i])==-1){
-      if (!Array.isArray(funcList[1][i]))
-        funcList[1][i]=[funcList[1][i]];
+    if (info.support.indexOf(funcList[0][i])==-1)
       for (var j in funcList[1][i])
         eval(funcList[1][i][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED")}');
-    }
-  if (info.support.indexOf('home')!=-1)
-    document.getElementById("home").innerHTML='<div style="padding-top: 3rem;">HOME</div>';
+  if (info.support.indexOf('home')==-1)
+    document.getElementById("home").innerHTML='';
   //Autostart
-  function runAutostart(){
-        for (var i in autostart)
-          [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
-  }
   if (!testStatus)
-    if (navigator.userAgent.indexOf('Windows')!=-1)
+    if (navigator.userAgent.indexOf('Windows')!=-1){
+      killShadow=function disabled(){comment("killShadow is DISABLED")};
       comment('Autostart disabled in Windows');
-    else
-      runAutostart();
+    } else
+      for (var i in autostart)
+        [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
+  //resume task from #a()#b()
+  var run=location.hash.split('#');
+  for (var i in run)
+    setTimeout(run[i], 1000);
+  location.hash="";
   </script>
 </body>
 </html>
