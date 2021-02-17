@@ -14,7 +14,7 @@ import ctypes
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[CAFFEINE] keep awake']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self, data=None, method=None):
         if (isEmptyPath(self.path)):
@@ -109,8 +109,8 @@ def controlRoom(path, data=None, method=None):
             needExtra=False
         elif (cmd[0:3]=='js:'):
             cmd=parse.unquote(ori_cmd)
-            new_room_id.value=-3
             info['pop']='9999'
+            que.put_nowait('[CAFFEINE] keep awake')
             que.put_nowait('[JS]'+cmd[3:])
             print('[js] '+cmd[3:])
             res='[JS-Executing]'+cmd[3:]
@@ -140,8 +140,8 @@ def readFromLive():
                     info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
                     if (len(info['super_chat'])>9):
                         info['super_chat']=info['super_chat'][3:]
-                else:
-                    info['pop']=tmp[1:-1] if status_code!=4 else '9999'
+                elif (tmp[1:-1]=="1" and info['pop']!='9999') or tmp[1:-1]!="1":
+                    info['pop']=tmp[1:-1]
                 continue
             res=tmp+('<br>' if tmp and res else '')+res
     if (status_code.value!=0):
@@ -220,6 +220,10 @@ def clear_que(q, n):
         n-=1
         q.get_nowait()
 
+def setSleep(q, status_code, status):
+    status_code.value=status
+    q.put_nowait("$1$")
+
 def main():
     print('--- START at '+asctime()+' ---')
     que = Queue()
@@ -238,12 +242,12 @@ def main():
         que.put_nowait('[INIT] new room: '+str(room_id))
     else:
         print('[wait] No preset room id, wait for client request')
-        status_code.value=1
+        setSleep(que, status_code, 1)
     while True:
         if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
             clear_que(que, 100)
-            status_code.value=2
+            setSleep(que, status_code, 2)
             c.terminate()
             c.join()
             room_id=0
@@ -256,12 +260,10 @@ def main():
                     break
                 if (new_room_id.value==-2):
                     print('[kick&kill] but no new room')
-                    status_code.value=3
+                    setSleep(que, status_code, 3)
                     c.terminate()
                     c.join()
                     room_id=0
-                if (new_room_id.value==-3):
-                    status_code.value=4
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))

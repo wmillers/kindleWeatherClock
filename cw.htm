@@ -26,7 +26,7 @@
     if (typeof eval!='function')
       comment('eval not support');
   </script>
-  <title>tomatoClock</title>
+  <title>&nbsp;</title><!--tomatoClock-->
   <link id='ico' href="" rel="icon" type="image/x-icon" />
 
 	<style>
@@ -1187,7 +1187,7 @@
     clearTimeout(danmuTaskIndexs[3]);
     setTimeout('if (danmuPop==1) danmuClear()', 10*60*1000);
     danmuAlter(true);
-    danmu.innerHTML='<b>--BLIVE-OFF--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-</b><br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
+    danmu.innerHTML='<b>--OFF'+dateString()+'--'+(s!=undefined?s+'-':'')+timeFormat(getOffsetTime()-danmuStart,2)+'-</b><br>'+(danmu.innerHTML).slice(0,danmuMax/5)+'...';
     danmuInfo();
     danmuPop=0;
   }
@@ -1259,7 +1259,7 @@
     }
     s=s.join("<br>");
     if (danmuPop!=1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
-      danmuOff('SLEEP');//setDanmuPop(1);
+      setDanmuPop(1);
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
@@ -1293,7 +1293,7 @@
     }, '', '', f==undefined?function c(){
       clearTimeout(danmuTaskIndexs[0]);
       if (isDanmuLive)
-        danmuTaskIndexs[0]=setTimeout('danmuRead()', danmuTryToken>3||danmuPop==1?2*60e3:danmuPop>5e4?2e3:10e3);
+        danmuTaskIndexs[0]=setTimeout('danmuRead()', danmuTryToken>5||danmuPop==1?2*60e3:danmuPop>5e4?2e3:10e3);
     }:undefined);
   }
   function danmuInfoUpdate(s){
