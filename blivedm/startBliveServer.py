@@ -24,8 +24,17 @@ class Resquest(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
-        cmd_res=controlRoom(self.path, data, method)
-        res=cmd_res[1]+('<br>' if cmd_res[1] and cmd_res[0] else '')+(readFromLive() if cmd_res[0] else '')
+        needExtra, cmd_res=controlRoom(self.path, data, method)
+        res=cmd_res+('<br>' if cmd_res and needExtra else '')
+        if needExtra:
+            count=0
+            while count<90:
+                count+=1
+                danmu=readFromLive()
+                if (danmu and danmu!='<br>'):
+                    res=res+danmu
+                    break
+                sleep(1)
         self.wfile.write(res.encode('utf-8'))
 
     def do_POST(self):
@@ -114,7 +123,7 @@ def controlRoom(path, data=None, method=None):
             needExtra=False
         else:
             res='[err] Invalid: '+cmd
-    return [needExtra, str(res)]
+    return needExtra, str(res)
 
 def readFromLive():
     global history, que, status_code, info, status
