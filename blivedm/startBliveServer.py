@@ -83,6 +83,7 @@ def controlRoom(path, data=None, method=None):
                 new_room_id.value=room_id
             else:
                 res='[err] Not in safe range: '+cmd
+            needExtra=False
     else:
         if (cmd=='history'):
             res=cmd+': '+'<br>'.join(history)
@@ -254,11 +255,12 @@ def main():
     while True:
         if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
-            clear_que(que, 100)
-            setSleep(que, status_code, 2)
             c.terminate()
             c.join()
             room_id=0
+            last_room_id.value=0
+            clear_que(que, 50)
+            setSleep(que, status_code, 2)
         if (new_room_id.value!=0):
             if (new_room_id.value<0):
                 if (new_room_id.value==-1):
