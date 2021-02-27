@@ -24,7 +24,7 @@
     //********************************************
     setTimeout(function isLoaded(){
       if (typeof loaded=="undefined"){
-        document.getElementById("week").innerHTML="js FAILED";
+        document.getElementsByClassName('cleaner')[0].innerHTML="js FAILED";
         confirm('JS failed, need reload?')?f5():comment('No need to reload');
       }
     }, 4000);
@@ -36,19 +36,19 @@
     }
   </script>
   <title>&nbsp;</title><!--tomatoClock-->
-  <link id='ico' href="" rel="icon" type="image/x-icon" />
+  <link id="ico" href="" rel="icon" type="image/x-icon" />
 
 	<style>
     table {
       border-spacing: 0;
     }
     .cleaner {
-      /*background: black;
-      color: white;*/
+      background: black;
+      color: white;
       position: fixed;
       width: 100%;
       height: 100%;
-      display: none;
+      display: block;
       z-index: 20;
       top: 0;
       left: 0;
@@ -189,25 +189,25 @@
   </style>
 </head>
 <body>
-  <div class="cleaner" id="cleaner"></div>
+  <div class="cleaner"></div>
   <div class="app"><div class="rotate">
-    <div class='tickList' id='tickList' onclick="showIcs()"><div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table></div>
-    <div class='home' id='home' onclick="hUpdate()"><div style="padding-top: 3rem;">HOME</div></div>
-    <div style='height:6rem;'></div>
-    <div class='danmu_fr' id='danmu_frame' onclick="danmuSwitch()"><span class='danmu_info' id='danmu_info'></span><span id='danmu'></span></div>
-    <div class="time" id="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
+    <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
+    <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
+    <div style="height:6rem"></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span id="danmu"></span></div>
+    <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
-    <div class="date" id="allDate" onclick="correctPrompt()"><span id="date">0月0日</span> <span id="week">星期零<noscript>Javascript NOT support.</noscript></span></div>
-    <iframe class='weath' id="ifrmid" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
-    <div class='basket' id="basket"></div>
-    <div class="inform" id="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
-    <div class='reminder' id='reminder' onclick="displayReminder(false)"></div>
+    <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一<noscript>Javascript NOT support.</noscript></div>
+    <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
+    <div class="basket"></div>
+    <div class="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
+    <div class="reminder" onclick="displayReminder(false)"></div>
   </div></div>
   <script type="text/javascript">
     var initialTitle=document.title;
     var clearCommentTime=0;
+    var basket=document.getElementsByClassName('basket')[0];
     function comment(s, isJam){
-      var basket=document.getElementById('basket');
       var lag=30*60*1000;
       s=s==undefined?'und':String(s);
       setTimeout("clearComment()", lag+1000);
@@ -220,7 +220,7 @@
     }
     function clearComment(){
       if (new Date().getTime()<clearCommentTime) return;
-      document.getElementById('basket').innerHTML='';
+      basket.innerHTML='';
     }
     function httpReq(path, f, fOnfailed, post, method, fOnBoth){
       var xmlhttp = new XMLHttpRequest();
@@ -342,7 +342,6 @@
     var timeOffset=0;
     var preventDecreaseShadow=false;//Stop when tomato
     var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
-    var cleaner=[document.getElementById('cleaner').style, document.getElementById('time').style];
     var initTime=new Date().getTime();
     var initTimeOffset=0;
     var averageTimeOffset=[];
@@ -473,7 +472,7 @@
     }
     function initBrowserPage(){
       setIcon();
-      //killShadow();
+      killShadow();
       addTaskOnPageChange("killShadow()", 86300*1000);//24*3600=86400 & 1700 --> 17*24*3600
       addTaskOnPageChange("reduceShadow()", 3100*1000);//prime number 60*60=3600
     }
@@ -498,16 +497,25 @@
           }
       return false;
     }
+    function tasks(f, l, t, i){
+      if (i==undefined) i=0;
+      if (i<l.length){
+        f(l[i++]);
+        setTimeout(function a(){tasks(f, l, t, i)}, t);
+      }
+    }
     function killShadow(force){
-      if (force||!preventDecreaseShadow)
-        for (var i=0;i<3;i++)
-          setTimeout('cleaner[0].display="'+["block", "block", "none"][i]+'";'+
-                    'cleaner[0].background="'+["black", "white", "black"][i]+'"', 800*i);
+      var t=400;
+      var cleaner=document.getElementsByClassName('cleaner')[0].style;
+      if (force||!preventDecreaseShadow){
+        tasks(function a(e){cleaner.display=e}, ["", "", "none"], t);
+        tasks(function b(e){cleaner.background=e}, ["", "white", ""], t);
+        tasks(function c(e){document.body.style.color=e}, ["", "", "", "white", ""], t);
+      }
     }
     function reduceShadow(){
       if (!preventDecreaseShadow)
-        for (var i=0;i<2;i++)
-          setTimeout('cleaner[1].opacity='+[0, 1][i], 600*i);
+        tasks(function a(e){document.getElementsByClassName('time')[0].style.opacity=e}, [0, 1], 600);
     }
     function runTime(n){return timeFormat(new Date().getTime()-initTime, n?n:3, true);}
     function noCache(){return "?noCache="+document.body.clientWidth+"."+document.body.clientHeight+"."+(""+Math.random()).slice(2,9);}
@@ -571,7 +579,7 @@
         o+=i+(cmdList[i][1]!==true?','+timeFormat(cmdList[i][1], 2, true)+',':'T')+dateString(cmdList[i][2])+'|';
       return o.slice(0,-1);
     }
-    function wipe(){document.getElementById('basket').innerHTML='';}
+    function wipe(){basket.innerHTML='';}
     function test(s){
       if (testStatus=!testStatus){
         comment(how());
@@ -639,14 +647,15 @@
       runTaskOnPageChange();
       if (timeOffset==0)//fix the bug on kindle
         date.setMinutes(date.getMinutes()+1);
-      var clock=[document.getElementById("hour"), document.getElementById("minute"), document.getElementById("date"), document.getElementById("week")];
-      clock[0].innerHTML = frontZero(date.getHours())+':';
-      clock[1].innerHTML = frontZero(date.getMinutes());
-      clock[2].innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日';
-      clock[3].innerHTML = '星期'+['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
-      if (hasModule('lunaryear'))
-        clock[3].innerHTML += ' ' + GetLunarDay(false, false, true, true);
-      clock[3].innerHTML += '<span style="font-size:1.5rem;position:absolute;"> '+(testStatus?'#envTest':'')+' '+tickListAlarm+"</span>";
+      var hour=document.getElementById("hour");
+      var minute=document.getElementById("minute");
+      var calendar=document.getElementsByClassName("date")[0];
+      hour.innerHTML = frontZero(date.getHours())+':';
+      minute.innerHTML = frontZero(date.getMinutes());
+      var weekday=['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
+      calendar.innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
+        + (hasModule('lunaryear')?'('+weekday+') ' + GetLunarDay(false, false, true, true):' 星期'+weekday)
+        + '<span style="font-size:1.5rem;position:absolute;"> '+(testStatus?'#envTest':'')+' '+tickListAlarm+"</span>";
       return date;
     }
     function weatherInterval(){
@@ -667,7 +676,7 @@
         setTimeout('onlineWeather()', 100);
     }
     function onlineWeather(){
-      var _doc=document.getElementsByTagName('body')[0];
+      var _doc=document.body;
       var script=document.createElement('img');
       script.setAttribute('id','testConnection');
       script.setAttribute('src','//www.163.com/favicon.ico'+noCache());
@@ -686,7 +695,8 @@
       var date=getOffsetDate();
       if (connected){
         lastSyncTime=date.getTime();
-        document.getElementById('ifrmid').src=document.getElementById('ifrmid').src;//change iframe
+        var ifrm=document.getElementsByClassName('weath')[0];
+        ifrm.src=ifrm.src;//change iframe
         document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero([date.getMonth()+1,'-',date.getDate(),' ',date.getHours(),':',date.getMinutes(),':',date.getSeconds()]);
         document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
         document.getElementById('net').innerHTML='完成上一次同步';
@@ -703,9 +713,10 @@
     var timerEnd, restWhenPaused;
     var toRestTimer=5*60
     var expireTomato=30;//Day
-    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.getElementsByTagName('title')[0]];
+    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.title];
     var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
-    var shinningSignal=[document.getElementById('ato').style, document.getElementById('inform').style, document.getElementById('allDate').style];
+    var shinningSignal=[document.getElementById('ato').style, document.getElementsByClassName('inform')[0].style, document.getElementsByClassName('date')[0].style];
+    var basket=document.getElementsByClassName('basket')[0];
     prepareTomato();
     //dumpTomato();gatherTomato(719);
     function dumpTomato(){rottenTomato(-1);}
@@ -729,8 +740,7 @@
       return compressed;
     }
     function showTomato(source){
-      var _doc=document.getElementById('basket');
-      _doc.textContent="";
+      basket.textContent="";
       var f=[1,2,20,60,180];
       var res=0;
       var tomatos=weeklyTomato.length;
@@ -809,6 +819,7 @@
       //quit from tomato
       preventDecreaseShadow=false;
       lessDisturbUpdateWhenTomato=false;
+      killShadow();
       toStatus='stop';//work,rest,stop
       ispaused=false;
       weeklyTomato=Array();
@@ -1045,9 +1056,9 @@
     function showIcs(keep){
       if (!tickListTaskIndex)
         tickListTaskIndex=addTaskOnPageChange('getIcs()', 6*3600*1000);
-      var t=document.getElementById('tickList');
+      var t=document.getElementsByClassName('tickList')[0];
       var tickTable=t.getElementsByTagName('table')[0];
-      var tickImg=document.getElementById('tickImg');
+      var tickImg=t.getElementsByClassName('tImg')[0];
       tickTable.innerHTML='';
       if (!keep) tickListStatus++;
       if (!keep&&tickListStatus%6==1){
@@ -1055,7 +1066,7 @@
         getIcs();
       } else if (tickListStatus%3==0){
         deleteTaskOnPageChange(tickListFloatIndex);
-        t.innerHTML='<div></div><img id="tickImg" class="tImg" style="padding:1rem"><table></table>';
+        t.innerHTML='<div></div><img class="tImg" style="padding:1rem"><table></table>';
       } else {
         if (tickImg) t.removeChild(tickImg);
         var limit=(tickListStatus%3==1)?5:tickListMaxLine;
@@ -1090,8 +1101,8 @@
     }
     function updateIcsFloatBar(){
       var dH=0;
-      var t=document.getElementById('tickList').children[0];
-      var tr=document.getElementById('tickList').getElementsByTagName('table')[0].children[0].children;
+      var t=document.getElementsByClassName('tickList')[0].children[0];
+      var tr=document.getElementsByClassName('tickList')[0].getElementsByTagName('table')[0].children[0].children;
       var ti=tickList.important.slice(0,5);
       var baitHeight=0;//tr[0].offsetHeight;
       if (ti.length>0)
@@ -1159,7 +1170,7 @@
       displayReminder(true);
     }
     function displayReminder(on){
-      var reminder=document.getElementById("reminder");
+      var reminder=document.getElementsByClassName('reminder')[0];
       if (!on){
         if (confirm('*CLEAN ALL?*')){
           tickListReminderList={};
@@ -1223,7 +1234,7 @@
     }
 })();
   */
-  var danmuStyle=document.getElementById('danmu_frame').style;
+  var danmuStyle=document.getElementsByClassName('danmu_fr')[0].style;
   var danmu=document.getElementById('danmu');
   var danmuReadCount=0;
   var isDanmuLive=0;
@@ -1434,7 +1445,7 @@
     }
     if (danmuTryToken>3)
       status=' ⁉'+danmuTryToken;
-    document.getElementById('danmu_info').innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+dTrends+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+'<b>'+status+' </b></span><br>'+danmuSuperChat;
+    document.getElementsByClassName('danmu_info')[0].innerHTML=(isDanmuLive==2||!streamer[2].join('')?'人气':'<big>'+streamer[2].reduce(function a(s, n){return s+(n?'•':'◦')},'')+'</big> ')+dTrends+'<span style="float:right">'+space(24, danmuStreamer?danmuStreamer:'')+'<b>'+status+' </b></span><br>'+danmuSuperChat;
   }
   function danmuRoomStatCollect(n){
     clearTimeout(danmuTaskIndexs[2]);
@@ -1486,7 +1497,7 @@
   function danmuClear(){
     if (isDanmuLive) return;
     danmuStyle.opacity=0;
-    document.getElementById('danmu_info').innerHTML='';
+    document.getElementsByClassName('danmu_info')[0].innerHTML='';
   }
 
 
@@ -1494,6 +1505,7 @@
   http://philips-hue/debug/clip.html
   https://developers.meethue.com/develop/get-started-2/
   */
+  var home=document.getElementsByClassName('home')[0];
   var hueBaseUrl='//philips-hue/api/';//No need CROS Access-Control-Allow-Origin *
   var hueUser={"devicetype": 'A 3-switch kindle-based controller.'};
   var hueToken="UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";
@@ -1564,7 +1576,6 @@
       hCollect();
       return;
     }
-    var home=document.getElementById('home');
     home.innerHTML='';
     home.style.left=l>=3?"20rem":"24rem";
     home.style.width=l>=3?"24rem":"20rem";
@@ -1573,7 +1584,7 @@
       hs.setAttribute('class', 'h_switch');
       hs.setAttribute('onclick', 'hSwitch('+i+', this)');
       hs.appendChild(document.createTextNode(switchs[i].name));
-      document.getElementById('home').appendChild(hs);
+      home.appendChild(hs);
       hs=hs.style;
       hs.fontSize="";
       hs.borderColor=switchs[i].reachable?"":"gray";
@@ -1583,7 +1594,7 @@
       hs.color=switchs[i].on?"black":"";
     }
     if (fixBugButCanAddMoreBugs)
-      document.getElementById('home').innerHTML+="<div class='h_switch' onclick=\"f5(\'\', \'#hSwitch(1)\')\">F5</div>";
+      home.innerHTML+="<div class='h_switch' onclick=\"f5(\'\', \'#hSwitch(1)\')\">F5</div>";
   }
 
 
@@ -1596,11 +1607,11 @@
       for (var j in funcList[i+1])
         eval(funcList[i+1][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
   if (!hasModule('home'))
-    document.getElementById("home").innerHTML='';
+    home.innerHTML='';
   //Autostart
   if (!testStatus)
     if (navigator.userAgent.indexOf('Windows')!=-1){
-      killShadow=function disabled(){comment("killShadow is DISABLED")};
+      //killShadow=function disabled(){comment("killShadow is DISABLED")};
       comment('Autostart disabled in Windows');
     } else
       for (var i in autostart)
