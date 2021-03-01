@@ -3,7 +3,8 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
-  <script type="text/javascript">
+  <script>
+    "use strict";
     //**************Basic settings***************
     var fixBugButCanAddMoreBugs=true;//If you not sure, please change this to false
     var testStatus=false;
@@ -180,7 +181,7 @@
       width: 22rem;
       position: absolute;
       border: dotted;
-      background-color: rgba(255, 255, 255, 0.8);
+      background-color: rgba(255, 255, 255, .8);
       font-size: 1.5rem;
       font-weight: bold;
       overflow: scroll;
@@ -204,6 +205,7 @@
     <div class="reminder" onclick="displayReminder(false)"></div>
   </div></div>
   <script type="text/javascript">
+    "use strict";
     var initialTitle=document.title;
     var clearCommentTime=0;
     var basket=document.getElementsByClassName('basket')[0];
@@ -214,7 +216,7 @@
       if (basket.innerHTML.length==0||isJam)
         basket.innerHTML=s;
       else
-        basket.innerHTML=(basket.innerHTML+'|'+s).slice(0, 150);
+        basket.innerHTML=(basket.innerHTML+'|'+s).slice(-150);
       clearCommentTime=new Date().getTime()+lag;
       return s;
     }
@@ -304,10 +306,6 @@
           }
       }
     }
-    function GetcDateString(TheDate, year, spirit, month, day){
-      setLunarDay(TheDate);
-      return GetLunarDay(year, spirit, month, day);
-    }
     function GetLunarDay(year, spirit, month, day){
       if (!cYear) setLunarDay();
       var tmp="";
@@ -333,7 +331,7 @@
       }
       return tmp;
     }
-      
+
 
     /*                Time Display & Weather                */
     var refreshRate=8*3600*1000;
@@ -392,6 +390,7 @@
         console.log(comment(timeOffsetFormat(2)+dTimeOffset+"#"+dOffsetPerSecond+"#"+timeFormat(uptime, 3, true)+""));
         document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
         averageTimeOffset=[];
+        initClockWeather();//immediately after date time got from server
         return true;
       } else {
         averageTimeOffset=[];
@@ -420,7 +419,6 @@
             averageTimeOffset.push(timeOffset);
             console.log(frontZero(n+1)+"#"+Math.floor(serverTime/1e5)+":S"+serverTime%1e5/1000+".:C"+clientTime%1e5/1000+":"+timeOffsetFormat());
             comment("Calculating..."+timeOffsetFormat(3), true);
-            //initClockWeather();//immediately after date time got from server
           } else {
             networkFaliure=true;
             comment("Failed(ServerTime)#1s/"+hardwareLagRate+"h("+timeOffsetFormat(3)+")");
@@ -583,14 +581,15 @@
     function test(s){
       if (testStatus=!testStatus){
         comment(how());
-        testInterval=setInterval('comment(how(), true)', (s==undefined?58:s)*1000);
+        testInterval=setInterval('comment(how(), true)', (s==undefined?29:s)*1000);
       } else
         clearInterval(testInterval);
       update();
     }
     function f5(p, g){location.replace(location.protocol+'//'+(p?p:location.hostname)+location.pathname+(location.search?"":"?1")+(g?g:''));}
     function loop(){
-      test(true, 3);
+      document.getElementsByClassName('weath')[0].src="about:blank";
+      test(3);
       setInterval('timeOffset+=57*1000;update()', 50);
     }
     function correctPrompt(){
@@ -599,7 +598,7 @@
                 who: navigator.userAgent,
                 credit: JSON.stringify(info).replace(/"/g,'')};
       [].push.apply(help.help=help.func, help.vari); 
-      var userInput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st 2020-07-22 17:59\n\nPlease ENTER number:\nformat: 235959 (hhmmss->23:59:59)\n* 123456 means reset *\n'+help.help);
+      var userInput=prompt(timeOffsetFormat(3)+'\nTo Manually change kindle system time:\n;st '+dateString('', 'YMdhm')+'\n\nPlease ENTER number:\nformat: '+dateString('', 'hms').replace(/:/g, '')+' (hhmmss->'+dateString('', 'hms')+')\n* 123456 means reset *\n'+help.help);
       if (!timeCorrect(userInput))
         try{
           if (help.vari.indexOf(userInput)!=-1)
@@ -636,7 +635,9 @@
       date.setMilliseconds(date.getMilliseconds()+timeOffset+offset);
       return date;
     }
-    function getOffsetTime(offset, noShift){return getOffsetDate(offset, noShift).getTime();}
+    function getOffsetTime(offset, noShift){
+      return getOffsetDate(offset, noShift).getTime();
+    }
     function updateInterval(){
       var mscs=getOffsetTime();
       setTimeout("updateInterval()", lessDisturbUpdateWhenTomato?((599999-mscs%600000)+50):(59999-mscs%60000)+50);//(60*10)*1000+50
@@ -704,7 +705,6 @@
         document.getElementById('net').innerHTML='无网络连接';
     }
 
-
     /*                TOMATO: Tomato Timer                */
     var toStatus, ispaused, weeklyTomato;
     var timerEntity;
@@ -713,7 +713,7 @@
     var timerEnd, restWhenPaused;
     var toRestTimer=5*60
     var expireTomato=30;//Day
-    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato'), document.title];
+    var tomatoMsg=[document.getElementById('tom'), document.getElementById('ato')];
     var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
     var shinningSignal=[document.getElementById('ato').style, document.getElementsByClassName('inform')[0].style, document.getElementsByClassName('date')[0].style];
     var basket=document.getElementsByClassName('basket')[0];
@@ -813,7 +813,7 @@
       tomatoMsg[0].innerHTML=toStatus&&toStatus!='stop'?'MATO':'TOMA';
       tomatoMsg[1].innerHTML=toStatus&&toStatus!='stop'?'TOMA':'MATO';
       prepareTomato();
-      tomatoMsg[2].innerHTML=initialTitle;
+      document.title=initialTitle;
     }
     function prepareTomato(){
       //quit from tomato
@@ -1028,15 +1028,15 @@
       tickList={important:[],normal:[],noDate:[]};
       var func=[[function (d){return d>-14},
                  function (a,b){return b.DTSTART-a.DTSTART}],
-                [function (d, freq){return d>=(freq?-7:-14)&&d<=(freq?14:90)},
+                [function (d, freq){return d>=(freq?-7:-14)&&d<=(freq?3:90)},
                  function (a,b){
                     var c=[a.DTSTART,b.DTSTART];
                     var d=[a, b];
                     for (var i in c){
                       c[i]-=getOffsetTime();
                       var isNeg=c[i]!=(c[i]=Math.abs(c[i]));
-                      c[i]*=(isNeg?c[i]>180?3:2:1)*(d[i].isDateOnly?6:1)*(d[i].FREQ?c[i]>5?8:3:1);
-                      }
+                      c[i]*=(isNeg?c[i]>180?3:2:1)*(d[i].isDateOnly?c[i]>180?6:3:1)*(d[i].FREQ?c[i]>4?8:3:1);
+                    }
                     return c[0]-c[1];
                  }]][sortNum];
       for (var i in r)
@@ -1380,6 +1380,8 @@
     s=s.join("<br>");
     if (danmuPop!=1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
       setDanmuPop(1);
+    else if (s.indexOf('[LIVE]')!=-1)
+      danmuAlter(false);
     if (s)
       danmuWrite(s);
     if (s||danmuPop==9999)
@@ -1401,19 +1403,20 @@
     } else if (danmuTryToken>3)
       danmuInfo();
     danmuLoadTime=getOffsetTime();
-    httpReq("/blive/"+(roomId?'?'+roomId:''), function a(s){
+    httpReq("/blive/"+(roomId?'?'+roomId:''), function succ(s){
       if (s.indexOf('[EXCEP]')==-1)
         danmuTryToken=0;
       if (f==undefined)
         danmuShow(s);
       else
         f(s);
-    }, function b(n){
+    }, function fail(n){
       if (isDanmuLive&&n>=400&&n<600)
         danmuWrite('[local] server return: '+n+'R'+danmuTryToken+'S'+Math.floor(getOffsetTime()/1000)%3600, false, true);
-    }, '', '', f==undefined?function c(){
-      if (getOffsetTime()-danmuLoadTime>=5e3)
-        comment(Math.floor((getOffsetTime()-danmuLoadTime)/1000), true);
+    }, '', '', f==undefined?function both(){
+      var t=getOffsetTime()-danmuLoadTime;
+      if (fixBugButCanAddMoreBugs&&t>=5e3&&t<50e3)
+        comment(Math.floor(t/1000), getOffsetTime()-danmuStart>10*60e3);
       clearTimeout(danmuTaskIndexs[0]);
       if (isDanmuLive)
         danmuTaskIndexs[0]=setTimeout('danmuRead()', danmuTryToken>5||danmuPop==1?2*60e3:danmuPop>5e4?2e3:10e3);
@@ -1500,7 +1503,6 @@
     document.getElementsByClassName('danmu_info')[0].innerHTML='';
   }
 
-
   /*                HOME: for Hue
   http://philips-hue/debug/clip.html
   https://developers.meethue.com/develop/get-started-2/
@@ -1556,7 +1558,7 @@
     if (t)
       t.style.background="rgba(128,128,128,.2)";
     if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000)
-      f5('', '#hSwitch(1)');
+      f5('', '#hSwitch('+n+')');
     hCollect(function hChange(){
       httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
         var s=JSON.parse(s)[0];
@@ -1593,34 +1595,36 @@
       hs.background="rgba("+(switchs[i].on?"255,255,255":"")+",.2)";
       hs.color=switchs[i].on?"black":"";
     }
-    if (fixBugButCanAddMoreBugs)
+    if (fixBugButCanAddMoreBugs&&l<3)
       home.innerHTML+="<div class='h_switch' onclick=\"f5(\'\', \'#hSwitch(1)\')\">F5</div>";
   }
 
-
   var loaded=true;
-  /*Modules control*/
-  var funcList=[['tomato', 'ticklist', 'danmu', 'home', 'lunaryear'],
-    ['switchTomato', 'pauseTomato'], ['showIcs'], ['danmuSwitch'], ['hSwitch', 'hUpdate', 'hReg'], ['GetLunarDay']];
-  for (var i in funcList[0])
-    if (!hasModule(funcList[0][i]))
-      for (var j in funcList[i+1])
-        eval(funcList[i+1][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
-  if (!hasModule('home'))
-    home.innerHTML='';
-  //Autostart
-  if (!testStatus)
-    if (navigator.userAgent.indexOf('Windows')!=-1){
-      //killShadow=function disabled(){comment("killShadow is DISABLED")};
-      comment('Autostart disabled in Windows');
-    } else
-      for (var i in autostart)
-        [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
-  //resume task from #a()#b()
-  var run=location.hash.split('#');
-  for (var i in run)
-    setTimeout(run[i], 1000);
-  location.hash="";
+  (function modulesControl(){
+    var funcList=[['tomato', 'ticklist', 'danmu', 'home', 'lunaryear'],
+      ['switchTomato', 'pauseTomato'], ['showIcs'], ['danmuSwitch'], ['hSwitch', 'hUpdate', 'hReg'], ['GetLunarDay']];
+    for (var i in funcList[0])
+      if (!hasModule(funcList[0][i]))
+        for (var j in funcList[i+1])
+          eval(funcList[i+1][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
+    if (!hasModule('home'))
+      home.innerHTML='';
+  })();
+
+  (function autoStart(){
+    if (!testStatus)
+      if (navigator.userAgent.indexOf('Windows')!=-1){
+        //killShadow=function disabled(){comment("killShadow is DISABLED")};
+        comment('Autostart disabled in Windows');
+      } else
+        for (var i in autostart)
+          [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
+    //resume task from #a()#b()
+    var run=location.hash.split('#');
+    for (var i in run)
+      setTimeout(run[i], 1000);
+    location.hash="";
+  })();
   </script>
 </body>
 </html>
