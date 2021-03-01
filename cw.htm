@@ -202,7 +202,7 @@
     <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class="basket"></div>
     <div class="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
-    <div class="reminder" onclick="displayReminder(false)"></div>
+    <div class="reminder" onclick="clearReminder()"></div>
   </div></div>
   <script type="text/javascript">
     "use strict";
@@ -429,12 +429,12 @@
     }
     function addTaskOnPageChange(cmd, interval, isTimeout){
       var t=getOffsetTime(interval);
-      var tag=cmd;
+      var tag=String(cmd);
       if (isTimeout) interval=true;
-      if (cmdList[cmd]!=undefined)
-        cmdList[cmd]=[cmdList[cmd][0], interval, t];
+      if (cmdList[tag]!=undefined)
+        cmdList[tag]=[cmdList[tag][0], interval, t];
       else {
-        tag=cmd.slice(0,4)+frontZero(++cmdListCount, 3);
+        tag=tag.slice(0,4)+frontZero(++cmdListCount, 3);
         cmdList[tag]=[cmd, interval, t];
       }
       refreshTaskOnPageChange();
@@ -447,7 +447,10 @@
         nextCmdList=0;
         for (var i in cmdList){
           if (cmdList[i][2]-59*1000<t){
-            eval(cmdList[i][0]);
+            if (typeof cmdList[i][0]=='function')
+              cmdList[i][0]();
+            else
+              eval(cmdList[i][0]);
             if (cmdList[i][1]===true)
               cmdList[i][1]=false
             else 
@@ -581,6 +584,7 @@
     function test(s){
       if (testStatus=!testStatus){
         comment(how());
+        testIcs();
         testInterval=setInterval('comment(how(), true)', (s==undefined?29:s)*1000);
       } else
         clearInterval(testInterval);
@@ -950,6 +954,7 @@
     var tickListMaxLine=21;
     var tickListReminderList={};
     var tickListFloatIndex=0;
+    var reminder=document.getElementsByClassName('reminder')[0];
     function dDay(t){return dHour(t, 24);}
     function dHour(t, h){return parseInt(dMs(t, (!h?1:h)*3600*1000));}
     function dMs(t, ms){return (t-getOffsetTime())/(!ms?1:ms);}
@@ -1054,12 +1059,12 @@
       tickList.normal.sort(func[1]);
     }
     function showIcs(keep){
-      if (!tickListTaskIndex)
+      if (!tickListTaskIndex&&!testStatus)
         tickListTaskIndex=addTaskOnPageChange('getIcs()', 6*3600*1000);
       var t=document.getElementsByClassName('tickList')[0];
       var tickTable=t.getElementsByTagName('table')[0];
-      var tickImg=t.getElementsByClassName('tImg')[0];
       tickTable.innerHTML='';
+      var tickImg=t.getElementsByClassName('tImg')[0];
       if (!keep) tickListStatus++;
       if (!keep&&tickListStatus%6==1){
         tickTable.innerHTML=tickListStatus;
@@ -1094,7 +1099,7 @@
         tickTable.innerHTML=s;
         updateIcsFloatBar();
         if (tickListFloatIndex==0)
-          tickListFloatIndex=addTaskOnPageChange('updateIcsFloatBar();updateIcsReminderDhour();', 2.5*3600*1000);//2.5*2=5<6<2.5*3=7.5
+          tickListFloatIndex=addTaskOnPageChange('updateIcsFloatBar();displayReminder();', 2.5*3600*1000);//2.5*2=5<6<2.5*3=7.5
         else
           addTaskOnPageChange(tickListFloatIndex, 2.5*3600*1000);
       }
@@ -1131,15 +1136,19 @@
       tickListAlarm='';
       remindIcs("tickListAlarm='['+'"+dateString(tick.DTSTART)+' '+tick.SUMMARY.slice(0,20)+"'+']'", (dH-12)*3600*1000);
       remindIcs("tickListAlarm=''", (dH+12)*3600*1000);
-      if (d>=-3600*1000){
-        remindIcs(icsReminderHtmlString(tick)+';killShadow(true);displayReminder(true)', d-15*60*1000);
+      if (dH>=-1){
+        remindIcs(function remind(){
+          tickListReminderList[hashString(tick)]=tick;
+          killShadow(true);
+          displayReminder()
+        }, d-15*60*1000);
         remindIcs('killShadow(true)', d-1*60*1000);
       }
     }
     function deleteReminder(tickId){
       event.stopPropagation();
       if (confirm('Job\'s done?')){
-        delete tickListReminderList[tickId];
+        delete tickListReminderList[String(tickId)];
         var i=document.getElementById('tickR'+tickId);
         var p=i.parentNode;
         p.removeChild(i);
@@ -1147,50 +1156,39 @@
           p.style.display='none';
       }
     }
-    function icsReminderHtmlString(tick){
-      var hash=(function(s) {
-          var hash = 0, i;
-          for (i = 0; i < s.length; i++) {
-            hash  = ((hash << 5) - hash) + s.charCodeAt(i);
-            hash |= 0; // Convert to 32bit integer
-          }
-          return hash;
-        })(tick.SUMMARY+tick.DESCRIPTION)+Math.floor(tick.DTSTART/1000);
-      var dH=dHour(tick.DTSTART);
-      var s='<span style="display:block" id="'+hash+'" onclick="deleteReminder("'+hash+'")\">'+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+'['+dateString(tick.DTSTART, 'Mdhm')+'+0]<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'</span>';
-      return 'tickListReminderList['+hash+']=\''+s+'\'';
-    }
-    function updateIcsReminderDhour(){
-      var l=tickListReminderList;
-      for (var i in l){
-        var s=l[i].slice(l[i].indexOf('[')+1, l[i].indexOf(']')).split('+');
-        s[1]=-dHour(new Date(new Date().getFullYear(), s[0].slice(0,2), s[0].slice(3,5), s[0].slice(6,8), s[0].slice(9,11)));
-        l[i]=l[i].slice(0, l[i].indexOf('[')+1)+s[0]+'+'+s[1]+l[i].slice(l[i].indexOf(']'));
+    function hashString(tick){
+      var s=tick.SUMMARY+tick.DESCRIPTION;
+      var hash = 0, i;
+      for (i = 0; i < s.length; i++) {
+        hash  = ((hash << 5) - hash) + s.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
       }
-      displayReminder(true);
+      return String(hash)+Math.floor(tick.DTSTART/1000);
     }
-    function displayReminder(on){
-      var reminder=document.getElementsByClassName('reminder')[0];
-      if (!on){
-        if (confirm('*CLEAN ALL?*')){
-          tickListReminderList={};
-          reminder.style.display='none';
-        }
-      } else {
-        var l=Object.keys(tickListReminderList).length;
-        var s='';
-        if (!l)
-          return;
-        for (var i in tickListReminderList)
-          s+=tickListReminderList[i];
-        s=s?s.slice(0,-11)+'</span>':'';
-        if (l>3)
-          reminder.style="margin: -28rem 10rem;max-height: 25.5rem;";
-        else
-          reminder.style="";
-        reminder.innerHTML=s;
-        reminder.style.display='block';
+    function displayReminder(){
+      var l=Object.keys(tickListReminderList).length;
+      var s='';
+      if (!l)
+        return;
+      for (var i in tickListReminderList){
+        var tick=tickListReminderList[i];
+        s+='<span style="display:block" id="'+i+'" onclick="deleteReminder('+i+')">'+(tick.FREQ?'<sup style="font-size:small;border-radius:20%;border:solid">'+tick.FREQ+'</sup>':'')+'['+dateString(tick.DTSTART, 'Mdhm')+timeFormat(dMs(tick.DTSTART),1)+']<br>'+tick.SUMMARY+'<br>'+tick.DESCRIPTION+'</span>';
       }
+      s=s?s.slice(0,-11)+'</span>':'';
+      if (l>3)
+        reminder.style="margin: -28rem 10rem;max-height: 25.5rem;";
+      else
+        reminder.style="";
+      reminder.innerHTML=s;
+      reminder.style.display='block';
+    }
+    function clearReminder(){
+      var r=confirm('*CLEAN ALL?*');
+      if (r){
+        tickListReminderList={};
+        reminder.style.display='none';
+      }
+      return r;
     }
     function remindIcs(cmd, timeout){addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
 
