@@ -81,6 +81,7 @@ def controlRoom(path, data=None, method=None):
             if (room_id>0 and room_id<999999999999):
                 res='[RECV] Valid Room_id: '+cmd
                 new_room_id.value=room_id
+                info['pop']='1'
             else:
                 res='[err] Not in safe range: '+cmd
             needExtra=False

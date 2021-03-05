@@ -12,8 +12,9 @@
       version: '1.6',
       description: '(bug-fix changes are in commit logs)',
       author: 'wmillers@github',
-      support: ['time', 'weather', 'tomato',//those three are default modules
+      support: ['time', 'weather',//those two are default modules
           //'TO-DISABLE-//COMMENT-THE-LINE',
+          'tomato',
           'ticklist',
           'danmu',
           'home',
@@ -242,72 +243,84 @@
         xmlhttp.setRequestHeader("Content-type", "application/json");
       xmlhttp.send(post);
     }
+    (function modulesControl(){
+      var funcList=[['tomato', 'ticklist', 'danmu', 'home', 'lunaryear'],
+        ['switchTomato', 'showIcs', 'danmuSwitch', 'hSwitch', 'getLunarDay']];
+      for (var i in funcList[0])
+        if (!hasModule(funcList[0][i]))
+          eval(funcList[1][i]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
+      if (!hasModule('home'))
+        home.innerHTML='';
+    })();
+
+    (function autoStart(){
+      if (!testStatus)
+        if (navigator.userAgent.indexOf('Windows')!=-1){
+          //killShadow=function disabled(){comment("killShadow is DISABLED")};
+          comment('Autostart disabled in Windows');
+        } else
+          for (var i in autostart)
+            [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
+      //resume task from #a()#b()
+      var run=location.hash.split('#');
+      location.hash="";
+      for (var i in run)
+        setTimeout(decodeURI(run[i]), 1000);
+    })();
 
 
     //Lunar Year
-    var CalendarData=new Array(100);
-    var madd=new Array(12);
     var tgString="甲乙丙丁戊己庚辛壬癸";
     var dzString="子丑寅卯辰巳午未申酉戌亥";
     var numString="一二三四五六七八九十";
     var monString="正二三四五六七八九十冬腊";
     var weekString="日一二三四五六";
     var sx="鼠牛虎兔龙蛇马羊猴鸡狗猪";
-    var cYear,cMonth,cDay,TheDate;
-    CalendarData = new Array(0xA4B,0x5164B,0x6A5,0x6D4,0x415B5,0x2B6,0x957,0x2092F,0x497,0x60C96,0xD4A,0xEA5,0x50DA9,0x5AD,0x2B6,0x3126E, 0x92E,0x7192D,0xC95,0xD4A,0x61B4A,0xB55,0x56A,0x4155B, 0x25D,0x92D,0x2192B,0xA95,0x71695,0x6CA,0xB55,0x50AB5,0x4DA,0xA5B,0x30A57,0x52B,0x8152A,0xE95,0x6AA,0x615AA,0xAB5,0x4B6,0x414AE,0xA57,0x526,0x31D26,0xD95,0x70B55,0x56A,0x96D,0x5095D,0x4AD,0xA4D,0x41A4D,0xD25,0x81AA5,0xB54,0xB6A,0x612DA,0x95B,0x49B,0x41497,0xA4B,0xA164B, 0x6A5,0x6D4,0x615B4,0xAB6,0x957,0x5092F,0x497,0x64B, 0x30D4A,0xEA5,0x80D65,0x5AC,0xAB6,0x5126D,0x92E,0xC96,0x41A95,0xD4A,0xDA5,0x20B55,0x56A,0x7155B,0x25D,0x92D,0x5192B,0xA95,0xB4A,0x416AA,0xAD5,0x90AB5,0x4BA,0xA5B, 0x60A57,0x52B,0xA93,0x40E95);
-    madd[0]=0;
-    madd[1]=31;
-    madd[2]=59;
-    madd[3]=90;
-    madd[4]=120;
-    madd[5]=151;
-    madd[6]=181;
-    madd[7]=212;
-    madd[8]=243;
-    madd[9]=273;
-    madd[10]=304;
-    madd[11]=334;
-      
+    var cYear,cMonth,cDay,cLastRecord;
+    var CalendarData = [0xA4B,0x5164B,0x6A5,0x6D4,0x415B5,0x2B6,0x957,0x2092F,0x497,0x60C96,0xD4A,0xEA5,0x50DA9,0x5AD,0x2B6,0x3126E, 0x92E,0x7192D,0xC95,0xD4A,0x61B4A,0xB55,0x56A,0x4155B, 0x25D,0x92D,0x2192B,0xA95,0x71695,0x6CA,0xB55,0x50AB5,0x4DA,0xA5B,0x30A57,0x52B,0x8152A,0xE95,0x6AA,0x615AA,0xAB5,0x4B6,0x414AE,0xA57,0x526,0x31D26,0xD95,0x70B55,0x56A,0x96D,0x5095D,0x4AD,0xA4D,0x41A4D,0xD25,0x81AA5,0xB54,0xB6A,0x612DA,0x95B,0x49B,0x41497,0xA4B,0xA164B, 0x6A5,0x6D4,0x615B4,0xAB6,0x957,0x5092F,0x497,0x64B, 0x30D4A,0xEA5,0x80D65,0x5AC,0xAB6,0x5126D,0x92E,0xC96,0x41A95,0xD4A,0xDA5,0x20B55,0x56A,0x7155B,0x25D,0x92D,0x5192B,0xA95,0xB4A,0x416AA,0xAD5,0x90AB5,0x4BA,0xA5B, 0x60A57,0x52B,0xA93,0x40E95];
+    var madd=[0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
     function GetBit(m,n){
       return (m>>n)&1;
     }
-    function setLunarDay(TheDate){
-      if (!TheDate) TheDate=getOffsetDate();
-      var total,m,n,k;
-      var isEnd=false;
-      var tmp=TheDate.getYear();
-      if(tmp<1900){
-          tmp+=1900;
+    function setLunarDay(TheDate) {
+      if (!TheDate) TheDate = getOffsetDate();
+      var total, m, n, k;
+      var isEnd = false;
+      var tmp = TheDate.getYear();
+      cLastRecord=TheDate.getDate();
+      if (tmp < 1900) {
+        tmp += 1900;
       }
-      total=(tmp-1921)*365+Math.floor((tmp-1921)/4)+madd[TheDate.getMonth()]+TheDate.getDate()-38;
-        
-      if(TheDate.getYear()%4==0&&TheDate.getMonth()>1) {
-          total++;
+      total = (tmp - 1921) * 365 + Math.floor((tmp - 1921) / 4) + madd[TheDate.getMonth()] + TheDate.getDate() - 38;
+
+      if (TheDate.getYear() % 4 == 0 && TheDate.getMonth() > 1) {
+        total++;
       }
-      for(m=0;;m++){
-          k=(CalendarData[m]<0xfff)?11:12;
-          for(n=k;n>=0;n--){
-              if(total<=29+GetBit(CalendarData[m],n)){
-                  isEnd=true; break;
-              }
-              total=total-29-GetBit(CalendarData[m],n);
+      for (m = 0; ; m++) {
+        k = (CalendarData[m] < 0xfff) ? 11 : 12;
+        for (n = k; n >= 0; n--) {
+          if (total <= 29 + GetBit(CalendarData[m], n)) {
+            isEnd = true; break;
           }
-          if(isEnd) break;
+          total = total - 29 - GetBit(CalendarData[m], n);
+        }
+        if (isEnd) break;
       }
-      cYear=1921 + m;
-      cMonth=k-n+1;
-      cDay=total;
-      if(k==12){
-          if(cMonth==Math.floor(CalendarData[m]/0x10000)+1){
-              cMonth=1-cMonth;
-          }
-          if(cMonth>Math.floor(CalendarData[m]/0x10000)+1){
-              cMonth--;
-          }
+      cYear = 1921 + m;
+      cMonth = k - n + 1;
+      cDay = total;
+      if (k == 12) {
+        if (cMonth == Math.floor(CalendarData[m] / 0x10000) + 1) {
+          cMonth = 1 - cMonth;
+        }
+        if (cMonth > Math.floor(CalendarData[m] / 0x10000) + 1) {
+          cMonth--;
+        }
       }
     }
-    function GetLunarDay(year, spirit, month, day){
-      if (!cYear) setLunarDay();
+    function getLunarDay(year, spirit, month, day, TheDate){
+      if (getOffsetDate().getDate()!=cLastRecord)
+        setLunarDay(TheDate);
       var tmp="";
       var all=!(year||spirit||month||day);
       if (all||year)
@@ -611,7 +624,7 @@
             userInput+='()';
           comment(eval(userInput));
         } catch (e){
-          comment(e);
+          comment('<span style="color:maroon">'+e+'</span>');
         }
     }
     function timeCorrect(correct){//000000~235959
@@ -659,7 +672,7 @@
       minute.innerHTML = frontZero(date.getMinutes());
       var weekday=['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
       calendar.innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
-        + (hasModule('lunaryear')?'('+weekday+') ' + GetLunarDay(false, false, true, true):' 星期'+weekday)
+        + (hasModule('lunaryear')?'('+weekday+') ' + getLunarDay(false, false, true, true):' 星期'+weekday)
         + '<span style="font-size:1.5rem;position:absolute;"> '+(testStatus?'#envTest':'')+' '+tickListAlarm+"</span>";
       return date;
     }
@@ -721,7 +734,6 @@
     var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
     var shinningSignal=[document.getElementById('ato').style, document.getElementsByClassName('inform')[0].style, document.getElementsByClassName('date')[0].style];
     var basket=document.getElementsByClassName('basket')[0];
-    prepareTomato();
     //dumpTomato();gatherTomato(719);
     function dumpTomato(){rottenTomato(-1);}
     function gatherTomato(fakeTomatos){
@@ -798,19 +810,16 @@
       setTimeout("rottenTomato()", expireTomato*24*3600*1000/3);
       showTomato("Rotten");
     }
-    function secondsUntilNow(future){
-      return Math.round((future-new Date().getTime())/1000);
-    }
     function updateMsg(tom, sliceIndex){
       if (tom){
         if (sliceIndex) tom+=tomatoMsg[0].innerHTML.slice(sliceIndex);
         if (tom.slice(-2)!=": ") tom+=": "
         tomatoMsg[0].innerHTML=tom;
       }
-      timerCount=secondsUntilNow(timerEnd);
-      timeString=""+frontZero(Math.floor(timerCount/60))+":"+frontZero(timerCount%60);
+      var s=Math.round((timerEnd-new Date().getTime())/1000);
+      var timeString=""+frontZero(Math.floor(s/60))+":"+frontZero(s%60);
       tomatoMsg[1].innerHTML=timeString;
-      tomatoMsg[2].innerHTML=timeString+(toStatus=='work'?" <TOM":" <ATO");
+      document.title=timeString+(toStatus=='work'?" <TOM":" <ATO");
     }
     function fridgeTomato(){
       killShadow();
@@ -832,6 +841,8 @@
       updateButton();
     }
     function switchTomato(){
+      if (!toStatus)
+        prepareTomato();
       switch (toStatus){
         case 'stop':
           toStatus='work';
@@ -839,7 +850,6 @@
           preventDecreaseShadow=true;
           lessDisturbUpdateWhenTomato=true;
           timerEnd=new Date().getTime()+toWorkTimer*1000;
-          rottenTomato();
           updateMsg("番茄开始");
           updateButton();
           break;
@@ -883,16 +893,16 @@
     function updateSignal(){
       if (ispaused && toStatus!='stop'){
         if (signalTired>toWorkTimer){
-          tomatoMsg[2].innerHTML=initialTitle;
+          document.title=initialTitle;
           for (var i in shinningSignal)
             shinningSignal[i].color='#000000';
         } else {
           if (signalTired%2==0){
-            tomatoMsg[2].innerHTML='✔ * * * ✔';
+            document.title='✔ * * * ✔';
             for (var i in shinningSignal)
               shinningSignal[i].color='#ffffff';
           } else {
-            tomatoMsg[2].innerHTML='* RELAX *';
+            document.title='* RELAX *';
             for (var i in shinningSignal)
               shinningSignal[i].color='#000000';
           }
@@ -903,7 +913,7 @@
         }
       } else {
         signalTired=0;
-        tomatoMsg[2].innerHTML=initialTitle;
+        document.title=initialTitle;
         for (var i in shinningSignal)
           shinningSignal[i].color='#000000';
       }
@@ -1332,11 +1342,13 @@
       danmuPop=p;
       if (old==0&&p>1)
         reduceShadow();
-      if (p==1||p==9999){
+      if (p==9999)
         danmuAlter(true);
-        if (p==1&&roomId!=streamer[1][0])
-          setTimeout("if (danmuPop==1&&roomId!=streamer[1][0]) danmuRead(streamer[1][0])", 5*60e3);
+      else if (p==1){
+        danmuAlter(true);
         danmuWrite('TRANSMIT'+dateString(getOffsetTime(), 'hm'), true);
+        if (roomId!=streamer[1][0])
+          setTimeout("if (danmuPop==1&&roomId!=streamer[1][0]) danmuRead(streamer[1][0])", 5*60e3);
       } else if (old==9999||(old==1&&p>1))
         danmuAlter(false);
     }
@@ -1358,7 +1370,7 @@
       setDanmuPop(2);
     for (var i in sn){
         if ((sn[i]=sn[i].trim()).slice(0,4)=='[JS]'){
-          var r=unescape(sn[i].slice(4)).split(';');
+          var r=decodeURI(sn[i].slice(4)).split(';');
           setTimeout(function run(){
             comment('', true);
             try {
@@ -1555,17 +1567,17 @@
     }
     if (t)
       t.style.background="rgba(128,128,128,.2)";
-    if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000)
-      f5('', '#hSwitch('+n+')');
-    hCollect(function hChange(){
-      httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
-        var s=JSON.parse(s)[0];
-        if ("success" in s)
-          hCollect();
-        else
-          comment(JSON.stringify(s));
-      }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
-    });
+    setTimeout(function a(){
+      hCollect(function hChange(){
+        httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
+          var s=JSON.parse(s)[0];
+          if ("success" in s)
+            hCollect();
+          else
+            comment(JSON.stringify(s));
+        }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
+      })
+    }, 0);
   }
   function hUpdate(){
     var l=Object.keys(switchs).length;
@@ -1598,31 +1610,6 @@
   }
 
   var loaded=true;
-  (function modulesControl(){
-    var funcList=[['tomato', 'ticklist', 'danmu', 'home', 'lunaryear'],
-      ['switchTomato', 'pauseTomato'], ['showIcs'], ['danmuSwitch'], ['hSwitch', 'hUpdate', 'hReg'], ['GetLunarDay']];
-    for (var i in funcList[0])
-      if (!hasModule(funcList[0][i]))
-        for (var j in funcList[i+1])
-          eval(funcList[i+1][j]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
-    if (!hasModule('home'))
-      home.innerHTML='';
-  })();
-
-  (function autoStart(){
-    if (!testStatus)
-      if (navigator.userAgent.indexOf('Windows')!=-1){
-        //killShadow=function disabled(){comment("killShadow is DISABLED")};
-        comment('Autostart disabled in Windows');
-      } else
-        for (var i in autostart)
-          [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
-    //resume task from #a()#b()
-    var run=location.hash.split('#');
-    for (var i in run)
-      setTimeout(run[i], 1000);
-    location.hash="";
-  })();
   </script>
 </body>
 </html>
