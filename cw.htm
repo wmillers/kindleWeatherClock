@@ -26,7 +26,7 @@
     //********************************************
     setTimeout(function isLoaded(){
       if (typeof loaded=="undefined"){
-        document.getElementsByClassName('cleaner')[0].innerHTML="js FAILED";
+        document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
         confirm('JS failed, need reload?')?f5():comment('No need to reload');
       }
     }, 4000);
@@ -243,7 +243,7 @@
         xmlhttp.setRequestHeader("Content-type", "application/json");
       xmlhttp.send(post);
     }
-    (function modulesControl(){
+    setTimeout(function modulesControl(){
       var funcList=[['tomato', 'ticklist', 'danmu', 'home', 'lunaryear'],
         ['switchTomato', 'showIcs', 'danmuSwitch', 'hSwitch', 'getLunarDay']];
       for (var i in funcList[0])
@@ -251,22 +251,20 @@
           eval(funcList[1][i]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
       if (!hasModule('home'))
         home.innerHTML='';
-    })();
-
-    (function autoStart(){
+    }, 100);
+    setTimeout(function autoStart(){
       if (!testStatus)
-        if (navigator.userAgent.indexOf('Windows')!=-1){
-          //killShadow=function disabled(){comment("killShadow is DISABLED")};
+        if (navigator.userAgent.indexOf('Windows')!=-1)
           comment('Autostart disabled in Windows');
-        } else
+        else
           for (var i in autostart)
             [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
       //resume task from #a()#b()
       var run=location.hash.split('#');
       location.hash="";
       for (var i in run)
-        setTimeout(decodeURI(run[i]), 1000);
-    })();
+        eval(decodeURI(run[i]));
+    }, 200);
 
 
     //Lunar Year
@@ -1258,6 +1256,7 @@
   var danmuMax=1600;
   var danmuTryToken=0;
   var danmuLoadTime=0;
+  var danmuLast='';
   function space(n, s){
     s=s!=undefined?String(s):'';
     for (n-=s.length*1.8;n-->0;)
@@ -1369,23 +1368,25 @@
     if (danmuPop==1&&sn.length>5)
       setDanmuPop(2);
     for (var i in sn){
-        if ((sn[i]=sn[i].trim()).slice(0,4)=='[JS]'){
-          var r=decodeURI(sn[i].slice(4)).split(';');
-          setTimeout(function run(){
-            comment('', true);
-            try {
-              for (var j in r)
-                if (r[j])
-                  comment(eval(r[j]));
-            } catch (e){
-              comment(e);
-            }
-          }, 0);
-        }
-        if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
-          sn[i]=danmuReverse(sn[i]);
-        if (sn[i]&&sn[i].indexOf('[CAFFEINE]')==-1)
-          s.push((danmuPop<=1?'<small>'+dateString(false,'hm')+' </small>':'')+sn[i]);
+      if (!(sn[i]=sn[i].trim())||danmuLast==(danmuLast=sn[i]))
+        continue;
+      if (sn[i].slice(0,4)=='[JS]'){
+        var r=decodeURI(sn[i].slice(4)).split(';');
+        setTimeout(function run(){
+          comment('', true);
+          try {
+            for (var j in r)
+              if (r[j])
+                comment(eval(r[j]));
+          } catch (e){
+            comment(e);
+          }
+        }, 0);
+      }
+      if (sn[i][0]=='['&&sn[i].indexOf(']')!=-1)
+        sn[i]=danmuReverse(sn[i]);
+      if (sn[i]&&sn[i].indexOf('[CAFFEINE]')==-1)
+        s.push((danmuPop<=1?'<small>'+dateString(false,'hm')+' </small>':'')+sn[i]);
     }
     s=s.join("<br>");
     if (danmuPop!=1&&s.indexOf('[RECV]')==-1&&s.indexOf('[SLEEP]')!=-1)
@@ -1558,16 +1559,20 @@
         comment(JSON.stringify(s));
     }, comment, JSON.stringify(hueUser));
   }
-  function hSwitch(n, t){
+  function hSwitch(n){
     if (event)
       event.stopPropagation();
     if (!hueToken){
       hHelp();
       return;
     }
-    if (t)
-      t.style.background="rgba(128,128,128,.2)";
-    setTimeout(function a(){
+    var butt=document.getElementsByClassName('hs'+n)[0];
+    if (butt)
+      butt.style.background="rgba(128,128,128,.2)";
+    
+    if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000)
+      f5('', '#hSwitch('+n+')');
+    else
       hCollect(function hChange(){
         httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
           var s=JSON.parse(s)[0];
@@ -1576,8 +1581,7 @@
           else
             comment(JSON.stringify(s));
         }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
-      })
-    }, 0);
+      });
   }
   function hUpdate(){
     var l=Object.keys(switchs).length;
@@ -1593,8 +1597,8 @@
     home.style.width=l>=3?"24rem":"20rem";
     for (var i in switchs){
       var hs=document.createElement('div');
-      hs.setAttribute('class', 'h_switch');
-      hs.setAttribute('onclick', 'hSwitch('+i+', this)');
+      hs.setAttribute('class', 'h_switch hs'+i);
+      hs.setAttribute('onclick', 'hSwitch('+i+')');
       hs.appendChild(document.createTextNode(switchs[i].name));
       home.appendChild(hs);
       hs=hs.style;
