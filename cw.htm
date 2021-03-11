@@ -22,7 +22,10 @@
       ],
       license: 'LGPL2.1'
     }
-    var autostart=['ticklist', 'danmu', 'home'];//delete unwanted auto-start modules
+    var autostart=[//COMMENT unwanted auto-start modules
+      'ticklist',
+      //'danmu',
+      'home'];
     //********************************************
     setTimeout(function isLoaded(){
       if (typeof loaded=="undefined"){
@@ -191,7 +194,7 @@
   </style>
 </head>
 <body>
-  <div class="cleaner"></div>
+  <div class="cleaner"><noscript><center>Javascript NOT support.</center></noscript></div>
   <div class="app"><div class="rotate">
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
@@ -199,8 +202,8 @@
     <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span id="danmu"></span></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
-    <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一<noscript>Javascript NOT support.</noscript></div>
-    <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
+    <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
+    <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class="basket"></div>
     <div class="inform" onclick="fridgeTomato();onlineWeather();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步零</span></div>
     <div class="reminder" onclick="clearReminder()"></div>
@@ -251,7 +254,7 @@
           eval(funcList[1][i]+'='+'function disabled(){comment("'+funcList[0][i]+' is DISABLED");return "";}');
       if (!hasModule('home'))
         home.innerHTML='';
-    }, 100);
+    });
     setTimeout(function autoStart(){
       if (!testStatus)
         if (navigator.userAgent.indexOf('Windows')!=-1)
@@ -264,7 +267,7 @@
       location.hash="";
       for (var i in run)
         eval(decodeURI(run[i]));
-    }, 200);
+    });
 
 
     //Lunar Year
@@ -347,7 +350,7 @@
     /*                Time Display & Weather                */
     var refreshRate=8*3600*1000;
     var hardwareLagRate=6.66;//+1s/6.66h
-    var lastSyncTime;
+    var lastSyncTime=0;
     var timeOffset=0;
     var preventDecreaseShadow=false;//Stop when tomato
     var lessDisturbUpdateWhenTomato=false;//less time update flash when tomato
@@ -409,7 +412,7 @@
       }
     }
     function singleDateFromServer(n){
-      xmlhttp = new XMLHttpRequest();
+      var xmlhttp = new XMLHttpRequest();
       xmlhttp.open("HEAD", noCache(), true);
       xmlhttp.onreadystatechange=function(){
         if (xmlhttp.readyState==4){
@@ -453,6 +456,7 @@
     }
     function runTaskOnPageChange(){
       //nextCmdList=1500, cmdList={tag0:['f()', interval, end], tag1:['f()', 86400*1000, 15000000], tag2:['',true,1500]};
+      try {
       var t=getOffsetTime();
       if (nextCmdList-59*1000<t){
         nextCmdList=0;
@@ -470,6 +474,10 @@
         }
         refreshTaskOnPageChange();
       }
+    } catch (e){
+      document.title=e.stack.replace(/ /g, '');
+      comment(e);
+  }
     }
     function deleteTaskOnPageChange(tId){
       if (tId) delete cmdList[tId];
@@ -677,7 +685,6 @@
     function weatherInterval(){
       var date = getOffsetDate();
       var nextRefresh=0;
-      if (!lastSyncTime) lastSyncTime=date.getTime();
       if (date.getTime()-lastSyncTime>refreshRate+100000)
         nextRefresh=10*60*1000;
       else if (date.getHours()+refreshRate/1000/3600<24)
@@ -712,7 +719,7 @@
       if (connected){
         lastSyncTime=date.getTime();
         var ifrm=document.getElementsByClassName('weath')[0];
-        ifrm.src=ifrm.src;//change iframe
+        ifrm.src="//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
         document.getElementById('sync').innerHTML=date.getFullYear()+'-'+frontZero([date.getMonth()+1,'-',date.getDate(),' ',date.getHours(),':',date.getMinutes(),':',date.getSeconds()]);
         document.getElementById('timeoffset').innerHTML=timeOffsetFormat();
         document.getElementById('net').innerHTML='完成上一次同步';
@@ -732,6 +739,7 @@
     var buttonStyle=[document.getElementById('hour').style, document.getElementById('minute').style]
     var shinningSignal=[document.getElementById('ato').style, document.getElementsByClassName('inform')[0].style, document.getElementsByClassName('date')[0].style];
     var basket=document.getElementsByClassName('basket')[0];
+    var isHomeShrink=false;
     //dumpTomato();gatherTomato(719);
     function dumpTomato(){rottenTomato(-1);}
     function gatherTomato(fakeTomatos){
@@ -762,16 +770,16 @@
         res=Math.floor(tomatos/f[i]);
         tomatos%=f[i];
         for (var j=0;j<res;j++)
-          enchantTomato(_doc, ['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'][i]);
+          enchantTomato(basket, ['opacity: 0.5;',"",'border:0.1rem dashed black;','border:0.1rem solid black;','border:0.1rem solid black; background-color: #c0c0c0'][i]);
       }
-      if (weeklyTomato.length!=0) _doc.insertAdjacentHTML("beforeend", weeklyTomato.length);
+      if (weeklyTomato.length!=0) basket.insertAdjacentHTML("beforeend", weeklyTomato.length);
       logTomato(source);
     }
-    function enchantTomato(_doc, magicType){
+    function enchantTomato(e, magicType){
         var script=document.createElement('img');
         script.setAttribute('class','tImg');
         if (magicType) script.setAttribute('style',magicType);
-        _doc.appendChild(script);
+        e.appendChild(script);
     }
     function eatTomato(){
       var offset=document.cookie.indexOf("tomato=");
@@ -825,6 +833,12 @@
       tomatoMsg[1].innerHTML=toStatus&&toStatus!='stop'?'TOMA':'MATO';
       prepareTomato();
       document.title=initialTitle;
+      if (isHomeShrink){
+        isHomeShrink=false;
+        var butts=document.getElementsByClassName('h_switch');
+        for (var i=0;i<butts.length;i++)
+          butts[i].style.height='';
+      }
     }
     function prepareTomato(){
       //quit from tomato
@@ -850,6 +864,12 @@
           timerEnd=new Date().getTime()+toWorkTimer*1000;
           updateMsg("番茄开始");
           updateButton();
+          if (!isHomeShrink){
+            isHomeShrink=true;
+            var butts=document.getElementsByClassName('h_switch');
+            for (var i=0;i<butts.length;i++)
+              butts[i].style.height='8rem';
+          }
           break;
         case 'work':
           toStatus='rest';
@@ -1548,7 +1568,10 @@
         else
           hUpdate();
       }
-    }, comment);
+    }, hFail);
+  }
+  function hFail(){
+    console.log(comment('<span style="color:maroon">HUE cert need to re-confirm, more in F12</span>'));
   }
   function hReg(){
     httpReq(hueBaseUrl, function hParse(s){
@@ -1557,7 +1580,7 @@
         hueToken=JSON.parse(s)[0].success.username;
       else
         comment(JSON.stringify(s));
-    }, comment, JSON.stringify(hueUser));
+    }, hFail, JSON.stringify(hueUser));
   }
   function hSwitch(n){
     if (event)
@@ -1569,18 +1592,19 @@
     var butt=document.getElementsByClassName('hs'+n)[0];
     if (butt)
       butt.style.background="rgba(128,128,128,.2)";
-    
     if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000)
       f5('', '#hSwitch('+n+')');
     else
-      hCollect(function hChange(){
-        httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
-          var s=JSON.parse(s)[0];
-          if ("success" in s)
-            hCollect();
-          else
-            comment(JSON.stringify(s));
-        }, comment, JSON.stringify({'on': !switchs[n].on}), 'PUT');
+      setTimeout(function a(){
+        hCollect(function hChange(){
+          httpReq(hueBaseUrl+hueToken+'/lights/'+n+'/state/', function hParse(s){
+            var s=JSON.parse(s)[0];
+            if ("success" in s)
+              hCollect();
+            else
+              comment(JSON.stringify(s));
+          }, hFail, JSON.stringify({'on': !switchs[n].on}), 'PUT');
+        });
       });
   }
   function hUpdate(){
