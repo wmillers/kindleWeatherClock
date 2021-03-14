@@ -492,22 +492,21 @@ function weatherInterval() {
     else
         addTaskOnPageChange(weatherTaskIndex, nextRefresh);
     if (date.getTime() - lastSyncTime > 10000)
-        setTimeout('onlineWeather()', 100);
-}
-function onlineWeather() {
-    var _doc = document.body;
-    var script = document.createElement('img');
-    script.setAttribute('id', 'testConnection');
-    script.setAttribute('src', '//www.163.com/favicon.ico' + noCache());
-    _doc.appendChild(script);
-    script.onload = script.onreadystatechange = function () {
-        if (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')
-            weather(true);
-        else
-            weather(false);
-        script.onload = script.onreadystatechange = null;
-    }
-    _doc.removeChild(script);
+        setTimeout(function onlineWeather() {
+            var _doc = document.body;
+            var script = document.createElement('img');
+            script.setAttribute('id', 'testConnection');
+            script.setAttribute('src', '//www.163.com/favicon.ico' + noCache());
+            _doc.appendChild(script);
+            script.onload = script.onreadystatechange = function () {
+                if (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')
+                    weather(true);
+                else
+                    weather(false);
+                script.onload = script.onreadystatechange = null;
+            }
+            _doc.removeChild(script);
+        }, 100);
 }
 function weather(connected) {
     var date = getOffsetDate();
@@ -690,17 +689,16 @@ function switchTomato() {
 }
 function setTimer() {
     clearTimeout(timerEntity);
-    timerEntity = setTimeout('tomatoTimer()', 1000);
-}
-function tomatoTimer() {
-    if (timerEnd < new Date().getTime()) {
-        if (toStatus == 'work')
-            gatherTomato();
-        switchTomato();
-    } else {
-        updateMsg();
-        setTimer();
-    }
+    timerEntity = setTimeout(function tomatoTimer() {
+        if (timerEnd < new Date().getTime()) {
+            if (toStatus == 'work')
+                gatherTomato();
+            switchTomato();
+        } else {
+            updateMsg();
+            setTimer();
+        }
+    }, 1000);
 }
 function updateButton() {
     buttonStyle[1].color = (ispaused) ? '#303030' : '#a9a9a9';
@@ -928,12 +926,6 @@ function showIcs(keep) {
         else
             addTaskOnPageChange(tickListFloatIndex, 2.5 * 3600 * 1000);
     }
-}
-function stringLine(s) {
-    var ns = '';
-    for (var i = 0; i < s.length; i++)
-        ns += '<br>' + s[i];
-    return ns;
 }
 function alarmIcs(tick) {
     var dH = dHour(tick.DTSTART);

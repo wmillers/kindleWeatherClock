@@ -1,5 +1,4 @@
 ![GitHub release](https://img.shields.io/github/release/wmillers/kindleWeatherClock.svg?color=pink)
-[![codebeat badge](https://codebeat.co/badges/fd768b3d-cef2-49be-9183-12cb33aabd4d)](https://codebeat.co/projects/github-com-wmillers-kindleweatherclock-master)
 [![DeepScan grade](https://deepscan.io/api/teams/13271/projects/16273/branches/344913/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13271&pid=16273&bid=344913)  
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/wmillers/kindleWeatherClock?color=dodgerblue)
 ![last_commit](https://img.shields.io/github/last-commit/wmillers/kindleWeatherClock.svg?color=aquamarine)  
