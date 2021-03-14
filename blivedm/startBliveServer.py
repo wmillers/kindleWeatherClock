@@ -63,14 +63,14 @@ def crosAccess(url, data=None, method=None):
     }
     req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
-        response = request.urlopen(req)
-        return response.read().decode("utf-8")
+        with request.urlopen(req) as response:
+            return response.read().decode("utf-8")
     except Exception:
         que.put_nowait('[EXCEP] cros: '+str(sys.exc_info()))
         return ''
 
 def controlRoom(path, data=None, method=None):
-    global new_room_id, que, info, status_code, last_room_id, status
+    global new_room_id, que, info, status_code, last_room_id, status #nosec
     ori_cmd=parse.urlparse(path).query.split('&')[0]
     cmd=ori_cmd.lower()
     needExtra=True
@@ -133,7 +133,7 @@ def controlRoom(path, data=None, method=None):
     return needExtra, str(res)
 
 def readFromLive():
-    global history, que, status_code, info, status
+    global history, que, status_code, info, status #nosec
     res=''
     if (not que.empty()):
         if (len(history)>100):
@@ -156,7 +156,7 @@ def readFromLive():
     return res
 
 def initServer(r, c1, c2, c3):
-    global que, new_room_id, status_code, last_room_id
+    global que, new_room_id, status_code, last_room_id #nosec
     que, new_room_id, status_code, last_room_id=r, c1, c2, c3
     host = ('localhost', 8099)
     print("Starting server, listen at: %s:%s" % host)
@@ -217,7 +217,7 @@ async def initDm(room_id):
         await client.close()
 
 def runDm(s, room_id):
-    global que
+    global que #nosec
     que=s
     aprint('[LIVE] New room: '+str(room_id))
     sys.stdout.flush()

@@ -81,7 +81,7 @@
     }
     .h_switch {
       height: 20rem;
-      width: 8rem;
+      width: 4rem;
       border: black 5px solid;
       display: table-cell;
       vertical-align:middle;
@@ -179,7 +179,7 @@
     }
     .reminder {
       display: none;
-      margin: -25rem 10rem; 
+      margin: -25rem 10rem;
       padding: 1rem;
       max-height: 21rem;
       width: 22rem;
@@ -262,11 +262,14 @@
         else
           for (var i in autostart)
             [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
+    });
+    var isFastLoad=location.hash!=(location.hash=location.hash.replace('#fastload', ''));
+    setTimeout(function loadFromHash(){
       //resume task from #a()#b()
       var run=location.hash.split('#');
       location.hash="";
       for (var i in run)
-        eval(decodeURI(run[i]));
+        setTimeout(decodeURI(run[i]));
     });
 
 
@@ -364,10 +367,12 @@
     var cmdList={};
     var weatherTaskIndex=0;
     var tickListAlarm='';
-    initDateFromServer();
-    adjustAgainstHardwareTimeLag();//extra offset cycle
+    if (!isFastLoad){
+      initDateFromServer();
+      adjustAgainstHardwareTimeLag();//extra offset cycle
+      setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
+    }
     initBrowserPage();
-    setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
 
     function adjustAgainstHardwareTimeLag(lag){
       if (lag==undefined||lag<hardwareLagRate*3600*1000) lag=hardwareLagRate*3600*1000;//add 1s offset every xxx hour
@@ -824,11 +829,15 @@
       }
       var s=Math.round((timerEnd-new Date().getTime())/1000);
       var timeString=""+frontZero(Math.floor(s/60))+":"+frontZero(s%60);
-      tomatoMsg[1].innerHTML=timeString;
-      document.title=timeString+(toStatus=='work'?" <TOM":" <ATO");
+      if (!document.hidden){
+        tomatoMsg[0].style.background=toStatus=='work'?'gray':'';
+        tomatoMsg[1].innerHTML=timeString;
+      } else
+        document.title=timeString+(toStatus=='work'?" <TOM":" <ATO");
     }
     function fridgeTomato(){
       killShadow();
+      tomatoMsg[0].style.background='';
       tomatoMsg[0].innerHTML=toStatus&&toStatus!='stop'?'MATO':'TOMA';
       tomatoMsg[1].innerHTML=toStatus&&toStatus!='stop'?'TOMA':'MATO';
       prepareTomato();
@@ -847,14 +856,15 @@
       killShadow();
       toStatus='stop';//work,rest,stop
       ispaused=false;
-      weeklyTomato=Array();
       eatTomato();
       clearTimeout(timerEntity);
       updateButton();
     }
     function switchTomato(){
-      if (!toStatus)
+      if (!toStatus){
         prepareTomato();
+        showTomato('INIT');
+      }
       switch (toStatus){
         case 'stop':
           toStatus='work';
@@ -1592,7 +1602,7 @@
     var butt=document.getElementsByClassName('hs'+n)[0];
     if (butt)
       butt.style.background="rgba(128,128,128,.2)";
-    if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000)
+    if (fixBugButCanAddMoreBugs&&hLast&&new Date().getTime()-hLast>3*3600*1000&&!isHomeShrink)
       f5('', '#hSwitch('+n+')');
     else
       setTimeout(function a(){
@@ -1628,13 +1638,14 @@
       hs=hs.style;
       hs.fontSize="";
       hs.borderColor=switchs[i].reachable?"":"gray";
-      hs.width=switchs[i].reachable?"12rem":"4rem";
+      hs.width=switchs[i].reachable?"12rem":"8rem";
+      hs.height=isHomeShrink?"8rem":"";
       hs.height=toStatus&&toStatus!='stop'?"8rem":"";
       hs.background="rgba("+(switchs[i].on?"255,255,255":"")+",.2)";
       hs.color=switchs[i].on?"black":"";
     }
     if (fixBugButCanAddMoreBugs&&l<3)
-      home.innerHTML+="<div class='h_switch' onclick=\"f5(\'\', \'#hSwitch(1)\')\">F5</div>";
+      home.innerHTML+="<div class='h_switch' "+(isHomeShrink?"style='height:8rem'":"")+" onclick=\"location.hash=\'#hSwitch(1)#setTimeout(window.close, 3000)#fastload\'\">Star</div>";
   }
 
   var loaded=true;
