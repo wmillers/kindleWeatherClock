@@ -1,4 +1,5 @@
 ![GitHub release](https://img.shields.io/github/release/wmillers/kindleWeatherClock.svg?color=pink)
+[![codebeat badge](https://codebeat.co/badges/fd768b3d-cef2-49be-9183-12cb33aabd4d)](https://codebeat.co/projects/github-com-wmillers-kindleweatherclock-master)  
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/wmillers/kindleWeatherClock?color=dodgerblue)
 ![last_commit](https://img.shields.io/github/last-commit/wmillers/kindleWeatherClock.svg?color=aquamarine)  
 ## 介绍(Introduce):  

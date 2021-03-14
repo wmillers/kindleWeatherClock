@@ -1407,34 +1407,30 @@ else
     });
 }
 function hUpdate(){
-var l=Object.keys(switchs).length;
-if (!hueToken){
-    hHelp();
-    return;
-} else if (!l){
-    hCollect();
-    return;
-}
-home.innerHTML='';
-home.style.left=l>=3?"20rem":"24rem";
-home.style.width=l>=3?"24rem":"20rem";
-for (var i in switchs){
-    var hs=document.createElement('div');
-    hs.setAttribute('class', 'h_switch hs'+i);
-    hs.setAttribute('onclick', 'hSwitch('+i+')');
-    hs.appendChild(document.createTextNode(switchs[i].name));
-    home.appendChild(hs);
-    hs=hs.style;
-    hs.fontSize="";
-    hs.borderColor=switchs[i].reachable?"":"gray";
-    hs.width=switchs[i].reachable?"12rem":"8rem";
-    hs.height=isHomeShrink?"8rem":"";
-    hs.height=toStatus&&toStatus!='stop'?"8rem":"";
-    hs.background="rgba("+(switchs[i].on?"255,255,255":"")+",.2)";
-    hs.color=switchs[i].on?"black":"";
-}
-if (fixBugButCanAddMoreBugs&&l<3)
-    home.innerHTML+="<div class='h_switch' "+(isHomeShrink?"style='height:8rem'":"")+" onclick=\"location.hash='#hSwitch(1)#setTimeout(window.close, 3000)#fastload'\">Star</div>";
+    var l=Object.keys(switchs).length;
+    if (!hueToken)
+        hHelp();
+    else if (!l)
+        hCollect();
+    else {
+        home.innerHTML='';
+        home.style.left=l>=3?"20rem":"24rem";
+        home.style.width=l>=3?"24rem":"20rem";
+        for (var i in switchs){
+            var hs=document.createElement('div');
+            hs.setAttribute('class', 'h_switch hs'+i);
+            hs.setAttribute('onclick', 'hSwitch('+i+')');
+            hs.appendChild(document.createTextNode(switchs[i].name));
+            home.appendChild(hs);
+            hs.style="border-color: "+(switchs[i].reachable?"":"gray")
+                +";width: "+(switchs[i].reachable?"12rem":"8rem")
+                +";height: "+(isHomeShrink||(toStatus&&toStatus!='stop')?"8rem":"")
+                +";background: rgba("+(switchs[i].on?"255,255,255":"")+",.2)"
+                +";color: "+(switchs[i].on?"black":"");
+        }
+        if (fixBugButCanAddMoreBugs&&l<3)
+            home.innerHTML+="<div class='h_switch' "+(isHomeShrink?"style='height:8rem'":"")+" onclick=\"location.hash='#hSwitch(1)#setTimeout(window.close, 3000)#fastload'\">Star</div>";
+    }
 }
 
 var loaded=true;
