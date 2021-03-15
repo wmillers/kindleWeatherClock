@@ -973,9 +973,9 @@ function displayReminder() {
     }
     s = s ? s.slice(0, -11) + '</span>' : '';
     if (l > 3)
-        reminder.style = "margin: -28rem 10rem;max-height: 25.5rem;";
+        reminder.style.cssText = "margin: -28rem 10rem;max-height: 25.5rem;";
     else
-        reminder.style = "";
+        reminder.style.cssText = "";
     reminder.innerHTML = s;
     reminder.style.display = 'block';
 }
@@ -1020,7 +1020,7 @@ if (!isNaN(parseInt(i))){
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function(){
         if (xmlhttp.readyState == 4){
-            document.title=(xmlhttp.status==200?'√ ':'×'+xmlhttp.status)+document.title;
+            document.title=(xmlhttp.status==200?'√ ':'['+xmlhttp.status)+document.title;
             console.log("["+i+"] "+xmlhttp.status+" "+xmlhttp.responseText)
         }
     }
@@ -1392,11 +1392,11 @@ function hUpdate() {
             hs.setAttribute('onclick', 'hSwitch(' + i + ')');
             hs.appendChild(document.createTextNode(switchs[i].name));
             home.appendChild(hs);
-            hs.style = "border-color: " + (switchs[i].reachable ? "" : "gray")
-                + ";width: " + (switchs[i].reachable ? "12rem" : "8rem")
-                + ";height: " + (isHomeShrink || (toStatus && toStatus != 'stop') ? "8rem" : "")
-                + ";background: rgba(" + (switchs[i].on ? "255,255,255" : "") + ",.2)"
-                + ";color: " + (switchs[i].on ? "black" : "");
+            hs.style.cssText = (switchs[i].reachable ? "" : "border-color: gray;")
+                + "width: " + (switchs[i].reachable ? "12rem;" : "8rem;")
+                + (isHomeShrink || (toStatus && toStatus != 'stop') ? "height: 8rem;" : "")
+                + (switchs[i].on ? "background: rgba(255,255,255, .2);" : "")
+                + (switchs[i].on ? "color: black;" : "");
         }
         if (fixBugButCanAddMoreBugs && l < 3)
             home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#setTimeout(window.close, 3000)#fastload'\">Star</div>";
