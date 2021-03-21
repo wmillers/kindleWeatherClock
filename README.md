@@ -1,8 +1,8 @@
-![GitHub release](https://img.shields.io/github/release/wmillers/kindleWeatherClock.svg?color=pink)
+![GitHub release](https://img.shields.io/github/release/wmillers/kindleWeatherClock.svg?color=yellow&style=flat-square)
 [![DeepScan grade](https://deepscan.io/api/teams/13271/projects/16273/branches/344913/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13271&pid=16273&bid=344913)
 [![CodeFactor](https://www.codefactor.io/repository/github/wmillers/kindleweatherclock/badge/master)](https://www.codefactor.io/repository/github/wmillers/kindleweatherclock/overview/master)  
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/wmillers/kindleWeatherClock?color=dodgerblue)
-![last_commit](https://img.shields.io/github/last-commit/wmillers/kindleWeatherClock.svg?color=aquamarine)  
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/wmillers/kindleWeatherClock?color=dodgerblue&style=flat-square)
+![last_commit](https://img.shields.io/github/last-commit/wmillers/kindleWeatherClock.svg?color=aquamarine&style=flat-square)  
 ## 介绍(Introduce):  
 功能包括时间显示、天气预报、番茄时钟、滴答清单、B站直播弹幕、智能家居Hue。屏幕尺寸适配KPW3，如有需要可以自行调整css。  
 Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu & Home Smart for Philips-Hue. Display For KPW3, but you can change it by edit css.
