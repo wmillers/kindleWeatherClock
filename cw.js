@@ -946,7 +946,7 @@ function deleteReminder(tickId) {
     event.stopPropagation();
     if (confirm('Job\'s done?')) {
         delete tickListReminderList[String(tickId)];
-        var i = document.getElementById('tickR' + tickId);
+        var i = document.getElementById('tick' + tickId);
         var p = i.parentNode;
         p.removeChild(i);
         if (!p.hasChildNodes())
@@ -960,7 +960,7 @@ function hashString(tick) {
         hash = ((hash << 5) - hash) + s.charCodeAt(i);
         hash |= 0; // Convert to 32bit integer
     }
-    return String(hash) + Math.floor(tick.DTSTART / 1000);
+    return (hash + Math.floor(tick.DTSTART / 1000)).toString(36);
 }
 function displayReminder() {
     var l = Object.keys(tickListReminderList).length;
@@ -969,7 +969,7 @@ function displayReminder() {
         return;
     for (var i in tickListReminderList) {
         var tick = tickListReminderList[i];
-        s += '<span style="display:block" id="' + i + '" onclick="deleteReminder(' + i + ')">' + (tick.FREQ ? '<sup style="font-size:small;border-radius:20%;border:solid">' + tick.FREQ + '</sup>' : '') + '[' + dateString(tick.DTSTART, 'Mdhm') + timeFormat(dMs(tick.DTSTART), 1) + ']<br>' + tick.SUMMARY + '<br>' + tick.DESCRIPTION + '</span>';
+        s += '<span style="display:block" id="tick' + i + '" onclick="deleteReminder(\'' + i + '\')">' + (tick.FREQ ? '<sup style="font-size:small;border-radius:20%;border:solid">' + tick.FREQ + '</sup>' : '') + '[' + dateString(tick.DTSTART, 'Mdhm') + timeFormat(dMs(tick.DTSTART), 1) + ']<br>' + tick.SUMMARY + '<br>' + tick.DESCRIPTION + '</span>';
     }
     s = s ? s.slice(0, -11) + '</span>' : '';
     if (l > 3)
@@ -1315,7 +1315,7 @@ var switchs = {};//{1:{on:false, name:"Somelight", reachable:true}}
 var hLast = 0;
 function hHelp() {
     comment('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
-    alert('hueToken around line:1383 is empty');
+    alert('hueToken around line:1313 is empty');
 }
 function hCollect(f) {
     if (!hueToken) {
@@ -1340,7 +1340,9 @@ function hCollect(f) {
     }, hFail);
 }
 function hFail() {
-    console.log(comment('<span style="color:maroon">HUE cert need to re-confirm, more in F12</span>'));
+    var s="HUE cert need to re-confirm, more in F12";
+    console.error(s);
+    comment('<span style="color:maroon">'+s+'</span>');
 }
 function hReg() {
     httpReq(hueBaseUrl, function hParse(s) {
