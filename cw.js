@@ -147,7 +147,7 @@ var preventDecreaseShadow = false;//Stop when tomato
 var lessDisturbUpdateWhenTomato = false;//less time update flash when tomato
 var initTime = new Date().getTime();
 var initTimeOffset = 0;
-var averageTimeOffset = [];
+var averageTimeOffset = [0, 0];
 var hasClockInit = false;
 var networkFaliure = false;
 var nextCmdList = 0;
@@ -158,7 +158,7 @@ var tickListAlarm = '';
 if (!isFastLoad) {
     initDateFromServer();
     adjustAgainstHardwareTimeLag();//extra offset cycle
-    setTimeout("initClockWeather()", 1000);//if server not responsed in 1s, use local time instead
+    initClockWeather();
 }
 initBrowserPage();
 
@@ -168,19 +168,15 @@ function adjustAgainstHardwareTimeLag(lag) {
     setTimeout("adjustAgainstHardwareTimeLag(" + lag + ")", lag);
 }
 function initDateFromServer() {
-    httpReq('/blive/?time', function s(a) {averageTimeOffset.push(parseInt(a) - new Date().getTime()); sumDateFromServer(true)});//oneTimeDateByBlive
+    httpReq('/blive/?time', function s(a) {averageTimeOffset=[parseInt(a) - new Date().getTime(),1]; sumDateFromServer(true)});//timeDateByBlive
     setTimeout('if (!timeOffset) sumDateFromServer()', 500);//alternative
 }
 function sumDateFromServer(calculate) {
     if (calculate) {
-        if (!averageTimeOffset.length) return false;
+        if (!averageTimeOffset[0]) return false;
         var oldHardwareLagRate = hardwareLagRate;
         var dOffsetPerSecond = "";
         var dTimeOffset = 0;
-        var sum = 0;
-        for (var i = 0; i < averageTimeOffset.length; i++)
-            sum += averageTimeOffset[i];
-        timeOffset = Math.floor(sum / averageTimeOffset.length);
         if (!initTimeOffset && timeOffset) initTimeOffset = timeOffset;
         if (initTimeOffset) {
             var uptime = new Date().getTime() - initTime;
@@ -196,12 +192,12 @@ function sumDateFromServer(calculate) {
         dTimeOffset = dTimeOffset ? "(" + timeFormat(dTimeOffset) + ")" : "";
         console.log(comment(timeOffsetFormat(2) + dTimeOffset + "#" + dOffsetPerSecond + "#" + timeFormat(uptime, 3, true) + ""));
         document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
-        averageTimeOffset = [];
         initClockWeather();//immediately after date time got from server
         return true;
     } else {
-        averageTimeOffset = [];
-        singleDateFromServer(20);
+        averageTimeOffset = [0, 0];
+        for (var i=0;i<=20;i++)
+            setTimeout('singleDateFromServer(' + i + ')', 50*i);
     }
 }
 function singleDateFromServer(n) {
@@ -213,19 +209,18 @@ function singleDateFromServer(n) {
                 networkFaliure = false;
                 return;
             }
-            if (n > 0)
-                setTimeout('singleDateFromServer(' + (--n) + ')', 100);
-            else {
+            if (n >= 20) {
                 sumDateFromServer(true);
                 return;
             }
             if (xmlhttp.status != 0) {
                 var serverTime = new Date(xmlhttp.getResponseHeader("Date")).getTime();
                 var clientTime = new Date().getTime();
-                timeOffset = serverTime - clientTime + 2300;//preset lag==>+1s(screen refresh time)
-                averageTimeOffset.push(timeOffset);
+                averageTimeOffset[0]+=serverTime - clientTime + 2300;
+                averageTimeOffset[1]++;
+                timeOffset = Math.floor(averageTimeOffset[0] / averageTimeOffset[1]);//preset lag==>+1s(screen refresh time)
                 console.log(frontZero(n + 1) + "#" + Math.floor(serverTime / 1e5) + ":S" + serverTime % 1e5 / 1000 + ".:C" + clientTime % 1e5 / 1000 + ":" + timeOffsetFormat());
-                comment("Calculating..." + timeOffsetFormat(3), true);
+                //comment("Calculating..." + timeOffsetFormat(3), true);
             } else {
                 networkFaliure = true;
                 comment("Failed(ServerTime)#1s/" + hardwareLagRate + "h(" + timeOffsetFormat(3) + ")");
@@ -292,13 +287,7 @@ function initBrowserPage() {
 function initClockWeather() {
     if (hasClockInit) return;//avoid duplicated init clock;
     hasClockInit = true;
-    var date = getOffsetDate();
-    //update() included in updateInterval()
     updateInterval();
-    //No need to update weather manually at the first time.
-    document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero(date.getMonth() + 1) + '-' + frontZero(date.getDate()) + ' ' + frontZero(date.getHours()) + ':' + frontZero(date.getMinutes()) + ':' + frontZero(date.getSeconds());
-    document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
-    document.getElementById('net').innerHTML = '初始化同步';
     weatherInterval();
 }
 function setIcon() {
@@ -481,6 +470,7 @@ function update() {
 function weatherInterval() {
     var date = getOffsetDate();
     var nextRefresh = 0;
+    document.getElementById('net').innerHTML = '初始化同步';
     if (date.getTime() - lastSyncTime > refreshRate + 100000)
         nextRefresh = 10 * 60 * 1000;
     else if (date.getHours() + refreshRate / 1000 / 3600 < 24)
@@ -495,31 +485,27 @@ function weatherInterval() {
         setTimeout(function onlineWeather() {
             var _doc = document.body;
             var script = document.createElement('img');
-            script.setAttribute('id', 'testConnection');
             script.setAttribute('src', '//www.163.com/favicon.ico' + noCache());
             _doc.appendChild(script);
             script.onload = script.onreadystatechange = function () {
-                if (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')
-                    weather(true);
-                else
-                    weather(false);
+                weather(!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete');
                 script.onload = script.onreadystatechange = null;
             }
             _doc.removeChild(script);
-        }, 100);
+        }, 10);
 }
 function weather(connected) {
-    var date = getOffsetDate();
-    if (connected) {
-        lastSyncTime = date.getTime();
-        var ifrm = document.getElementsByClassName('weath')[0];
-        ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
-        document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
-        document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
-        document.getElementById('net').innerHTML = '完成上一次同步';
-    } else
+    if (!connected)
         document.getElementById('net').innerHTML = '无网络连接';
+    var date = getOffsetDate();
+    lastSyncTime = date.getTime();
+    var ifrm = document.getElementsByClassName('weath')[0];
+    ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
+    document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
+    document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
+    document.getElementById('net').innerHTML = '完成上一次同步';
 }
+
 
 /*                TOMATO: Tomato Timer                */
 var toStatus, ispaused, weeklyTomato = [];
@@ -734,7 +720,7 @@ function updateSignal() {
     }
 }
 function pauseTomato() {
-    if (toStatus == "stop") return;
+    if (!toStatus || toStatus == "stop") return;
     ispaused = !ispaused
     if (ispaused) {
         clearTimeout(timerEntity);
@@ -748,6 +734,7 @@ function pauseTomato() {
     updateButton();
     updateSignal();
 }
+
 
 /*                TICKLIST: Ticktick Reminder
 Note: you need set a Nginx server to proxy the GET method to the
@@ -988,6 +975,7 @@ function clearReminder() {
     return r;
 }
 function remindIcs(cmd, timeout) {addTaskOnPageChange(cmd, timeout, true);}//-12h,-15m,-1m,+12h
+
 
 /*                DANMU: Bilibili Live Danmu
 sudo apt-get install python3-distutils
@@ -1302,6 +1290,7 @@ function danmuClear() {
     danmuStyle.opacity = 0;
     document.getElementsByClassName('danmu_info')[0].innerHTML = '';
 }
+
 
 /*                HOME: for Hue
 http://philips-hue/debug/clip.html
