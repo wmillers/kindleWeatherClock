@@ -43,7 +43,7 @@ Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/b
 Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
 
 ### 智能家居Hue(Home Smart for Philips-Hue)
-适配飞利浦Hue智能家居的开关。Hue中继桥的api带CROS跨域操作头，所以不需要手动代理。  
-为获取api授权操作码，按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件1383行左右的变量hueToken为该值。  
-Smart home switch for Philips-Hue products. Response Header returned from Hue bridge api contains allow CROS *, therefore need to proxy the request.  
-To get Hue api token: 1.Press the Hue Link button 2. Run hReg() 3. Change the hueToken variable in this page file Line1383~  
+适配飞利浦Hue智能家居的开关。Hue中继桥的api带CROS跨域操作头，可以不需要手动代理，但是为了稳定性，此处仍然提供手动代理的步骤：将该代码前注释中的`location /hue/ {..}`代码复制到Nginx配置文件中。如果不需要手动代理，则将网页代码中`hueBaseUrl`变量修改为`//philips-hue/api/`。  
+为获取api授权操作码，按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件1383行左右的变量`hueToken`为该值。  
+Smart home switch for Philips-Hue products. Response Header returned from Hue bridge api contains allow CROS *, therefore it's optional to proxy the request. Here are the setups if you want it more reliable: copy the `location /hue/ {..}` code to your Nginx config. If you want to disable the proxy, edit the content of the `hueBaseUrl` variable in the page source code file to `//philips-hue/api/`.  
+To get Hue api token: 1.Press the Hue Link button 2. Run hReg() 3. Change the content of the `hueToken` variable in the page source code file's Line1383~.  

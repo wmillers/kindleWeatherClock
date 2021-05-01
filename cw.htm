@@ -4,46 +4,60 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <script>
-    "use strict";
-    //**************Basic settings***************
-    var fixBugButCanAddMoreBugs=true;//If you not sure, please change this to false
-    var testStatus=false;
-    var info={
-      version: '1.6',
-      description: '(bug-fix changes are in commit logs)',
-      author: 'wmillers@github',
-      support: ['time', 'weather',//those two are default modules
-          //'TO-DISABLE-//COMMENT-THE-LINE',
-          'tomato',
-          'ticklist',
-          'danmu',
-          'home',
-          'lunaryear',
-      ],
-      license: 'LGPL2.1'
+"use strict";
+//**************Basic settings***************
+var forDebugUse=true;//If you not sure, please change this to false
+var testStatus=false;
+var info={
+    version: '1.6',
+    description: '(bug-fix changes are in commit logs)',
+    author: 'wmillers@github',
+    support: ['time', 'weather',//those two are default modules
+        //'TO-DISABLE-//COMMENT-THE-LINE',
+        'tomato',
+        'ticklist',
+        'danmu',
+        'home',
+        'lunaryear',
+    ],
+    license: 'LGPL2.1'
+}
+var autostart=[//COMMENT unwanted auto-start modules
+    'ticklist',
+    //'danmu',
+    'home'];
+//********************************************
+setTimeout(function isLoaded(){
+    if (typeof loaded=="undefined"){
+    document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
+    confirm('JS failed, need reload?')?f5():comment('No need to reload');
     }
-    var autostart=[//COMMENT unwanted auto-start modules
-      'ticklist',
-      //'danmu',
-      'home'];
-    //********************************************
-    setTimeout(function isLoaded(){
-      if (typeof loaded=="undefined"){
-        document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
-        confirm('JS failed, need reload?')?f5():comment('No need to reload');
-      }
-    }, 4000);
-    var testInterval=testStatus?setInterval('comment(how(), true)', 7*1000):0;
-    if (typeof eval!='function')
-      comment('eval not support');
-    function hasModule(name){
-      return info.support.indexOf(name)!=-1;
-    }
+}, 4000);
+var testInterval=testStatus?setInterval('comment(how(), true)', 7*1000):0;
+if (typeof eval!='function')
+    comment('eval not support');
+function hasModule(name){
+    return info.support.indexOf(name)!=-1;
+}
+/*
+if ('serviceWorker' in navigator) {
+    // 当页面加载完成就创建一个serviceWorker
+    window.addEventListener('load', function () {
+        // 创建并指定对应的执行内容
+        // scope 参数是可选的，可以用来指定你想让 service worker 控制的内容的子目录。 在这个例子里，我们指定了 '/'，表示 根网域下的所有内容。这也是默认值。
+        navigator.serviceWorker.register('./serviceWorker.js', {scope: './'})
+            .then(function sw_reg(registration) {
+                console.log('ServiceWorker registration successful with scope: '+registration.scope);
+            })
+            .catch(function sw_col(err) {
+                comment('[ServiceWorker] registration failed: '+err);
+            });
+    });
+}*/
   </script>
   <title>&nbsp;</title><!--tomatoClock-->
   <link id="ico" href="" rel="icon" type="image/x-icon" />
-
-	<style>
+  <style>
     table {
       border-spacing: 0;
     }
@@ -271,6 +285,14 @@ setTimeout(function loadFromHash() {
     for (var i = 0; i < run.length; i++)
         setTimeout(decodeURI(run[i]));
 });
+setTimeout(function isVisible(){
+    function notVisible(){
+        document.title="页面被遮挡";
+        alert('页面被遮挡');
+    }
+    if (document.hidden || document.mozHidden || document.msHidden || document.webkitHidden)
+        notVisible();
+}, 10000);
 
 
 //Lunar Year
@@ -1115,7 +1137,7 @@ function showIcs(keep) {
                     td_divider = '';
                 var sude = (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25) ? [l[i].SUMMARY.slice(0, 10), (l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim()] : [(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim(), ''];
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 3) / 3 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '<span style="font-size:small">' + dHour(l[i].DTSTART) + '</span>') + '</td><td class="tl_sude"><span class="tl_su"> ' + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
+                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '<span style="font-size:xx-small"><i>' + dHour(l[i].DTSTART) + '</i></span>') + '</td><td class="tl_sude"><span class="tl_su"> ' + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
@@ -1414,7 +1436,7 @@ function danmuRead(roomId, f) {
             danmuWrite('[local] server return: ' + n + 'R' + danmuTryToken + 'S' + Math.floor(getOffsetTime() / 1000) % 3600, false, true);
     }, '', '', f == undefined ? function both() {
         var t = getOffsetTime() - danmuLoadTime;
-        if (fixBugButCanAddMoreBugs && t >= 5e3 && t < 50e3)
+        if (forDebugUse && t >= 5e3 && t < 50e3)
             comment(Math.floor(t / 1000), getOffsetTime() - danmuStart > 10 * 60e3);
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
@@ -1506,15 +1528,34 @@ function danmuClear() {
 /*                HOME: for Hue
 http://philips-hue/debug/clip.html
 https://developers.meethue.com/develop/get-started-2/
+
+location /hue/ {
+    proxy_redirect off;
+    proxy_buffering off;
+    proxy_http_version 1.1;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $http_connection;
+    add_header Access-Control-Allow-Methods *;
+    add_header Access-Control-Allow-Credentials true;
+    add_header Access-Control-Allow-Origin $http_origin;
+    if ($request_method = OPTIONS){
+    return 200;
+    }
+    access_log off;
+    proxy_pass https://philips-hue/api/;
+}
 */
 var home = document.getElementsByClassName('home')[0];
-var hueBaseUrl = '//philips-hue/api/';//No need CROS Access-Control-Allow-Origin *
+var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CROS Access-Control-Allow-Origin *
 var hueUser = {"devicetype": 'A 3-switch kindle-based controller.'};
 var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";
 var switchs = {};//{1:{on:false, name:"Somelight", reachable:true}}
 var hLast = 0;
+var hSingle=false;
+var hPreventNetworkError=(hueBaseUrl=='/hue/')?false:true;
 function hHelp() {
-    comment('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
+    hFail('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
     alert('hueToken around line:1313 is empty');
 }
 function hCollect(f) {
@@ -1539,10 +1580,10 @@ function hCollect(f) {
         }
     }, hFail);
 }
-function hFail() {
-    var s="HUE cert need to re-confirm, more in F12";
-    console.error(s);
-    comment('<span style="color:maroon">'+s+'</span>');
+function hFail(s) {
+    if (!s) s="HUE cert need to re-confirm, more in F12";
+    console.warn(s);
+    comment('<a href="'+hueBaseUrl+hueToken+'">'+s+'</a>');
 }
 function hReg() {
     httpReq(hueBaseUrl, function hParse(s) {
@@ -1563,7 +1604,7 @@ function hSwitch(n) {
     var butt = document.getElementsByClassName('hs' + n)[0];
     if (butt)
         butt.style.background = "rgba(128,128,128,.2)";
-    if (fixBugButCanAddMoreBugs && hLast && new Date().getTime() - hLast > 3 * 3600 * 1000 && !isHomeShrink)
+    if (hPreventNetworkError && hLast && new Date().getTime() - hLast > 3 * 3600 * 1000 && !isHomeShrink)
         f5('', '#hSwitch(' + n + ')');
     else
         setTimeout(function a() {
@@ -1574,7 +1615,7 @@ function hSwitch(n) {
                         hCollect();
                     else
                         comment(JSON.stringify(s));
-                }, hFail, JSON.stringify({'on': !switchs[n].on}), 'PUT');
+                }, hFail, JSON.stringify({'on': !switchs[n].on}), 'PUT', hSingle?window.close:undefined);
             });
         });
 }
@@ -1600,8 +1641,8 @@ function hUpdate() {
                 + (switchs[i].on ? "background: rgba(255,255,255, .2);" : "")
                 + (switchs[i].on ? "color: black;" : "");
         }
-        if (fixBugButCanAddMoreBugs && l < 3)
-            home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#setTimeout(window.close, 3000)#fastload'\">Star</div>";
+        if (l < 3)
+            home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#hSingle=true#fastload'\">Star</div>";
     }
 }
 
