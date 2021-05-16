@@ -205,6 +205,23 @@ if ('serviceWorker' in navigator) {
       overflow: scroll;
       z-index: 3;
     }
+    .loader {
+        margin: 0 .5rem;
+        width: 4rem;
+        height: 2rem;
+        text-align: center;
+        font-size: 10px;
+        display: inline-block;
+    }
+    .bar {
+        background-color: black;
+        height: 10%;
+        width: .5rem;
+        display: inline-block;
+        float: left;
+        margin-left: .1rem;
+        margin-top: .5rem;
+    }
   </style>
 </head>
 <body>
@@ -215,7 +232,7 @@ if ('serviceWorker' in navigator) {
     <div style="height:6rem"></div>
     <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span id="danmu"></span></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
-    <div class="tomato"><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
+    <div class="tomato"><span class="loader"></span><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer()">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
     <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class="basket"></div>
@@ -388,6 +405,7 @@ var cmdListCount = 0;
 var cmdList = {};
 var weatherTaskIndex = 0;
 var tickListAlarm = '';
+var loaderInterval;
 if (!isFastLoad) {
     initDateFromServer();
     adjustAgainstHardwareTimeLag();//extra offset cycle
@@ -522,6 +540,7 @@ function initClockWeather() {
     hasClockInit = true;
     updateInterval();
     weatherInterval();
+    timeLoader();
 }
 function setIcon() {
     for (var i in document.styleSheets)
@@ -737,6 +756,25 @@ function weather(connected) {
     document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
     document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
     document.getElementById('net').innerHTML = '完成上一次同步';
+}
+function timeLoader(){
+    var loader=document.getElementsByClassName('loader')[0];
+    clearTimeout(loaderInterval);
+    if (!loaderInterval)
+        loader.innerHTML=repeat('<div class="bar"></div>', 6);
+    loaderInterval=setTimeout("timeLoader()", (5-getOffsetTime()/1e3%60%5)*1e3);
+    var i=Math.floor(getOffsetTime()/1000%60/5);//[0,12)
+    if (i>=1&&i<6+1)
+        loader.children[i-1].style.height="50%";
+    else
+        loader.children[i==0?6-1:i-6-1].style.height="10%";
+
+    function repeat(s, n){
+        var r='';
+        for (;n>0;n--)
+            r+=s;
+        return r;
+    }
 }
 
 
@@ -1075,6 +1113,7 @@ function readIcs(s) {
     return tickList;
 }
 function sortIcs(r, sortNum) {
+    clearReminder(true);
     tickList = {important: [], normal: [], noDate: []};
     var func = [[function (d) {return d > -14},
     function (a, b) {return b.DTSTART - a.DTSTART}],
@@ -1092,7 +1131,7 @@ function sortIcs(r, sortNum) {
     for (var i = 0; i < r.length; i++)
         if (r[i].DTSTART) {
             var dD = dDay(r[i].DTSTART);
-            if (!dD)
+            if (dD<=0&&dD>-3)
                 alarmIcs(r[i]);
             if (func[0](dD, r[i].FREQ))
                 tickList.important.push(r[i]);
@@ -1137,7 +1176,7 @@ function showIcs(keep) {
                     td_divider = '';
                 var sude = (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25) ? [l[i].SUMMARY.slice(0, 10), (l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim()] : [(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim(), ''];
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '<span style="font-size:xx-small"><i>' + dHour(l[i].DTSTART) + '</i></span>') + '</td><td class="tl_sude"><span class="tl_su"> ' + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
+                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? humanDate(dD) : '<span style="font-size:xx-small"><i>' + dHour(l[i].DTSTART) + '</i></span>') + '</td><td class="tl_sude"><span class="tl_su"> ' + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
@@ -1146,6 +1185,14 @@ function showIcs(keep) {
         else
             addTaskOnPageChange(tickListFloatIndex, 2.5 * 3600 * 1000);
     }
+}
+function humanDate(d){
+    if (d>=1000)
+        return Math.floor(d/1000)+'<small><b>Q</b></small>';
+    else if (d>=100)
+        return Math.floor(d/100)+'<small><b>B</b></small>';
+    else
+        return d+'';
 }
 function alarmIcs(tick) {
     var dH = dHour(tick.DTSTART);
@@ -1199,8 +1246,8 @@ function displayReminder() {
     reminder.innerHTML = s;
     reminder.style.display = 'block';
 }
-function clearReminder() {
-    var r = confirm('*CLEAN ALL?*');
+function clearReminder(force) {
+    var r = force?force:confirm('*CLEAN ALL?*');
     if (r) {
         tickListReminderList = {};
         reminder.style.display = 'none';
@@ -1582,6 +1629,7 @@ function hCollect(f) {
 }
 function hFail(s) {
     if (!s) s="HUE cert need to re-confirm, more in F12";
+    if (s=='404'||s=='403'||s=='502') s+='> network ERROR, F12 to check URL';
     console.warn(s);
     comment('<a href="'+hueBaseUrl+hueToken+'">'+s+'</a>');
 }
