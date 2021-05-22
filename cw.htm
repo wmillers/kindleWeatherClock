@@ -228,7 +228,8 @@ if ('serviceWorker' in navigator) {
         float: left;
     }
     .gua_void {
-        background-color: white;
+        background-color: black;
+        opacity: 0;
         height: .2rem;
         width: .3rem;
         float: left;
@@ -803,7 +804,7 @@ function timeAnimation(sixty, isAlter){
         var state=decBin(getOffsetTime()/1e3%sixty/sixty*64, 6);
         var next=sixty/64;
         for (var i=0;i<state.length;i++)
-            loader.children[0].children[i*3+1].style.background=state[i]?"black":"";
+            loader.children[0].children[i*3+1].style.opacity=state[i]?"1":"0";
     }
     setTimeout("timeAnimation("+sixty+", "+isAlter+")", next+10);//bug on timer activate 0.000999927520751s earlier
 
@@ -814,7 +815,7 @@ function timeAnimation(sixty, isAlter){
         for (var i=0;i<l;i++)
             r.push(s[i]=="1"?1:0);
         for (var j=r.length;j<n;j++)
-            r.push(0);
+            r.unshift(0);
         return r;
     }
 
