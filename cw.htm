@@ -793,7 +793,7 @@ function timeAnimation(sixty, isAlter){
         // bagua
         var loader=document.getElementsByClassName('loader')[0];
         if (needInit){
-            loader.innerHTML='<div style="margin-top: .2rem; margin-left: 2rem; width: 1.5rem">'
+            loader.innerHTML='<div style="margin-top: .2rem; margin-left: 1.5rem; width: 1.5rem">'
                 +repeat('<div class="gua"></div>'
                 +'<div class="gua_void"></div>'
                 +'<div class="gua"></div>', 6)
@@ -803,7 +803,7 @@ function timeAnimation(sixty, isAlter){
         var state=decBin(getOffsetTime()/1e3%sixty/sixty*64, 6);
         var next=sixty/64;
         for (var i=0;i<state.length;i++)
-            loader.children[0].children[i*3+1].style.background=state[i]?"":"black";
+            loader.children[0].children[i*3+1].style.background=state[i]?"black":"";
     }
     setTimeout("timeAnimation("+sixty+", "+isAlter+")", next+10);//bug on timer activate 0.000999927520751s earlier
 
