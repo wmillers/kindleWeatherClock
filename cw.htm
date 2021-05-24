@@ -6,8 +6,7 @@
   <script>
 "use strict";
 //**************Basic settings***************
-var forDebugUse=true;//If you not sure, please change this to false
-var testStatus=false;
+var forTestUse=false;//If you not sure, please change this to false
 var info={
     version: '1.6',
     description: '(bug-fix changes are in commit logs)',
@@ -33,7 +32,8 @@ setTimeout(function isLoaded(){
     confirm('JS failed, need reload?')?f5():comment('No need to reload');
     }
 }, 4000);
-var testInterval=testStatus?setInterval('comment(how(), true)', 7*1000):0;
+if (forTestUse)
+    setInterval('comment(how(), true)', 7*1000);
 if (typeof eval!='function')
     comment('eval not support');
 function hasModule(name){
@@ -159,6 +159,10 @@ if ('serviceWorker' in navigator) {
       font-size: 2rem;
       font-weight: bold;
     }
+    .old_date {
+        font-size: small;
+        position: absolute;
+    }
     .date {
       font-size: 2rem;
       font-weight: bold;
@@ -206,17 +210,13 @@ if ('serviceWorker' in navigator) {
       z-index: 3;
     }
     .loader {
-        width: 4rem;
-        height: 2rem;
-        text-align: center;
-        font-size: 10px;
         display: inline-block;
+        margin: 0 1rem;
     }
     .bar {
         background-color: black;
         height: 10%;
         width: .4rem;
-        display: inline-block;
         float: left;
         margin-left: .1rem;
     }
@@ -225,13 +225,6 @@ if ('serviceWorker' in navigator) {
         height: .2rem;
         width: .6rem;
         margin-bottom: .15rem;
-        float: left;
-    }
-    .gua_void {
-        background-color: black;
-        opacity: 0;
-        height: .2rem;
-        width: .3rem;
         float: left;
     }
   </style>
@@ -244,7 +237,7 @@ if ('serviceWorker' in navigator) {
     <div style="height:6rem"></div>
     <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span id="danmu"></span></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
-    <div class="tomato"><span class="loader"></span><span id="tom" onclick="comment(runTime())">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
+    <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
     <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
     <div class="basket"></div>
@@ -299,7 +292,7 @@ setTimeout(function modulesControl() {
         home.innerHTML = '';
 });
 setTimeout(function autoStart() {
-    if (!testStatus)
+    if (!forTestUse)
         if (navigator.userAgent.indexOf('Windows') != -1)
             comment('Autostart disabled in Windows');
         else
@@ -317,7 +310,7 @@ setTimeout(function loadFromHash() {
 setTimeout(function isVisible(){
     function notVisible(){
         document.title="页面被遮挡";
-        alert('页面被遮挡');
+        comment('页面被遮挡');
     }
     if (document.hidden || document.mozHidden || document.msHidden || document.webkitHidden)
         notVisible();
@@ -416,6 +409,7 @@ var nextCmdList = 0;
 var cmdListCount = 0;
 var cmdList = {};
 var tickListAlarm = '';
+var timeAnimationInterval;
 if (!isFastLoad) {
     initDateFromServer();
     adjustAgainstHardwareTimeLag();//extra offset cycle
@@ -551,7 +545,7 @@ function initClockWeather() {
     hasClockInit = true;
     updateInterval();
     weatherInterval();
-    timeAnimation();
+    timeAnimation(forTestUse?15:undefined);
 }
 function setIcon() {
     for (var i in document.styleSheets)
@@ -583,7 +577,7 @@ function reduceShadow() {
     if (!preventDecreaseShadow)
         tasks(function a(e) {document.getElementsByClassName('time')[0].style.opacity = e}, [0, 1], 600);
 }
-function runTime(n) {return timeFormat(new Date().getTime() - initTime, n ? n : 3, true);}
+function runTime(n) {return comment(timeFormat(new Date().getTime() - initTime, n ? n : 3, true));}
 function noCache() {return "?noCache=" + document.body.clientWidth + "." + document.body.clientHeight + "." + ("" + Math.random()).slice(2, 9);}
 function frontZero(a, n) {
     if (!n) n = 2;
@@ -646,26 +640,19 @@ function how() {
     return o.slice(0, -1);
 }
 function wipe() {basket.innerHTML = '';}
-function test(s) {
-    testStatus = !testStatus
-    if (testStatus) {
-        comment(how());
-        testIcs();
-        testInterval = setInterval('comment(how(), true)', (s == undefined ? 29 : s) * 1000);
-    } else
-        clearInterval(testInterval);
-    update();
+function test() {
+    forTestUse=true;
+    document.getElementsByClassName('weath')[0].src = "about:blank";
+    comment(how());
+    testIcs();
+    timeAnimation(15);
+    setInterval('timeOffset+=57*1000;update()', 100);
 }
 function f5(p, g) {location.replace(location.protocol + '//' + (p ? p : location.hostname) + location.pathname + (location.search ? "" : "?1") + (g ? g : ''));}
-function loop() {
-    document.getElementsByClassName('weath')[0].src = "about:blank";
-    test(3);
-    setInterval('timeOffset+=57*1000;update()', 50);
-}
 function correctPrompt() {
     var help = {
         vari: ['who', 'credit', 'help'],
-        func: ['how', 'wipe', 'test', 'loop', 'testIcs', 'f5'],
+        func: ['how', 'wipe', 'test', 'testIcs', 'f5'],
         who: navigator.userAgent,
         credit: JSON.stringify(info).replace(/"/g, '')
     };
@@ -713,22 +700,25 @@ function getOffsetTime(offset, noShift) {
 function updateInterval() {
     var mscs = getOffsetTime();
     setTimeout("updateInterval()", lessDisturbUpdateWhenTomato ? ((599999 - mscs % 600000) + 50) : (59999 - mscs % 60000) + 50);//(60*10)*1000+50
+
+    runTaskOnPageChange();
     update();
 }
 function update() {
     var date = getOffsetDate();
-    runTaskOnPageChange();
     if (timeOffset == 0)//fix the bug on kindle
         date.setMinutes(date.getMinutes() + 1);
     var hour = document.getElementById("hour");
     var minute = document.getElementById("minute");
     var calendar = document.getElementsByClassName("date")[0];
+    var old_date = document.getElementsByClassName("old_date")[0];
     hour.innerHTML = frontZero(date.getHours()) + ':';
     minute.innerHTML = frontZero(date.getMinutes());
-    var weekday = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
+    var weekday = '日一二三四五六'[date.getDay()];
     calendar.innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
         + (hasModule('lunaryear') ? '(' + weekday + ') ' + getLunarDay(false, false, true, true) : ' 星期' + weekday)
-        + '<span style="font-size:1.5rem;position:absolute;"> ' + (testStatus ? '#envTest' : '') + ' ' + tickListAlarm + "</span>";
+        + '<span style="font-size:1.5rem;position:absolute;"> ' + (forTestUse ? '#envTest' : '') + ' ' + tickListAlarm + "</span>";
+    old_date.innerHTML = "子丑寅卯辰巳午未申酉戌亥"[Math.floor((date.getHours()>=23?0:date.getHours()+1)/2)] + "初正"[1-date.getHours()%2];
     return date;
 }
 function weatherInterval() {
@@ -762,43 +752,38 @@ function weather(connected) {
     var date = getOffsetDate();
     lastSyncTime = date.getTime();
     var ifrm = document.getElementsByClassName('weath')[0];
-    ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
+    ifrm.src = !forTestUse?"//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15":"";//change iframe
     document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
     document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
     document.getElementById('net').innerHTML = '完成上一次同步';
 }
 function timeAnimation(sixty, isAlter){
+    clearTimeout(timeAnimationInterval);
     var loader=document.getElementsByClassName('loader')[0];
-    var needInit=sixty==undefined;
-    if (!sixty){
+    if (!sixty)
         sixty=60;
-    }
     if (isAlter){
         // 00 -> 10 -> 11 -> 01 -> 00
         var base=6;
         var frames=15;// 1/(60/2/base/frames)=3fps
         var growth=range(10, 50, frames+1, function act(i){return i+"%"});// 2 3 2 1
 
-        if (needInit){
-            loader.style.transform="scaleY(-1)";
-            loader.innerHTML=repeat('<div class="bar"></div>', base);
+        if (!timeAnimationInterval){
+            loader.innerHTML='<div style="height: 2rem; transform: scaleY(-1)">'
+                +repeat('<div class="bar"></div>', base)+"</div>";
         }
         var seconds=getOffsetTime()/1e3%sixty;
         var circle=sixty/2/base;
         var next=(circle-seconds%circle)*1e3;
         //console.log(Math.floor(seconds/circle)%base, circle-seconds%circle, circle, seconds);
         tasks(function act(e){
-            loader.children[Math.floor(seconds/circle)%base].style.height=e;
+            loader.children[0].children[Math.floor(seconds/circle)%base].style.height=e;
             }, (seconds<(sixty/2)?growth:growth.reverse()).slice(1), circle/frames*1e3, true);
     } else {
         // bagua
         var loader=document.getElementsByClassName('loader')[0];
-        if (needInit){
-            loader.innerHTML='<div style="margin-top: .2rem; margin-left: 1.5rem; width: 1.5rem">'
-                +repeat('<div class="gua"></div>'
-                +'<div class="gua_void"></div>'
-                +'<div class="gua"></div>', 6)
-                +'</div>';
+        if (!timeAnimationInterval){
+            loader.innerHTML='<div style="width: 1.5rem">'+repeat('<div class="gua"></div><div class="gua" style="width: .3rem"></div><div class="gua"></div>', 6)+'</div>';
         }
 
         var state=decBin(getOffsetTime()/1e3%sixty/sixty*64, 6);
@@ -806,7 +791,7 @@ function timeAnimation(sixty, isAlter){
         for (var i=0;i<state.length;i++)
             loader.children[0].children[i*3+1].style.opacity=state[i]?"1":"0";
     }
-    setTimeout("timeAnimation("+sixty+", "+isAlter+")", next+10);//bug on timer activate 0.000999927520751s earlier
+    timeAnimationInterval=setTimeout("timeAnimation("+sixty+", "+isAlter+")", next+10);//bug on timer activate 0.000999927520751s earlier
 
     function decBin(d, n){
         var r=[];
@@ -1105,7 +1090,7 @@ function dateString(timeStamp, format) {
     var res = [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
     for (var i = 0; i < all.length; i++)
         if (format.indexOf(all[i]) != -1)
-            s += frontZero([res[i], ['-', '-', ' ', ':', ':', ' '][i]]);
+            s += frontZero([res[i], '-- :: '[i]]);
     return s.slice(0, -1);
 }
 function randInt(n, from) {if (from == undefined) from = 0; return Math.ceil(Math.random() * (n - from)) + from;}
@@ -1199,7 +1184,7 @@ function sortIcs(r, sortNum) {
     tickList.normal.sort(func[1]);
 }
 function showIcs(keep) {
-    if (!tickListTaskIndex && !testStatus)
+    if (!tickListTaskIndex && !forTestUse)
         tickListTaskIndex = addTaskOnPageChange('getIcs()', 6 * 3600 * 1000);
     var t = document.getElementsByClassName('tickList')[0];
     var tickTable = t.getElementsByTagName('table')[0];
@@ -1232,20 +1217,12 @@ function showIcs(keep) {
                     td_divider = '';
                 var sude = (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25) ? [l[i].SUMMARY.slice(0, 10), (l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim()] : [(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim(), ''];
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? humanDate(dD) : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
+                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
         addTaskOnPageChange('displayReminder()', 2.5 * 3600 * 1000, true);//2.5*2=5<6<2.5*3=7.5
     }
-}
-function humanDate(d){
-    if (d>=1000)
-        return Math.floor(d/1000)+'<small><b>Q</b></small>';
-    else if (d>=100)
-        return Math.floor(d/100)+'<small><b>B</b></small>';
-    else
-        return d+'';
 }
 function alarmIcs(tick) {
     var dH = dHour(tick.DTSTART);
@@ -1536,7 +1513,7 @@ function danmuRead(roomId, f) {
             danmuWrite('[local] server return: ' + n + 'R' + danmuTryToken + 'S' + Math.floor(getOffsetTime() / 1000) % 3600, false, true);
     }, '', '', f == undefined ? function both() {
         var t = getOffsetTime() - danmuLoadTime;
-        if (forDebugUse && t >= 5e3 && t < 50e3)
+        if (t >= 5e3 && t < 50e3)
             comment(Math.floor(t / 1000), getOffsetTime() - danmuStart > 10 * 60e3);
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
