@@ -159,10 +159,6 @@ if ('serviceWorker' in navigator) {
       font-size: 2rem;
       font-weight: bold;
     }
-    .old_date {
-        font-size: small;
-        position: absolute;
-    }
     .date {
       font-size: 2rem;
       font-weight: bold;
@@ -211,7 +207,7 @@ if ('serviceWorker' in navigator) {
     }
     .loader {
         display: inline-block;
-        margin: 0 1rem;
+        margin: 0 .5rem;
     }
     .bar {
         background-color: black;
@@ -224,7 +220,7 @@ if ('serviceWorker' in navigator) {
         background-color: black;
         height: .2rem;
         width: .6rem;
-        margin-bottom: .15rem;
+        margin-top: .15rem;
         float: left;
     }
   </style>
@@ -718,7 +714,7 @@ function update() {
     calendar.innerHTML = (date.getMonth() + 1) + '月' + date.getDate() + '日'
         + (hasModule('lunaryear') ? '(' + weekday + ') ' + getLunarDay(false, false, true, true) : ' 星期' + weekday)
         + '<span style="font-size:1.5rem;position:absolute;"> ' + (forTestUse ? '#envTest' : '') + ' ' + tickListAlarm + "</span>";
-    old_date.innerHTML = "子丑寅卯辰巳午未申酉戌亥"[Math.floor((date.getHours()>=23?0:date.getHours()+1)/2)] + "初正"[1-date.getHours()%2];
+    old_date.innerHTML = "子丑寅卯辰巳午未申酉戌亥"[Math.floor((date.getHours()>=23?0:date.getHours()+1)/2)];// + "初正"[1-date.getHours()%2];
     return date;
 }
 function weatherInterval() {
@@ -1217,7 +1213,7 @@ function showIcs(keep) {
                     td_divider = '';
                 var sude = (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25) ? [l[i].SUMMARY.slice(0, 10), (l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim()] : [(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim(), ''];
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%)">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
+                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
@@ -1707,8 +1703,11 @@ function hUpdate() {
         home.innerHTML = '';
         home.style.left = l >= 3 ? "20rem" : "24rem";
         home.style.width = l >= 3 ? "24rem" : "20rem";
+        home.style.fontSize = l<3 ? "3rem" : "";
+        home.style.fontWeight = l<3 ? "bold" : "";
         for (var i in switchs) {
             var hs = document.createElement('div');
+            var sdcolor=(switchs[i].on ? "white" : "black");
             hs.setAttribute('class', 'h_switch hs' + i);
             hs.setAttribute('onclick', 'hSwitch(' + i + ')');
             hs.appendChild(document.createTextNode(switchs[i].name));
@@ -1717,9 +1716,10 @@ function hUpdate() {
                 + "width: " + (switchs[i].reachable ? "12rem;" : "8rem;")
                 + (isHomeShrink || (toStatus && toStatus != 'stop') ? "height: 8rem;" : "")
                 + (switchs[i].on ? "background: rgba(255,255,255, .2);" : "")
-                + (switchs[i].on ? "color: black;" : "");
+                + (switchs[i].on ? "color: black;" : "")
+                + "text-shadow: 4px 4px 0 "+sdcolor+", -4px -4px 0 "+sdcolor+", -4px 4px 0 "+sdcolor+", 4px -4px 0 "+sdcolor;
         }
-        if (l < 3)
+        if (navigator.userAgent.indexOf('Windows') != -1)
             home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#hSingle=true#fastload'\">Star</div>";
     }
 }
