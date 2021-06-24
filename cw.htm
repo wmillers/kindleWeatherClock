@@ -137,7 +137,7 @@ if ('serviceWorker' in navigator) {
       position: absolute;
       font-size: 1rem;
       margin-top: 14rem;
-      margin-left: -3.5rem;
+      margin-left: -3.4rem;
       text-align: left;
       height: 15rem;
       width: 18rem;
@@ -1345,7 +1345,7 @@ var danmuMax = 1600;
 var danmuTryToken = 0;
 var danmuLoadTime = 0;
 var danmuLast = '';
-var isDanmuFullScreen=false;
+var isDanmuFullScreen=true;
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1409,6 +1409,7 @@ function danmuOff(s) {
     danmuPop = 0;
 }
 function danmuAlter(beLess) {
+    var danmuInfoStyle=document.getElementsByClassName('danmu_info')[0].style;
     if (beLess) {
         danmu.style.background = 'white';
         danmuStyle.background = '';
@@ -1417,7 +1418,8 @@ function danmuAlter(beLess) {
 
         danmuStyle.fontSize="";
         danmuStyle.width="";
-        document.getElementsByClassName('danmu_info')[0].fontSize="";
+        danmuInfoStyle.fontSize="";
+        danmuInfoStyle.fontWeight="";
     } else {
         danmuRoomStatCollect();
         if (isDanmuLive == 1) {
@@ -1426,12 +1428,13 @@ function danmuAlter(beLess) {
         }
         danmu.style.background = '';
         danmuStyle.background = isDanmuFullScreen?'rgba(255,255,255,.8)':'white';
-        danmuStyle.marginTop=isDanmuFullScreen?"-5.6rem":"9rem";
-        danmuStyle.height=isDanmuFullScreen?"40rem":"23rem";
+        danmuStyle.marginTop=isDanmuFullScreen?"-6rem":"9rem";
+        danmuStyle.height=isDanmuFullScreen?"41.6rem":"23rem";
 
         danmuStyle.fontSize=isDanmuFullScreen?"6rem":"";
-        danmuStyle.width=isDanmuFullScreen?"47.6rem":"";
-        document.getElementsByClassName('danmu_info')[0].fontSize=isDanmuFullScreen?"1rem":"";
+        danmuStyle.width=isDanmuFullScreen?"47.5rem":"";
+        danmuInfoStyle.fontSize=isDanmuFullScreen?"2rem":"";
+        danmuInfoStyle.fontWeight="bold";
     }
 }
 function setDanmuPop(p) {
@@ -1580,7 +1583,7 @@ function danmuParseStreamer(s) {
                 var stat = JSON.parse(s);
                 if (stat.code == 0) {
                     var s = [stat.data.name, stat.data.live_room.title];
-                    danmuStreamer = s[0].length + s[1].length > 14 ? (s[0].slice(-3) + s[1]).slice(0, 14) : s[0] + s[1];
+                    danmuStreamer = isDanmuFullScreen?(s[0]+s[1]).slice(0,20)+" ":s[0].length + s[1].length > 14 ? (s[0].slice(-3) + s[1]).slice(0, 14) : s[0] + s[1];
                 }
             });
         } else {

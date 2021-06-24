@@ -184,20 +184,21 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        identity=('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')
-        if identity:
-            identity='<b>'+identity+' </b>'
-        aprint(f'<small><small>{identity}{danmaku.uname}: </small></small><big><b>{danmaku.msg}</b></big>')
+        identity='<sup><b>'+('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')+'</b></sup>'
+        level_tag='i' if danmaku.user_level>=15 else 'small'
+        aprint(f"<small><small>{identity}<{level_tag}>{danmaku.uname}</{level_tag}> </small></small><big><b>{danmaku.msg}</b></big>")
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
-            aprint(f'<small>{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')# （{gift.coin_type}币x{gift.total_coin}）')
+            identity='<sup><b>'+(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')+'</b></sup>'
+            aprint(f'<small>{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')# （{gift.coin_type}币x{gift.total_coin}）')
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'<big><b>{message.username}</b> 购买 <b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        aprint(f'$${message.price}${message.uname}: <big><b>{message.message}</b></big>$')
+        identity='<sup><b>'+(str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')+'</b></sup>'
+        aprint(f'$${message.price}${identity}{message.uname}: <big><b>{message.message}</b></big>$')
 
 
 async def initDm(room_id):
