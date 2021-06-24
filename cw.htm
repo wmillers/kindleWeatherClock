@@ -137,12 +137,12 @@ if ('serviceWorker' in navigator) {
       position: absolute;
       font-size: 1rem;
       margin-top: 14rem;
-      margin-left: -4rem;
+      margin-left: -3.5rem;
       text-align: left;
       height: 15rem;
       width: 18rem;
       overflow: hidden;
-      z-index: 1;
+      z-index: 4;
       word-break: break-all;
       white-space: pre-wrap;
     }
@@ -245,6 +245,7 @@ if ('serviceWorker' in navigator) {
 var initialTitle = document.title;
 var clearCommentTime = 0;
 var basket = document.getElementsByClassName('basket')[0];
+var isWindows=navigator.userAgent.indexOf('Windows') != -1;
 function comment(s, isJam) {
     var lag = 30 * 60 * 1000;
     s = s == undefined ? 'und' : String(s);
@@ -289,7 +290,7 @@ setTimeout(function modulesControl() {
 });
 setTimeout(function autoStart() {
     if (!forTestUse)
-        if (navigator.userAgent.indexOf('Windows') != -1)
+        if (isWindows)
             comment('Autostart disabled in Windows');
         else
             for (var i = 0; i < autostart.length; i++)
@@ -429,16 +430,15 @@ function sumDateFromServer(calculate) {
         var oldHardwareLagRate = hardwareLagRate;
         var dOffsetPerSecond = "";
         var dTimeOffset = 0;
+        var uptime = new Date().getTime() - initTime;
+        timeOffset = Math.floor(averageTimeOffset[0] / averageTimeOffset[1]);
         if (!initTimeOffset && timeOffset) initTimeOffset = timeOffset;
-        if (initTimeOffset) {
-            var uptime = new Date().getTime() - initTime;
-            if (Math.abs(timeOffset - initTimeOffset) > 200) {
-                dTimeOffset = timeOffset - initTimeOffset;
-                if (uptime > 3600 * 1000) {
-                    var newHardwareLagRate = Math.floor((uptime / 1000 / 3600) / (dTimeOffset / 1000) * 100) / 100;
-                    dOffsetPerSecond = "1s/" + newHardwareLagRate + "h" + "(" + oldHardwareLagRate + ")";
-                    if (uptime > 3 * 24 * 3600 * 1000) hardwareLagRate = newHardwareLagRate;
-                }
+        if (Math.abs(timeOffset - initTimeOffset) > 200) {
+            dTimeOffset = timeOffset - initTimeOffset;
+            if (uptime > 3600 * 1000) {
+                var newHardwareLagRate = Math.floor((uptime / 1000 / 3600) / (dTimeOffset / 1000) * 100) / 100;
+                dOffsetPerSecond = "1s/" + newHardwareLagRate + "h" + "(" + oldHardwareLagRate + ")";
+                if (uptime > 3 * 24 * 3600 * 1000) hardwareLagRate = newHardwareLagRate;
             }
         }
         dTimeOffset = dTimeOffset ? "(" + timeFormat(dTimeOffset) + ")" : "";
@@ -645,14 +645,14 @@ function test() {
     setInterval('timeOffset+=57*1000;update()', 100);
 }
 function f5(p, g) {location.replace(location.protocol + '//' + (p ? p : location.hostname) + location.pathname + (location.search ? "" : "?1") + (g ? g : ''));}
+var help = {
+    vari: ['who', 'credit', 'help'],
+    func: ['how', 'wipe', 'test', 'testIcs', 'f5'],
+    who: navigator.userAgent,
+    credit: JSON.stringify(info).replace(/"/g, '')
+};
+[].push.apply(help.help = help.func, help.vari);
 function correctPrompt() {
-    var help = {
-        vari: ['who', 'credit', 'help'],
-        func: ['how', 'wipe', 'test', 'testIcs', 'f5'],
-        who: navigator.userAgent,
-        credit: JSON.stringify(info).replace(/"/g, '')
-    };
-    [].push.apply(help.help = help.func, help.vari);
     var userInput = prompt(timeOffsetFormat(3) + '\nTo Manually change kindle system time:\n;st ' + dateString('', 'YMdhm') + '\n\nPlease ENTER number:\nformat: ' + dateString('', 'hms').replace(/:/g, '') + ' (hhmmss->' + dateString('', 'hms') + ')\n* 123456 means reset *\n' + help.help);
     if (!timeCorrect(userInput))
         try {
@@ -747,11 +747,16 @@ function weather(connected) {
         document.getElementById('net').innerHTML = '无网络连接';
     var date = getOffsetDate();
     lastSyncTime = date.getTime();
-    var ifrm = document.getElementsByClassName('weath')[0];
-    ifrm.src = !forTestUse?"//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15":"";//change iframe
+    if (!forTestUse && !isWindows){
+        var ifrm = document.getElementsByClassName('weath')[0];
+        ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
+        document.getElementById('net').innerHTML = '完成上一次同步';
+    } else {
+        console.log('iframe refresh is disabled in test and Windows');
+        document.getElementById('net').innerHTML = '测试模式';
+    }
     document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
     document.getElementById('timeoffset').innerHTML = timeOffsetFormat();
-    document.getElementById('net').innerHTML = '完成上一次同步';
 }
 function timeAnimation(sixty, isAlter){
     clearTimeout(timeAnimationInterval);
@@ -1213,7 +1218,7 @@ function showIcs(keep) {
                     td_divider = '';
                 var sude = (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25) ? [l[i].SUMMARY.slice(0, 10), (l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim()] : [(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim(), ''];
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
+                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1.2rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
@@ -1328,8 +1333,8 @@ var danmu = document.getElementById('danmu');
 var danmuReadCount = 0;
 var isDanmuLive = 0;
 var danmuStart = 0;
-var streamer = [['nc', 'dd', 'pi', 'kf'], [1220, 16548, 92613, 22259479], []];
-var danmuControl = ['history', 'bye', 'kick', 'info', 'call[:]', 'c', 'js[:]', 'time'];
+var streamer = [['sz', '12', 'nc', 'dd', 'pi', 'kf'], [2366002, 544786, 1220, 16548, 92613, 22259479], []];
+var danmuControl = ['history 历史弹幕', 'bye 停止', 'kick 下线', 'info 统计', 'c 待机', 'js[:] 远程脚本', 'time 时间戳', 'f 全屏'];
 var danmuRoomId = '';
 var danmuStreamer = '';
 var danmuSuperChat = '';
@@ -1340,6 +1345,7 @@ var danmuMax = 1600;
 var danmuTryToken = 0;
 var danmuLoadTime = 0;
 var danmuLast = '';
+var isDanmuFullScreen=false;
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1378,9 +1384,12 @@ function danmuOn(roomId) {
             isDanmuLive = 2;
             danmuInfo();
             break;
+        case 'f':
+            isDanmuFullScreen=!isDanmuFullScreen;
+            break;
         default:
             isDanmuLive = 1;
-            danmuRead(roomId);
+            danmuRead(roomId)
             danmuInfo();
     }
     danmuAlter(false);
@@ -1405,6 +1414,10 @@ function danmuAlter(beLess) {
         danmuStyle.background = '';
         danmuStyle.marginTop = '14rem';
         danmuStyle.height = '15rem';
+
+        danmuStyle.fontSize="";
+        danmuStyle.width="";
+        document.getElementsByClassName('danmu_info')[0].fontSize="";
     } else {
         danmuRoomStatCollect();
         if (isDanmuLive == 1) {
@@ -1412,9 +1425,13 @@ function danmuAlter(beLess) {
             danmuInfoUpdate();//on danmuRooId change => danmuParseStreamer();
         }
         danmu.style.background = '';
-        danmuStyle.background = 'white';
-        danmuStyle.marginTop = '9rem';
-        danmuStyle.height = '23rem';
+        danmuStyle.background = isDanmuFullScreen?'rgba(255,255,255,.8)':'white';
+        danmuStyle.marginTop=isDanmuFullScreen?"-5.6rem":"9rem";
+        danmuStyle.height=isDanmuFullScreen?"40rem":"23rem";
+
+        danmuStyle.fontSize=isDanmuFullScreen?"6rem":"";
+        danmuStyle.width=isDanmuFullScreen?"47.6rem":"";
+        document.getElementsByClassName('danmu_info')[0].fontSize=isDanmuFullScreen?"1rem":"";
     }
 }
 function setDanmuPop(p) {
@@ -1509,7 +1526,7 @@ function danmuRead(roomId, f) {
             danmuWrite('[local] server return: ' + n + 'R' + danmuTryToken + 'S' + Math.floor(getOffsetTime() / 1000) % 3600, false, true);
     }, '', '', f == undefined ? function both() {
         var t = getOffsetTime() - danmuLoadTime;
-        if (t >= 5e3 && t < 50e3)
+        if (forTestUse&&t >= 5e3)
             comment(Math.floor(t / 1000), getOffsetTime() - danmuStart > 10 * 60e3);
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
@@ -1707,7 +1724,7 @@ function hUpdate() {
         home.style.fontWeight = l<3 ? "bold" : "";
         for (var i in switchs) {
             var hs = document.createElement('div');
-            var sdcolor=(switchs[i].on ? "white" : "black");
+            var sdcolor=(switchs[i].on ? "black" : "white");
             hs.setAttribute('class', 'h_switch hs' + i);
             hs.setAttribute('onclick', 'hSwitch(' + i + ')');
             hs.appendChild(document.createTextNode(switchs[i].name));
@@ -1716,10 +1733,10 @@ function hUpdate() {
                 + "width: " + (switchs[i].reachable ? "12rem;" : "8rem;")
                 + (isHomeShrink || (toStatus && toStatus != 'stop') ? "height: 8rem;" : "")
                 + (switchs[i].on ? "background: rgba(255,255,255, .2);" : "")
-                + (switchs[i].on ? "color: black;" : "")
+                + (switchs[i].on ? "" : "color: black;")
                 + "text-shadow: 4px 4px 0 "+sdcolor+", -4px -4px 0 "+sdcolor+", -4px 4px 0 "+sdcolor+", 4px -4px 0 "+sdcolor;
         }
-        if (navigator.userAgent.indexOf('Windows') != -1)
+        if (isWindows)
             home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#hSingle=true#fastload'\">Star</div>";
     }
 }

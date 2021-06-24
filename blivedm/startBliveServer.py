@@ -187,7 +187,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         identity=('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')
         if identity:
             identity='<b>'+identity+' </b>'
-        aprint(f'<small>{identity}{danmaku.uname}: </small><big><b>{danmaku.msg}</b></big>')
+        aprint(f'<small><small>{identity}{danmaku.uname}: </small></small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
@@ -219,7 +219,7 @@ async def initDm(room_id):
 def runDm(s, room_id):
     global que
     que=s
-    aprint('[LIVE] New room: '+str(room_id))
+    aprint('[LIVE] New room: <b>'+str(room_id)+'</b>')
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
