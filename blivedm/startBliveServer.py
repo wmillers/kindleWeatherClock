@@ -187,7 +187,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         identity=('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')
         if identity:
             identity='<b>'+identity+' </b>'
-        aprint(f'<small><small>{identity}{danmaku.uname}: </small></small><big><b>{danmaku.msg}</b></big>')
+        aprint(f'<small><small>{identity}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
