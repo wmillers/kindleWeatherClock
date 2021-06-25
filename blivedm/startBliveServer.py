@@ -184,10 +184,12 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
+        def bold(s):
+            return '<b>'+s+'</b>'
         identity=('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')
         if identity:
-            identity='<b>'+identity+' </b>'
-        aprint(f'<small><small>{identity}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>')
+            identity=bold(identity)
+        aprint(f'<small><small>{identity}{bold(danmaku.uname) if danmaku.user_level>=15 else danmaku.uname} </small></small><big>{bold(danmaku.msg)}</big>')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver'):
