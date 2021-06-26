@@ -26,7 +26,7 @@ var autostart=[//COMMENT unwanted auto-start modules
     //'danmu',
     'home'];
 //********************************************
-window.onerror=function handler(message, source, lineno, colno, error){comment('['+lineno+'] '+message);};
+window.onerror=function handler(msg, source, lineno, colno, e){comment((lineno?'['+lineno+'] ':'')+msg);};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
     document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
@@ -1555,8 +1555,8 @@ function danmuInfoUpdate(s) {
 }
 function danmuInfo() {
     var status = ['OFF', streamer[2][streamer[1].indexOf(danmuRoomId)] ? streamer[2][streamer[1].indexOf(danmuRoomId)] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];
-    var dTrends = (danmuPop < 1e4 ? (danmuPop < 1e3 ? danmuPop : Math.floor(danmuPop / 1e2) / 10) : Math.floor(danmuPop / 1e3) / 10 + '万');
-    if (String(dTrends).indexOf('.') != -1) {
+    var dTrends = String(danmuPop < 1e4 ? (danmuPop < 1e3 ? danmuPop : Math.floor(danmuPop / 1e2) / 10) : Math.floor(danmuPop / 1e3) / 10 + '万');
+    if (dTrends.indexOf('.') != -1) {
         dTrends = dTrends.split('.');
         var a = ['sub', '', 'sup'][danmuPopTrends + 1];
         dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + dTrends[1].slice(1);
