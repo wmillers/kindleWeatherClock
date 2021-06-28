@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
   <script>
 "use strict";
-//**************Basic settings***************
+/***************Basic settings***************
+Note: Most you need to configure is in Basic settings.
+    If you want extra modules to run normal, please
+    follow the instruction in the README.md file, and
+    add the `location xxx {}` things in this file to
+    your nginx config.
+*/
 var forTestUse=false;//If you not sure, please change this to false
 var info={
     version: '1.6',
@@ -25,6 +31,7 @@ var autostart=[//COMMENT unwanted auto-start modules
     'ticklist',
     //'danmu',
     'home'];
+var isDanmuFullScreen=true;//true if danmu start in fullscreen mode
 //********************************************
 window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));};
 setTimeout(function isLoaded(){
@@ -39,26 +46,6 @@ if (typeof eval!='function')
     comment('eval not support');
 function hasModule(name){
     return info.support.indexOf(name)!=-1;
-}
-
-var initialTitle = document.title;
-var clearCommentTime = 0;
-var basket = document.getElementsByClassName('basket')[0];
-var isWindows=navigator.userAgent.indexOf('Windows') != -1;
-function comment(s, isJam) {
-    var lag = 30 * 60 * 1000;
-    s = s == undefined ? 'und' : String(s);
-    setTimeout("clearComment()", lag + 1000);
-    if (basket.innerHTML.length == 0 || isJam)
-        basket.innerHTML = s;
-    else
-        basket.innerHTML = (basket.innerHTML + '|' + s).slice(-150);
-    clearCommentTime = new Date().getTime() + lag;
-    return s;
-}
-function clearComment() {
-    if (new Date().getTime() < clearCommentTime) return;
-    basket.innerHTML = '';
 }
   </script>
   <title>&nbsp;</title><!--tomatoClock-->
@@ -237,7 +224,7 @@ function clearComment() {
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
     <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span id="danmu"></span></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span class="danmu"></span></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
@@ -248,6 +235,25 @@ function clearComment() {
   </div></div>
   <script>
 "use strict";
+var initialTitle = document.title;
+var clearCommentTime = 0;
+var basket = document.getElementsByClassName('basket')[0];
+var isWindows=navigator.userAgent.indexOf('Windows') != -1;
+function comment(s, isJam) {
+    var lag = 30 * 60 * 1000;
+    s = s == undefined ? 'und' : String(s);
+    setTimeout("clearComment()", lag + 1000);
+    if (basket.innerHTML.length == 0 || isJam)
+        basket.innerHTML = s;
+    else
+        basket.innerHTML = (basket.innerHTML + '|' + s).slice(-150);
+    clearCommentTime = new Date().getTime() + lag;
+    return s;
+}
+function clearComment() {
+    if (new Date().getTime() < clearCommentTime) return;
+    basket.innerHTML = '';
+}
 function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function () {
@@ -266,7 +272,8 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
         xmlhttp.setRequestHeader("Content-type", "application/json");
     xmlhttp.send(post);
 }
-setTimeout(function modulesControl() {
+
+setTimeout(function modulesControl(){
     var funcList = [['tomato', 'ticklist', 'danmu', 'home', 'lunaryear'],
     ['switchTomato', 'showIcs', 'danmuSwitch', 'hSwitch', 'getLunarDay']];
     for (var i in funcList[0])
@@ -275,7 +282,7 @@ setTimeout(function modulesControl() {
     if (!hasModule('home'))
         home.innerHTML = '';
 });
-setTimeout(function autoStart() {
+setTimeout(function autoStart(){
     if (!forTestUse)
         if (isWindows)
             comment('Autostart disabled in Windows');
@@ -284,7 +291,7 @@ setTimeout(function autoStart() {
                 [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
 });
 var isFastLoad = location.hash != (location.hash = location.hash.replace('#fastload', ''));
-setTimeout(function loadFromHash() {
+setTimeout(function loadFromHash(){
     //resume task from #a()#b()
     var run = location.hash.split('#');
     location.hash = "";
@@ -299,6 +306,35 @@ setTimeout(function isVisible(){
     if (document.hidden || document.mozHidden || document.msHidden || document.webkitHidden)
         notVisible();
 }, 10000);
+/*
+# To skip password and get short link in Nginx reverse proxy 
+location /cw {
+    access_log off;
+    proxy_redirect      off;
+    proxy_buffering     off;
+    proxy_http_version  1.1;
+    proxy_set_header Authorization "Basic c2hhcmU6c2hhcmUwMjRwYXNz";
+    proxy_pass "http://192.168.208.145:8088/S4f_/%E6%AF%95%E4%B8%9A/%E4%BB%A3%E7%A0%81/kindle/cw.htm";
+}
+*/
+function danmuOnly(){
+    reduceShadow=function und(){};
+    var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
+    document.body.innerHTML='';
+    document.body.appendChild(danmu_fr);
+    isDanmuFullScreen=true;
+    danmuSwitch();
+    document.getElementsByClassName('danmu_fr')[0].style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: black;color: white;font-size: 2rem;font-size: 5vh;";
+    danmuAlter=function withoutStyle(beLess){
+        if (!beLess){
+            danmuRoomStatCollect();
+            if (isDanmuLive == 1) {
+                danmuRead();
+                danmuInfoUpdate();//on danmuRooId change => danmuParseStreamer();
+            }
+        }
+    };
+}
 
 
 //Lunar Year
@@ -1316,7 +1352,7 @@ if (!isNaN(parseInt(i))){
 })();
 */
 var danmuStyle = document.getElementsByClassName('danmu_fr')[0].style;
-var danmu = document.getElementById('danmu');
+var danmu = document.getElementsByClassName('danmu')[0];
 var danmuReadCount = 0;
 var isDanmuLive = 0;
 var danmuStart = 0;
@@ -1333,7 +1369,6 @@ var danmuMax = 1600;
 var danmuTryToken = 0;
 var danmuLoadTime = 0;
 var danmuLast = '';
-var isDanmuFullScreen=true;
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1393,12 +1428,12 @@ function danmuOff(s) {
     setTimeout('if (danmuPop==1) danmuClear()', 10 * 60 * 1000);
     danmuAlter(true);
     danmu.innerHTML = '<b>[OFF@'+ dateString() +']</b> ' + (s != undefined ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStart, 2, true) + '<br>' + (danmu.innerHTML).slice(0, danmuMax / 5) + '...';
-    if (isDanmuFullScreen) danmuStreamer=danmuStreamer.slice(0,12);
     danmuInfo();
     danmuPop = 0;
 }
 function danmuAlter(beLess) {
     var danmuInfoStyle=document.getElementsByClassName('danmu_info')[0].style;
+    if (isDanmuFullScreen&&(beLess||danmuPop==1)) danmuStreamer=danmuStreamer.slice(0,12);
     if (beLess) {
         danmu.style.background = 'white';
         danmuStyle.background = '';
