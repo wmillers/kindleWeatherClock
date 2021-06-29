@@ -39,7 +39,7 @@ class Resquest(BaseHTTPRequestHandler):
                     res=res+danmu
                     break
                 sleep(1)
-        self.wfile.write(res.encode('utf-8'))
+        self.wfile.write((res if res else ' ').encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
