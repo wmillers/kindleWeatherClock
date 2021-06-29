@@ -12,7 +12,7 @@ Note: Most you need to configure is in Basic settings.
     add the `location xxx {}` things in this file to
     your nginx config.
 */
-var forTestUse=false;//If you not sure, please change this to false
+var forTestUse=false;//If you are not sure, please change it to false
 var info={
     version: '1.6',
     description: '(bug-fix changes are in commit logs)',
@@ -224,7 +224,7 @@ function hasModule(name){
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
     <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span class="danmu"></span></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info" onclick="event.stopPropagation()"></span><span class="danmu"></span></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
@@ -319,12 +319,13 @@ location /cw {
 */
 function danmuOnly(){
     reduceShadow=function und(){};
+    updateInterval=reduceShadow;
     var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
     document.body.innerHTML='';
     document.body.appendChild(danmu_fr);
     isDanmuFullScreen=true;
     danmuSwitch();
-    document.getElementsByClassName('danmu_fr')[0].style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: black;color: white;font-size: 2rem;font-size: 5vh;";
+    document.getElementsByClassName('danmu_fr')[0].style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,10%);color: hsl(0,0%,80%);font-size: 7vh;left: -.01rem;";
     danmuAlter=function withoutStyle(beLess){
         if (!beLess){
             danmuRoomStatCollect();
@@ -538,7 +539,7 @@ function runTaskOnPageChange() {
             refreshTaskOnPageChange();
         }
     } catch (e) {
-        document.title = e.stack.replace(/ /g, '');
+        //document.title = e.stack.replace(/ /g, '');
         comment(e);
     }
 }
@@ -1482,8 +1483,8 @@ function danmuReverse(s) {return '<span style="margin-left:2rem"><small>' + s + 
 function danmuWrite(s, isBold, isReverse) {
     if (isBold) s = danmuBold(s);
     if (isReverse) s = danmuReverse(s);
-    var buffer = danmu.innerHTML.slice(0, danmuMax);
-    danmu.innerHTML = s + (buffer ? '<br>' : '') + buffer;
+    var buffer = danmu.innerHTML;
+    danmu.innerHTML = (s + (buffer ? '<br>' + buffer : '')).slice(0, danmuMax);
 }
 function danmuShow(s) {
     if (!s)
@@ -1585,7 +1586,7 @@ function danmuInfo() {
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = (isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends + '<span style="float:right">' + danmuStreamer + '<b>' + status + ' </b></span><br>' + danmuSuperChat;
+    document.getElementsByClassName('danmu_info')[0].innerHTML = (isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends + '<span style="float:right"><a style="text-decoration: none;color: inherit;" href="https://live.bilibili.com/blanc/'+danmuRoomId+'" target="_blank">' + danmuStreamer + '</a><b>' + status + ' </b></span><br>' + danmuSuperChat;
 }
 function danmuRoomStatCollect(n) {
     clearTimeout(danmuTaskIndexs[2]);
