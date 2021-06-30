@@ -31,7 +31,7 @@ var autostart=[//COMMENT unwanted auto-start modules
     'ticklist',
     //'danmu',
     'home'];
-var isDanmuFullScreen=true;//true if danmu start in fullscreen mode
+var isDanmuFullWindow=true;//true if danmu start in fullscreen mode
 //********************************************
 window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));};
 setTimeout(function isLoaded(){
@@ -323,7 +323,7 @@ function danmuOnly(){
     var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
     document.body.innerHTML='';
     document.body.appendChild(danmu_fr);
-    isDanmuFullScreen=true;
+    isDanmuFullWindow=true;
     danmuSwitch();
     document.getElementsByClassName('danmu_fr')[0].style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,10%);color: hsl(0,0%,80%);font-size: 7vh;left: -.01rem;";
     danmuAlter=function withoutStyle(beLess){
@@ -1409,7 +1409,7 @@ function danmuOn(roomId) {
             danmuInfo();
             break;
         case 'f':
-            isDanmuFullScreen=!isDanmuFullScreen;
+            isDanmuFullWindow=!isDanmuFullWindow;
             break;
         default:
             isDanmuLive = 1;
@@ -1434,7 +1434,7 @@ function danmuOff(s) {
 }
 function danmuAlter(beLess) {
     var danmuInfoStyle=document.getElementsByClassName('danmu_info')[0].style;
-    if (isDanmuFullScreen&&(beLess||danmuPop==1)) danmuStreamer=danmuStreamer.slice(0,12);
+    if (isDanmuFullWindow&&(beLess||danmuPop==1)) danmuStreamer=danmuStreamer.slice(0,12);
     if (beLess) {
         danmu.style.background = 'white';
         danmuStyle.background = '';
@@ -1452,14 +1452,14 @@ function danmuAlter(beLess) {
             danmuInfoUpdate();//on danmuRooId change => danmuParseStreamer();
         }
         danmu.style.background = '';
-        danmuStyle.background = isDanmuFullScreen?'rgba(255,255,255,.8)':'white';
-        danmuStyle.marginTop=isDanmuFullScreen?"-6rem":"9rem";
-        danmuStyle.height=isDanmuFullScreen?"41.6rem":"23rem";
+        danmuStyle.background = isDanmuFullWindow?'rgba(255,255,255,.8)':'white';
+        danmuStyle.marginTop=isDanmuFullWindow?"-6rem":"9rem";
+        danmuStyle.height=isDanmuFullWindow?"41.6rem":"23rem";
 
-        danmuStyle.fontSize=isDanmuFullScreen?"6rem":"";
-        danmuStyle.width=isDanmuFullScreen?"47.5rem":"";
-        danmuInfoStyle.fontSize=isDanmuFullScreen?"1.6rem":"";
-        danmuInfoStyle.fontWeight=isDanmuFullScreen?"bold":"";
+        danmuStyle.fontSize=isDanmuFullWindow?"6rem":"";
+        danmuStyle.width=isDanmuFullWindow?"47.5rem":"";
+        danmuInfoStyle.fontSize=isDanmuFullWindow?"1.6rem":"";
+        danmuInfoStyle.fontWeight=isDanmuFullWindow?"bold":"";
     }
 }
 function setDanmuPop(p) {
@@ -1560,6 +1560,30 @@ function danmuRead(roomId, f) {
             danmuTaskIndexs[0] = setTimeout('danmuRead()', danmuTryToken > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? 2e3 : 10e3);
     } : undefined);
 }
+function danmuFullScreen(){
+    var danmu=document.getElementsByClassName('danmu_fr')[0];
+    if (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullScreenElement || document.msFullscreenElement){
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+            document.webkitCancelFullScreen();
+        } else if (document.msCancelFullscreen) {
+            document.msCancelFullscreen();
+        }
+    } else {
+        if (danmu.requestFullscreen) {
+            danmu.requestFullscreen();
+        } else if (danmu.mozRequestFullScreen) {
+            danmu.mozRequestFullScreen();
+        } else if (danmu.webkitRequestFullScreen) {
+            danmu.webkitRequestFullScreen();
+        } else if (danmu.msRequestFullscreen) {
+            danmu.msRequestFullscreen();
+        }
+    }
+}
 function danmuInfoUpdate(s) {
     clearTimeout(danmuTaskIndexs[1]);
     if (isDanmuLive) {
@@ -1586,7 +1610,11 @@ function danmuInfo() {
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = (isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends + '<span style="float:right"><a style="text-decoration: none;color: inherit;" href="https://live.bilibili.com/blanc/'+danmuRoomId+'" target="_blank">' + danmuStreamer + '</a><b>' + status + ' </b></span><br>' + danmuSuperChat;
+    document.getElementsByClassName('danmu_info')[0].innerHTML = atag(false, 'danmuFullScreen()', (isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends) + '<span style="float:right">'+atag(true, 'https://live.bilibili.com/blanc/'+danmuRoomId, danmuStreamer) + '<b>' + status + ' </b></span><br>' + danmuSuperChat;
+
+    function atag(isHref, s, inner){
+        return '<a style="text-decoration: none;color: inherit;" '+ (isHref?'href="'+s+'" target="_blank':'href="javascript:void(0)" onclick="'+s) +'">' + inner + '</a>';
+    }
 }
 function danmuRoomStatCollect(n) {
     clearTimeout(danmuTaskIndexs[2]);
@@ -1607,7 +1635,7 @@ function danmuParseStreamer(s) {
                 var stat = JSON.parse(s);
                 if (stat.code == 0) {
                     var s = [stat.data.name, stat.data.live_room.title];
-                    var limit=(isDanmuFullScreen?28:18)-streamerCount;//(28, 18)-6=(22, 12)
+                    var limit=(isDanmuFullWindow?28:18)-streamerCount;//(28, 18)-6=(22, 12)
                     danmuStreamer = ((s[0].length + s[1].length > limit ? s[0].slice(-3) + s[1] : s[0] + s[1])+ ' ').slice(0, limit);
                 }
             });
