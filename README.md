@@ -4,6 +4,9 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/wmillers/kindleWeatherClock?color=dodgerblue&style=flat-square)
 ![last_commit](https://img.shields.io/github/last-commit/wmillers/kindleWeatherClock.svg?color=aquamarine&style=flat-square)  
 ## 介绍(Introduce):  
+前言：本多功能 Kindle 页面的部分功能由于部署在服务端所以额外需要安装，请务必阅读本文“可选-需要手动部署”段并修改附带的`nginx.conf`实例文件。
+Preface: some functions of this Kindle Page need to be mannually installed due to their dependancy on the server. Please follow the section Optional-How-to-Install and edit the `nginx.conf` example file (or create a new config file) as your own's one.
+
 功能包括时间显示、天气预报、番茄时钟、滴答清单、B站直播弹幕、智能家居Hue。屏幕尺寸适配KPW3，如有需要可以自行调整css。  
 Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu & Home Smart for Philips-Hue. Display For KPW3, but you can change it by edit css.
 
@@ -39,6 +42,9 @@ You need to add proxy to the Ticktick Reminder task subscription url to avoid br
 Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/basic.ics` url to your personal subsciption url.  
 
 ### B站直播弹幕(Bilibili Live Danmu)
+备注：弹幕全屏功能（不是全窗口功能）在其他系统的浏览器中也可以使用，开启方法为在网址后添加`#danmuOnly()`或者点击星期栏输入`danmuOnly()`。
+Note: the fullscreen mode (not the fullwindow mode) of danmu is adapted to other platform (Win 10, ios, Android). To use it add the `#danmuOnly()` behind the url link ,or click the week on the page and input `danmuOnly()` in the prompt window.
+
 根据`cw.htm`文件弹幕功能代码段前的注释安装依赖。将`location /blive/ {..}`中内容复制到Nginx配置文件中。进入`blivedm`文件夹，`python3 startBliveServer.py`运行弹幕获取服务端。  
 Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
 
