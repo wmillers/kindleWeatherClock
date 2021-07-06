@@ -27,15 +27,19 @@ var info={
     ],
     license: 'LGPL2.1'
 }
-var autostart=[//COMMENT unwanted auto-start modules
+var isOnKindle=!/windows|chrome/i.test(navigator.userAgent);//most affect autostart
+var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     'ticklist',
     //'danmu',
-    'home'];
+    'home']
+    :[];
 var isDanmuFullWindow=true;//true if danmu start in fullwindow mode (fullscreen mode activated by danmuOnly())
 var danmuFontSizeFullScreen="5.7vh";//only takes effect under fullscreen (not fullwindow) mode
 var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CROS Access-Control-Allow-Origin *
-var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your own's token
-//********************************************
+var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your token, to get: push bridge button and run hReg()
+//*******************END**********************
+
+if (!isOnKindle) console.log('Autostart only enabled on Kindle');
 window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
@@ -247,7 +251,6 @@ function hasModule(name){
 var initialTitle = document.title;
 var clearCommentTime = 0;
 var basket = document.getElementsByClassName('basket')[0];
-var isWindows=navigator.userAgent.indexOf('Windows') != -1;
 function comment(s, isJam) {
     var lag = 30 * 60 * 1000;
     s = s == undefined ? 'und' : String(s);
@@ -303,11 +306,8 @@ if (isDanmuOnly){
 } else {
     setTimeout(function autoStart(){
         if (!forTestUse)
-            if (isWindows)
-                comment('Autostart disabled in Windows');
-            else
-                for (var i = 0; i < autostart.length; i++)
-                    [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
+            for (var i = 0; i < autostart.length; i++)
+                [showIcs, danmuSwitch, hUpdate][['ticklist', 'danmu', 'home'].indexOf(autostart[i])]();
     });
 }
 setTimeout(function loadFromHash(){
@@ -792,7 +792,7 @@ function weather(connected) {
         document.getElementById('net').innerHTML = '无网络连接';
     var date = getOffsetDate();
     lastSyncTime = date.getTime();
-    if (!forTestUse && !isWindows){
+    if (!forTestUse && isOnKindle){
         var ifrm = document.getElementsByClassName('weath')[0];
         ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
         document.getElementById('net').innerHTML = '完成上一次同步';
@@ -1427,8 +1427,8 @@ function danmuOn(roomId) {
     danmuStart = getOffsetTime();
     danmuTryToken = 0;
     danmuPop = 0;
-    streamer[2] = [];
-    streamer[3] = [];
+    streamer[2] = space(streamer[0].length-1).split(' ');
+    streamer[3] = streamer[2].slice();
     danmuTaskIndexs = [0, 0, 0];
     danmuStyle.opacity = 1;
     roomId = String(roomId);
@@ -1457,11 +1457,11 @@ function danmuOff(s) {
     clearTimeout(danmuTaskIndexs[1]);
     clearTimeout(danmuTaskIndexs[2]);
     clearTimeout(danmuTaskIndexs[3]);
-    setTimeout('if (danmuPop==1) danmuClear()', 10 * 60 * 1000);
+    setTimeout(danmuClear, 10 * 60 * 1000);
     danmuAlter(true);
     danmu.innerHTML = '<b>[OFF@'+ dateString() +']</b> ' + (s != undefined ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStart, 2, true) + '<br>' + (danmu.innerHTML).slice(0, danmuMax / 5) + '...';
-    danmuInfo();
     danmuPop = 0;
+    danmuInfo();
 }
 function danmuTitle(s, end, i){//s == string (when end == undefined) OR start
     if (i==undefined)
@@ -1504,7 +1504,7 @@ function danmuAlter(beLess) {
     }
 }
 function setDanmuPop(p) {
-    if (p != danmuPop && !(danmuPop == 0 && p == 1 && getOffsetTime() - danmuStart < 2 * 60 * 1000) || (danmuPop == 9999 && p != 1)) {
+    if (isDanmuLive && p != danmuPop && !(danmuPop == 0 && p == 1 && getOffsetTime() - danmuStart < 2 * 60 * 1000) || (danmuPop == 9999 && p != 1)) {
         var old = danmuPop;
         danmuPopTrends = p < danmuPop ? -1 : (p == danmuPop ? 0 : 1);
         danmuPop = p;
@@ -1641,11 +1641,12 @@ function danmuInfoUpdate(s) {
     }
 }
 function danmuInfo() {
-    var status = ['OFF', streamer[2][streamer[1].indexOf(danmuRoomId)] ? streamer[2][streamer[1].indexOf(danmuRoomId)] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];
+    var status = ['OFF', streamer[2][streamer[1].indexOf(danmuRoomId)] ? streamer[2][streamer[1].indexOf(danmuRoomId)] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
-    for (var i=0;i<streamer[0].length;i++)
-        if (isDanmuWatch&&streamer[2][i]&&danmuRoomId!=i)
-            liveStatus+='| '+atag(streamer[2][i]+' '+(streamer[3][i]==undefined?'':streamer[3][i]), 'https://live.bilibili.com/blanc/'+streamer[1][i], "danmuRead("+streamer[1][i]+")", streamer[0][i]);
+    if (!isOnKindle)
+        for (var i=0;i<streamer[0].length;i++)
+            if (isDanmuWatch&&streamer[2][i]&&danmuRoomId!=i)
+                liveStatus+='| '+atag(streamer[2][i]+' '+(streamer[3][i]==undefined?'':streamer[3][i]), 'https://live.bilibili.com/blanc/'+streamer[1][i], "danmuRead("+streamer[1][i]+")", streamer[0][i]);
     var dTrends = String(danmuPop < 1e4 ? (danmuPop < 1e3 ? danmuPop : Math.floor(danmuPop / 1e2) / 10) : Math.floor(danmuPop / 1e3) / 10 + '万');
     if (dTrends.indexOf('.') != -1) {
         dTrends = dTrends.split('.');
@@ -1655,7 +1656,7 @@ function danmuInfo() {
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + danmuSuperChat + '<small>' +liveStatus + '</small>';
+    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + danmuSuperChat + (liveStatus?'<small>' +liveStatus + '</small>'+ ' '+dateString():'');
 
     function atag(inner, href, onclick, title){
         return '<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"')+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
@@ -1682,7 +1683,7 @@ function danmuParseStreamer(s, n) {
             n=(n+1)%streamer[1].length;
             danmuTaskIndexs[3] = setTimeout(function getRealId(){
                 danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n], function count(s){danmuParseStreamer(s, n);});
-            }, danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3][n]? 300e3 : 60e3));
+            }, danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3));
             var stat = JSON.parse(s);
             danmuRead("cros:https://api.bilibili.com/x/space/acc/info?mid=" + stat.data.uid, function a(s) {
                 var stat = JSON.parse(s);
@@ -1723,9 +1724,10 @@ function danmuParseLive(s) {
     }
 }
 function danmuClear() {
-    if (isDanmuLive) return;
-    danmuStyle.opacity = 0;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = '';
+    if (!isDanmuLive){
+        danmuStyle.opacity = 0;
+        document.getElementsByClassName('danmu_info')[0].innerHTML = '';
+    }
 }
 
 
@@ -1758,7 +1760,7 @@ var hSingle=false;
 var hPreventNetworkError=(hueBaseUrl=='/hue/')?false:true;
 function hHelp() {
     hFail('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
-    alert('hueToken around line:1313 is empty');
+    alert('hueToken in *Basic Settings* is invalid');
 }
 function hCollect(f) {
     if (!hueToken) {
@@ -1848,7 +1850,7 @@ function hUpdate() {
                 + (switchs[i].on ? "" : "color: black;")
                 + "text-shadow: 4px 4px 0 "+sdcolor+", -4px -4px 0 "+sdcolor+", -4px 4px 0 "+sdcolor+", 4px -4px 0 "+sdcolor;
         }
-        if (isWindows)
+        if (!isOnKindle)
             home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#hSingle=true#fastload'\">Star</div>";
     }
 }
