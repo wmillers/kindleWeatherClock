@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-import sys
+import sys, os
 import blivedm
 from time import sleep, time, asctime
 from multiprocessing import Process, Queue, Value
@@ -69,9 +69,12 @@ def crosAccess(url, data=None, method=None):
         que.put_nowait('[EXCEP] cros: '+str(sys.exc_info()))
         return ''
 
+def restart():
+    return os.execv(sys.executable, ['python3'] + sys.argv)
+
 def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
-    ori_cmd=parse.urlparse(path).query.split('&')[0]
+    ori_cmd=path.split('?')[1]
     cmd=ori_cmd.lower()
     needExtra=True
     if (cmd==''):
@@ -94,7 +97,7 @@ def controlRoom(path, data=None, method=None):
         elif (cmd=='kick'):
             new_room_id.value=-2
             info['pop']='1'
-            res='[SLEEP] & [KCIK] OK'
+            res='[SLEEP] & [KCIK] restart OK'
             needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
@@ -271,11 +274,13 @@ def main():
                     c.terminate()
                     break
                 if (new_room_id.value==-2):
-                    print('[kick&kill] but no new room')
+                    print('[kick&kill] but no new room, restart script')
                     setSleep(que, status_code, 3)
-                    c.terminate()
-                    c.join()
-                    room_id=0
+                    sleep(1)
+                    restart()
+                    # c.terminate()
+                    # c.join()
+                    # room_id=0
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
