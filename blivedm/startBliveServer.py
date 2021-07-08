@@ -238,6 +238,14 @@ def setSleep(q, status_code, status):
     status_code.value=status
     q.put_nowait("$1$")
 
+def kill(p):
+    try:
+        if (p):
+            p.terminate()
+            p.join()
+    except Exception:
+        print('Error when kill '+str(p))
+
 def main():
     print('--- START at '+asctime()+' ---')
     que = Queue()
@@ -263,8 +271,7 @@ def main():
         sleep(1)
         if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
-            c.terminate()
-            c.join()
+            kill(c)
             room_id=0
             last_room_id.value=0
             clear_que(que, 50)
@@ -273,23 +280,21 @@ def main():
             if (new_room_id.value<0):
                 if (new_room_id.value==-1):
                     print('[deactivate] goodbye')
-                    p.terminate()
-                    c.terminate()
+                    kill(p)
+                    kill(c)
                     isOn=False
                 if (new_room_id.value==-2):
                     print('[kick&kill] but no new room, restart script')
                     setSleep(que, status_code, 3)
                     isOn=False
-                    p.terminate()
-                    c.terminate()
+                    room_id=0
+                    kill(p)
+                    kill(c)
                     restart()
-                    # c.join()
-                    # room_id=0
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
-                    c.terminate()
-                    c.join()
+                    kill(c)
                 room_id=new_room_id.value
                 last_room_id.value=room_id
                 print('[launch] new room id: '+str(room_id))
@@ -297,8 +302,6 @@ def main():
                 c = Process(target=runDm, args=(que,room_id,))
                 c.start()
             new_room_id.value=0
-    p.join()
-    c.join()
     print('***  END  at '+asctime()+' ***')
 
 if __name__ == '__main__':
