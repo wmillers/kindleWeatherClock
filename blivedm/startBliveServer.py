@@ -244,7 +244,7 @@ def kill(p):
             p.terminate()
             p.join()
     except Exception:
-        print('Error when kill '+str(p))
+        print('skip Error when kill '+str(p))
 
 def main():
     print('--- START at '+asctime()+' ---')
@@ -255,6 +255,7 @@ def main():
     sleep(0.5)# To wait Restart
     p = Process(target=initServer, args=(que,new_room_id,status_code,last_room_id,))
     p.start()
+    c=False
     room_id=0
     isOn=True
     if (len(sys.argv)>1):
