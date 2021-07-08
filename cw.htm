@@ -336,6 +336,8 @@ location /cw {
     proxy_pass "http://192.168.208.145:8088/S4f_/%E6%AF%95%E4%B8%9A/%E4%BB%A3%E7%A0%81/kindle/cw.htm";
 }
 */
+var isMouseHidden=false;
+var mouseMoveTime=0;
 function danmuOnly(){
     var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
     document.body.appendChild(danmu_fr);
@@ -343,6 +345,22 @@ function danmuOnly(){
     isDanmuFullWindow=true;
     document.getElementsByClassName('danmu_info')[0].style.fontSize="3.5vh";
     danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: hsl(0,0%,60%);font-size: "+danmuFontSizeFullScreen+";left: -.01rem;";
+    danmu_fr.onmousemove=function showMouse(){
+        var t=4e3;
+        var now=new Date().getTime();
+        if (isMouseHidden){
+            document.body.style.cursor='';
+            isMouseHidden=false;
+        }
+        if (mouseMoveTime-now<500)
+            setTimeout(function hideMouse(){
+                if (!isMouseHidden&&new Date().getTime()+200-mouseMoveTime>t){
+                    isMouseHidden=true;
+                    document.body.style.cursor='none';
+                }
+            }, t);
+        mouseMoveTime=now;
+    };
     danmuAlter=function withoutStyle(beLess){
         if (!beLess){
             danmuRoomStatCollect();
@@ -1470,7 +1488,7 @@ function danmuTitle(s, end, i){//s == string (when end == undefined) OR start
         streamer[3][i]=streamer[3][i].slice(s, end);
     else if (typeof s=="string")
         streamer[3][i]=s;
-    return streamer[3][i]==undefined?'... ':streamer[3][i];
+    return streamer[3][i]==undefined||!streamer[3][i].trim()?'... ':streamer[3][i];
 }
 function danmuAlter(beLess) {
     var danmuInfoStyle=document.getElementsByClassName('danmu_info')[0].style;
@@ -1630,7 +1648,7 @@ function danmuInfoUpdate(s) {
     if (isDanmuLive) {
         danmuTaskIndexs[1] = setTimeout('danmuRead("info", danmuInfoUpdate)', !s ? 3 * 1000 : danmuPop == 1 ? 3 * 60e3 : 60e3);
         if (s) {
-            var info = JSON.parse(s);
+            var info = JSON.parse(s.trim());
             if (danmuRoomId != (danmuRoomId = info.room_id))
                 danmuParseStreamer();
             danmuSC(info.super_chat);
@@ -1686,7 +1704,7 @@ function danmuParseStreamer(s, n) {
             }, danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3));
             var stat = JSON.parse(s);
             danmuRead("cros:https://api.bilibili.com/x/space/acc/info?mid=" + stat.data.uid, function a(s) {
-                var stat = JSON.parse(s);
+                var stat = JSON.parse(s.trim()?s:'{"code":-1}');
                 if (stat.code == 0) {
                     var s = [stat.data.name, stat.data.live_room.title];
                     var limit=(isDanmuFullWindow?28:18)-streamerCount;//(28, 18)-6=(22, 12)

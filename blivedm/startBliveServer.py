@@ -66,7 +66,7 @@ def crosAccess(url, data=None, method=None):
         with request.urlopen(req) as response:
             return response.read().decode("utf-8")
     except Exception:
-        que.put_nowait('[EXCEP] cros: '+str(sys.exc_info()))
+        que.put_nowait('[EXCEP] cros: <'+url+'>'+str(sys.exc_info()))
         return ''
 
 def restart():
@@ -74,7 +74,8 @@ def restart():
 
 def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
-    ori_cmd=path.split('?')[1]
+    ori_cmd='?'.join(path.split('?')[1:])
+    print(ori_cmd)
     cmd=ori_cmd.lower()
     needExtra=True
     if (cmd==''):
@@ -238,15 +239,26 @@ def setSleep(q, status_code, status):
     status_code.value=status
     q.put_nowait("$1$")
 
+def kill(p):
+    try:
+        if (p):
+            p.terminate()
+            p.join()
+    except Exception:
+        print('skip Error when kill '+str(p))
+
 def main():
     print('--- START at '+asctime()+' ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
     last_room_id=Value(ctypes.c_longlong, 0)
+    sleep(0.5)# To wait Restart
     p = Process(target=initServer, args=(que,new_room_id,status_code,last_room_id,))
     p.start()
+    c=False
     room_id=0
+    isOn=True
     if (len(sys.argv)>1):
         room_id=int(sys.argv[1])
         last_room_id.value=room_id
@@ -257,11 +269,11 @@ def main():
     else:
         print('[wait] No preset room id, wait for client request')
         setSleep(que, status_code, 1)
-    while True:
+    while isOn:
+        sleep(1)
         if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
-            c.terminate()
-            c.join()
+            kill(c)
             room_id=0
             last_room_id.value=0
             clear_que(que, 50)
@@ -270,22 +282,21 @@ def main():
             if (new_room_id.value<0):
                 if (new_room_id.value==-1):
                     print('[deactivate] goodbye')
-                    p.terminate()
-                    c.terminate()
-                    break
+                    kill(p)
+                    kill(c)
+                    isOn=False
                 if (new_room_id.value==-2):
                     print('[kick&kill] but no new room, restart script')
                     setSleep(que, status_code, 3)
-                    sleep(1)
+                    isOn=False
+                    room_id=0
+                    kill(p)
+                    kill(c)
                     restart()
-                    # c.terminate()
-                    # c.join()
-                    # room_id=0
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))
-                    c.terminate()
-                    c.join()
+                    kill(c)
                 room_id=new_room_id.value
                 last_room_id.value=room_id
                 print('[launch] new room id: '+str(room_id))
@@ -293,9 +304,7 @@ def main():
                 c = Process(target=runDm, args=(que,room_id,))
                 c.start()
             new_room_id.value=0
-        sleep(1)
-    p.join()
-    c.join()
+    print('***  END  at '+asctime()+' ***')
 
 if __name__ == '__main__':
     main()
