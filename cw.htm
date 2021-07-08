@@ -1384,8 +1384,8 @@ var danmu = document.getElementsByClassName('danmu')[0];
 var danmuReadCount = 0;
 var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStart = 0;
-var streamer = [['sz', '12', 'nc', 'dd', 'sun', 'sid'],
-    [2366002, 544786, 1220, 16548, 22905626, 5300231], [], []];
+var streamer = [['sz', '12', 'nc', 'dd', 'sid'],
+    [2366002, 544786, 1220, 16548, 5300231], [], []];
 var streamerCount=streamer[0].length;
 var danmuControl = ['history 历史弹幕', 'bye 停止', 'kick 下线', 'info 统计', 'w 切换 watch', 'js[:] 远程脚本', 'time 时间戳', 'f 全屏', 'url 添加 #danmuonly'];
 var danmuRoomId = '';
@@ -1656,7 +1656,7 @@ function danmuInfo() {
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + danmuSuperChat + (liveStatus?'<small>' +liveStatus + '</small>'+ ' '+dateString():'');
+    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + danmuSuperChat + (liveStatus?'<small>' +liveStatus.slice(1) + '</small>'+ ' '+dateString():'');
 
     function atag(inner, href, onclick, title){
         return '<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"')+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
