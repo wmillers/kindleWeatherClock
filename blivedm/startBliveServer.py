@@ -75,6 +75,7 @@ def restart():
 def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
     ori_cmd=''.join(path.split('?')[1:])
+    print(ori_cmd)
     cmd=ori_cmd.lower()
     needExtra=True
     if (cmd==''):
