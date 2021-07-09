@@ -6,10 +6,12 @@ cd kindleWeatherClock/
 for((i=0;i<5;i++));
 do
     git pull
-    if [ $? = "0" ] ;then
+    ret=$?
+    if [ $ret = "0" ] ;then
+        echo get $ret
         break
     else
-        echo retry: $i < 5
+        echo retry[$ret]: $i \< 5
     fi
 done
 nohup python3 blivedm/startBliveServer.py &
