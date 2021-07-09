@@ -66,7 +66,7 @@ def crosAccess(url, data=None, method=None):
         with request.urlopen(req) as response:
             return response.read().decode("utf-8")
     except Exception:
-        que.put_nowait('[EXCEP] cros: '+str(sys.exc_info()))
+        que.put_nowait('[EXCEP] cros: <'+url+'>'+str(sys.exc_info()))
         return ''
 
 def restart():
