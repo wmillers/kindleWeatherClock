@@ -159,7 +159,7 @@ function hasModule(name){
     }
     .danmu_live {
         height: 90vh;
-        width: 45vw;
+        width: 50vw;
         object-fit: contain;
         position: absolute;
         top: 5vh;
@@ -325,7 +325,7 @@ if (isDanmuOnly){
 setTimeout(function loadFromHash(){
     //resume task from #a()#b()
     var run = location.hash.split('#');
-    location.hash = "";
+    //location.hash = "";
     for (var i = 0; i < run.length; i++)
         setTimeout(decodeURI(run[i]));
 });
@@ -350,8 +350,6 @@ location /cw {
 */
 var isMouseHidden=false;
 var mouseMoveTime=0;
-var livePlayer;
-var liveRetry=0;
 function danmuOnly(){
     isDanmuOnly=true;
     var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
@@ -386,51 +384,6 @@ function danmuOnly(){
         }
     };
     setTimeout(danmuSwitch, 500);
-}
-function danmuLiveGetUrl(room){
-    danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=0', function parse(s){
-        try {
-            danmuLiveVideo(JSON.parse(s).data.durl[0].url);
-        } catch (e){
-            danmuWrite('[Error] parse JSON: '+s.slice(20), true, true);
-        }
-    });
-}
-function danmuLiveVideo(url){
-    if (mpegts.isSupported()){
-        if (url)
-            liveRetry=0;
-        var video = document.getElementsByClassName('danmu_live')[0];
-        livePlayer = mpegts.createPlayer({
-            type: 'flv',  // could also be mpegts, m2ts, flv
-            isLive: true,
-            url: url?url:livePlayer.statisticsInfo.url,
-        }, {
-            liveBufferLatencyChasing: true,
-            liveBufferLatencyMaxLatency: 10,
-            autoCleanupSourceBuffer: true,
-        });
-        livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
-            if (++liveRetry<5){
-                danmuWrite('[Reload:'+liveRetry+'] '+errType+', '+errDetail, true, true);
-                livePlayer.pause();
-                danmuLiveVideo();
-            } else {
-                danmuWrite('[Quit:'+liveRetry+'] '+errType+', '+errDetail, true, true);
-                video.style.display='';
-                livePlayer.destroy();
-            }
-        });
-        danmuWrite('[Load] start live video', true, true);
-        livePlayer.attachMediaElement(video);
-        livePlayer.load();
-        livePlayer.volume=1;
-        livePlayer.muted=false;
-        livePlayer.play();
-        video.style.display='block';
-    } else {
-        comment('mpegts.js is not supported.');
-    }
 }
 
 
@@ -1476,6 +1429,8 @@ var danmuTryToken = 0;
 var danmuLoadTime = 0;
 var danmuLast = '';
 var isDanmuWatch=true;
+var livePlayer;
+var liveRetry=0;
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1502,6 +1457,7 @@ function danmuSwitch() {
 function danmuOn(roomId) {
     if (streamer[0].indexOf(roomId) != -1)
         roomId = streamer[1][streamer[0].indexOf(roomId)];
+    danmuWrite('[ON@'+dateString()+':'+'room'+(roomId?roomId:'')+']'+(isDanmuOnly&&isDanmuLiveVideo?' & live video':''), true, true);
     danmuStart = getOffsetTime();
     danmuTryToken = 0;
     danmuPop = 0;
@@ -1526,11 +1482,17 @@ function danmuOn(roomId) {
             danmuInfo();
     }
     danmuAlter(false);
+    if (isDanmuOnly&&isDanmuLiveVideo)
+        if (roomId)
+            liveFromRoom(roomId);
+        else if (danmuRoomId)
+            liveFromRoom(danmuRoomId);
 }
 function danmuOff(s) {
     if (!isDanmuLive)
         return;
     isDanmuLive = 0;
+    danmuLiveOff();
     clearTimeout(danmuTaskIndexs[0]);
     clearTimeout(danmuTaskIndexs[1]);
     clearTimeout(danmuTaskIndexs[2]);
@@ -1712,7 +1674,7 @@ function danmuInfoUpdate(s) {
             if (danmuRoomId != (danmuRoomId = info.room_id)){
                 danmuParseStreamer();
                 if (isDanmuOnly&&isDanmuLiveVideo)
-                    danmuLiveGetUrl(danmuRoomId);
+                    liveFromRoom(danmuRoomId);
             }
             danmuSC(info.super_chat);
             var p = parseInt(info.pop);
@@ -1809,6 +1771,56 @@ function danmuClear() {
         danmuStyle.opacity = 0;
         document.getElementsByClassName('danmu_info')[0].innerHTML = '';
     }
+}
+function liveFromRoom(room){
+    danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=0', function parse(s){
+        try {
+            liveFromUrl(JSON.parse(s).data.durl[0].url);
+        } catch (e){
+            danmuWrite('[Error] parse JSON: '+s.slice(20), true, true);
+        }
+    });
+}
+function liveFromUrl(url){
+    if (mpegts.isSupported()){
+        if (url){
+            liveRetry=0;
+            danmuWrite('[Load] start live video', true, true);
+        }
+        var video = document.getElementsByClassName('danmu_live')[0];
+        livePlayer = mpegts.createPlayer({
+            type: 'flv',  // could also be mpegts, m2ts, flv
+            isLive: true,
+            url: url?url:livePlayer.statisticsInfo.url,
+        }, {
+            liveBufferLatencyChasing: true,
+            liveBufferLatencyMaxLatency: 10,
+            autoCleanupSourceBuffer: true,
+        });
+        livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
+            if (++liveRetry<3){
+                danmuWrite('[Reload:'+liveRetry+'] '+errType+', '+errDetail, true, true);
+                livePlayer.pause();
+                liveFromUrl();
+            } else {
+                danmuWrite('[Quit:'+liveRetry+'] '+errType+', '+errDetail, true, true);
+                video.style.display='';
+                livePlayer.destroy();
+            }
+        });
+        livePlayer.attachMediaElement(video);
+        livePlayer.load();
+        livePlayer.volume=1;
+        livePlayer.muted=false;
+        livePlayer.play();
+        video.style.display='block';
+    } else {
+        comment('mpegts.js is not supported.');
+    }
+}
+function danmuLiveOff(){
+    if (livePlayer)
+        livePlayer.destroy();
 }
 
 
