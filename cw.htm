@@ -34,7 +34,8 @@ var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     'home']
     :[];
 var isDanmuFullWindow=true;//true if danmu start in fullwindow mode (fullscreen mode activated by danmuOnly())
-var danmuFontSizeFullScreen="5.7vh";//only takes effect under fullscreen (not fullwindow) mode
+var isDanmuLiveVideo=true;//play live on roomId changed, only under fullscreen (not fullwindow) mode #danmuOnly 
+var danmuFontSizeFullScreen="5.7vh";//only under fullscreen (not fullwindow) mode #danmuOnly
 var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CROS Access-Control-Allow-Origin *
 var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your token, to get: push bridge button and run hReg()
 //*******************END**********************
@@ -156,6 +157,16 @@ function hasModule(name){
       display: block;
       font-size: .6rem;
     }
+    .danmu_live {
+        height: 90vh;
+        width: 45vw;
+        object-fit: contain;
+        position: absolute;
+        top: 5vh;
+        right: 0;
+        z-index: -1;
+        display: none;
+    }
     .time {
       font-size: 16rem;
       font-variant-numeric: tabular-nums;
@@ -237,7 +248,7 @@ function hasModule(name){
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
     <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info" onclick="event.stopPropagation()"></span><span class="danmu"></span></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info" onclick="event.stopPropagation()"></span><span class="danmu"></span><video class="danmu_live">video live Only in #danmuOnly mode</video></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
@@ -246,6 +257,7 @@ function hasModule(name){
     <div class="inform" onclick="fridgeTomato();weatherInterval();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步</span></div>
     <div class="reminder" onclick="clearReminder()"></div>
   </div></div>
+  <script src="mpegts.js"></script>
   <script>
 "use strict";
 var initialTitle = document.title;
@@ -338,7 +350,10 @@ location /cw {
 */
 var isMouseHidden=false;
 var mouseMoveTime=0;
+var livePlayer;
+var liveRetry=0;
 function danmuOnly(){
+    isDanmuOnly=true;
     var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
@@ -371,6 +386,51 @@ function danmuOnly(){
         }
     };
     setTimeout(danmuSwitch, 500);
+}
+function danmuLiveGetUrl(room){
+    danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=0', function parse(s){
+        try {
+            danmuLiveVideo(JSON.parse(s).data.durl[0].url);
+        } catch (e){
+            danmuWrite('[Error] parse JSON: '+s.slice(20), true, true);
+        }
+    });
+}
+function danmuLiveVideo(url){
+    if (mpegts.isSupported()){
+        if (url)
+            liveRetry=0;
+        var video = document.getElementsByClassName('danmu_live')[0];
+        livePlayer = mpegts.createPlayer({
+            type: 'flv',  // could also be mpegts, m2ts, flv
+            isLive: true,
+            url: url?url:livePlayer.statisticsInfo.url,
+        }, {
+            liveBufferLatencyChasing: true,
+            liveBufferLatencyMaxLatency: 10,
+            autoCleanupSourceBuffer: true,
+        });
+        livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
+            if (++liveRetry<5){
+                danmuWrite('[Reload:'+liveRetry+'] '+errType+', '+errDetail, true, true);
+                livePlayer.pause();
+                danmuLiveVideo();
+            } else {
+                danmuWrite('[Quit:'+liveRetry+'] '+errType+', '+errDetail, true, true);
+                video.style.display='';
+                livePlayer.destroy();
+            }
+        });
+        danmuWrite('[Load] start live video', true, true);
+        livePlayer.attachMediaElement(video);
+        livePlayer.load();
+        livePlayer.volume=1;
+        livePlayer.muted=false;
+        livePlayer.play();
+        video.style.display='block';
+    } else {
+        comment('mpegts.js is not supported.');
+    }
 }
 
 
@@ -1402,8 +1462,8 @@ var danmu = document.getElementsByClassName('danmu')[0];
 var danmuReadCount = 0;
 var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStart = 0;
-var streamer = [['sz', '12', 'nc', 'dd', 'sid'],
-    [2366002, 544786, 1220, 16548, 5300231], [], []];
+var streamer = [['sz', '12', 'nc', 'dd', 'sid', 'wt'],
+    [2366002, 544786, 1220, 16548, 5300231, 733], [], []];
 var streamerCount=streamer[0].length;
 var danmuControl = ['history 历史弹幕', 'bye 停止', 'kick 下线', 'info 统计', 'w 切换 watch', 'js[:] 远程脚本', 'time 时间戳', 'f 全屏', 'url 添加 #danmuonly'];
 var danmuRoomId = '';
@@ -1649,8 +1709,11 @@ function danmuInfoUpdate(s) {
         danmuTaskIndexs[1] = setTimeout('danmuRead("info", danmuInfoUpdate)', !s ? 3 * 1000 : danmuPop == 1 ? 3 * 60e3 : 60e3);
         if (s) {
             var info = JSON.parse(s.trim());
-            if (danmuRoomId != (danmuRoomId = info.room_id))
+            if (danmuRoomId != (danmuRoomId = info.room_id)){
                 danmuParseStreamer();
+                if (isDanmuOnly&&isDanmuLiveVideo)
+                    danmuLiveGetUrl(danmuRoomId);
+            }
             danmuSC(info.super_chat);
             var p = parseInt(info.pop);
             setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
@@ -1674,7 +1737,7 @@ function danmuInfo() {
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + danmuSuperChat + (liveStatus?'<small>' +liveStatus.slice(1) + '</small>'+ ' '+dateString():'');
+    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + (liveStatus?'<small>' +liveStatus.slice(1) + ' [' +dateString() + ']</small><br>':'') + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
         return '<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"')+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
