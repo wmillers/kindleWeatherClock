@@ -33,14 +33,14 @@ var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     //'danmu',
     'home']
     :[];
-var isDanmuFullWindow=true;//true if danmu start in fullwindow mode (fullscreen mode activated by danmuOnly())
-var isDanmuLiveVideo=true;//play live on roomId changed, only under fullscreen (not fullwindow) mode #danmuOnly 
-var danmuFontSizeFullScreen="5.7vh";//only under fullscreen (not fullwindow) mode #danmuOnly
-var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CROS Access-Control-Allow-Origin *
+var isDanmuFullWindow=true;//danmu start in fullwindow mode (fullscreen mode activated by danmuOnlyScreen())
+var isDanmuLiveVideo=true;//play live on roomId changed, only in fullscreen (not fullwindow) mode #danmuonly 
+var danmuFontSizeFullScreen="5.7vh";//only under fullscreen (not fullwindow) mode #danmuonly
+var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CORS Access-Control-Allow-Origin *
 var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your token, to get: push bridge button and run hReg()
 //*******************END**********************
 
-if (!isOnKindle) console.log('Autostart only enabled on Kindle');
+if (!isOnKindle) console.warn('autostart only enabled on Kindle');
 window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
@@ -165,7 +165,7 @@ function hasModule(name){
         top: 5vh;
         right: 0;
         z-index: -1;
-        display: none;
+        opacity: 0;
     }
     .time {
       font-size: 16rem;
@@ -306,15 +306,15 @@ setTimeout(function modulesControl(){
     if (!hasModule('home'))
         home.innerHTML = '';
 });
-var isFastLoad = location.hash != (location.hash = location.hash.replace(/#fastload/i, ''));
-var isDanmuOnly = location.hash != (location.hash = location.hash.replace(/#danmuonly/i, ''));
-isFastLoad=isFastLoad||isDanmuOnly;
+var hash=location.hash;
+var isDanmuOnly = hash != (hash = hash.replace(/#danmuonly/i, ''));
+var isFastLoad = hash != (hash = hash.replace(/#fastload/i, ''))||isDanmuOnly;
 if (isDanmuOnly){
     document.getElementsByClassName('cleaner')[0].style.display='none';
     reduceShadow=function und(){};
     killShadow=reduceShadow;
 
-    danmuOnly();
+    danmuOnlyScreen();
 } else {
     setTimeout(function autoStart(){
         if (!forTestUse)
@@ -324,8 +324,7 @@ if (isDanmuOnly){
 }
 setTimeout(function loadFromHash(){
     //resume task from #a()#b()
-    var run = location.hash.split('#');
-    //location.hash = "";
+    var run = hash.split('#');
     for (var i = 0; i < run.length; i++)
         setTimeout(decodeURI(run[i]));
 });
@@ -350,7 +349,7 @@ location /cw {
 */
 var isMouseHidden=false;
 var mouseMoveTime=0;
-function danmuOnly(){
+function danmuOnlyScreen(){
     isDanmuOnly=true;
     var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
     document.body.appendChild(danmu_fr);
@@ -379,10 +378,11 @@ function danmuOnly(){
             danmuRoomStatCollect();
             if (isDanmuLive == 1) {
                 danmuRead();
-                danmuInfoUpdate();//on danmuRoomId change => danmuParseStreamer();
+                danmuInfoUpdate();// on danmuRoomId change => danmuParseStreamer();
             }
         }
     };
+    danmuClear=function und(){};
     setTimeout(danmuSwitch, 500);
 }
 
@@ -1129,7 +1129,7 @@ function pauseTomato() {
 /*                TICKLIST: Ticktick Reminder
 Note: you need set a Nginx server to proxy the GET method to the
         calendar server to download the .ics file. Add those lines
-        to your Nginx config file to avoid CROS problem as the
+        to your Nginx config file to avoid CORS problem as the
         request directly from your browser is banned for some
         security reason.
         
@@ -1446,7 +1446,7 @@ function danmuSwitch() {
             if (danmuPop <= 1) {
                 var up = prompt('Current: ' + danmuRoomId + '\nStreamer:\n' + streamer[0] + '\nControl:\n' + danmuControl);
                 if (up != null)
-                    if (up == '' && danmuPop == 1)
+                    if (up == '' && danmuPop <= 1)
                         danmuOff('<b>quit</b>');
                     else
                         danmuOn(up);
@@ -1482,11 +1482,7 @@ function danmuOn(roomId) {
             danmuInfo();
     }
     danmuAlter(false);
-    if (isDanmuOnly&&isDanmuLiveVideo)
-        if (roomId)
-            liveFromRoom(roomId);
-        else if (danmuRoomId)
-            liveFromRoom(danmuRoomId);
+    danmuChangeRoomId(roomId);
 }
 function danmuOff(s) {
     if (!isDanmuLive)
@@ -1557,6 +1553,8 @@ function setDanmuPop(p) {
             danmuWrite('TRANSMIT' + dateString(getOffsetTime(), 'hm'), true);
         } else if (old == 9999 || (old == 1 && p > 1))
             danmuAlter(false);
+        if (old<=1&&p>1&&p!=9999&&!livePlayer&&danmuRoomId)
+            liveFromRoom(danmuRoomId);
     }
 }
 function danmuBold(s) {return '<b>' + s + '</b>';}
@@ -1665,17 +1663,22 @@ function danmuFullScreen(){
         }
     }
 }
+function danmuChangeRoomId(s){
+    if (parseInt(s)){
+        if (danmuRoomId != (danmuRoomId = s)){
+            danmuParseStreamer();
+            if (isDanmuOnly&&isDanmuLiveVideo)
+                liveFromRoom(danmuRoomId);
+        }
+    }
+}
 function danmuInfoUpdate(s) {
     clearTimeout(danmuTaskIndexs[1]);
     if (isDanmuLive) {
         danmuTaskIndexs[1] = setTimeout('danmuRead("info", danmuInfoUpdate)', !s ? 3 * 1000 : danmuPop == 1 ? 3 * 60e3 : 60e3);
         if (s) {
             var info = JSON.parse(s.trim());
-            if (danmuRoomId != (danmuRoomId = info.room_id)){
-                danmuParseStreamer();
-                if (isDanmuOnly&&isDanmuLiveVideo)
-                    liveFromRoom(danmuRoomId);
-            }
+            danmuChangeRoomId(info.room_id);
             danmuSC(info.super_chat);
             var p = parseInt(info.pop);
             setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
@@ -1689,20 +1692,20 @@ function danmuInfo() {
     if (!isOnKindle)
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamer[2][i]&&danmuRoomId!=i)
-                liveStatus+='| '+atag(streamer[2][i]+' '+(streamer[3][i]==undefined?'':streamer[3][i]), 'https://live.bilibili.com/blanc/'+streamer[1][i], "danmuRead("+streamer[1][i]+")", streamer[0][i]);
+                liveStatus+='| '+atag(streamer[2][i]+' '+(streamer[3][i]==undefined?'':streamer[3][i]), false, "danmuRead("+streamer[1][i]+")", streamer[0][i]);
     var dTrends = String(danmuPop < 1e4 ? (danmuPop < 1e3 ? danmuPop : Math.floor(danmuPop / 1e2) / 10) : Math.floor(danmuPop / 1e3) / 10 + '万');
     if (dTrends.indexOf('.') != -1) {
         dTrends = dTrends.split('.');
-        var a = ['sub', '', 'sup'][danmuPopTrends + 1];
+        var a = ['sub', 'small', 'sup'][danmuPopTrends + 1];
         dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + dTrends[1].slice(1);
         dTrends = dTrends.join('');
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly()')", '刷新 Refresh') + '</b></span><br>' + (liveStatus?'<small>' +liveStatus.slice(1) + ' [' +dateString() + ']</small><br>':'') + danmuSuperChat;
+    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", '刷新 Refresh') + '</b></span><br>' + (liveStatus?'<small>' +liveStatus.slice(1) + ' [' +dateString() + ']</small><br>':'') + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
-        return '<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"')+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
+        return (isOnKindle?'<a':'<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"'))+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
     }
 }
 function danmuRoomStatCollect(n) {
@@ -1710,7 +1713,7 @@ function danmuRoomStatCollect(n) {
     if (isDanmuLive) {
         if (n == undefined)
             n = 0;
-        danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n++ % streamer[1].length], danmuParseLive);
+        danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n++ % streamer[1].length], danmuParseLive);
         danmuTaskIndexs[2] = setTimeout('danmuRoomStatCollect(' + n + ')', danmuPop == 1 || n % streamer[1].length == 0 || danmuTryToken >= 3 ? 4 * 60e3 : 10e3);
     }
 }
@@ -1725,10 +1728,10 @@ function danmuParseStreamer(s, n) {
                 i=n;
             n=(n+1)%streamer[1].length;
             danmuTaskIndexs[3] = setTimeout(function getRealId(){
-                danmuRead("cros:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n], function count(s){danmuParseStreamer(s, n);});
+                danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n], function count(s){danmuParseStreamer(s, n);});
             }, danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3));
             var stat = JSON.parse(s);
-            danmuRead("cros:https://api.bilibili.com/x/space/acc/info?mid=" + stat.data.uid, function a(s) {
+            danmuRead("cors:https://api.bilibili.com/x/space/acc/info?mid=" + stat.data.uid, function a(s) {
                 var stat = JSON.parse(s.trim()?s:'{"code":-1}');
                 if (stat.code == 0) {
                     var s = [stat.data.name, stat.data.live_room.title];
@@ -1738,7 +1741,7 @@ function danmuParseStreamer(s, n) {
             });
         } else {
             if (danmuRoomId)
-                danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/room_init?id=' + danmuRoomId, danmuParseStreamer);
+                danmuRead('cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=' + danmuRoomId, danmuParseStreamer);
             else
                 setTimeout('danmuParseStreamer()', 30 * 1000);
         }
@@ -1773,54 +1776,71 @@ function danmuClear() {
     }
 }
 function liveFromRoom(room){
-    danmuRead('cros:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=0', function parse(s){
+    danmuWrite('[Load:'+room+'] start live video', true, true);
+    livePlayer={};
+    danmuRead('cors:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=0', function parse(s){
         try {
-            liveFromUrl(JSON.parse(s).data.durl[0].url);
+            liveFromUrl(JSON.parse(s).data.durl.slice(-2)[0].url);
         } catch (e){
+            console.error(s);
             danmuWrite('[Error] parse JSON: '+s.slice(20), true, true);
         }
     });
-}
-function liveFromUrl(url){
-    if (mpegts.isSupported()){
-        if (url){
-            liveRetry=0;
-            danmuWrite('[Load] start live video', true, true);
+    function liveFromUrl(url, audioOnly){
+        if (mpegts.isSupported()){
+            if (url)
+                liveRetry=0;
+            else
+                url=livePlayer.statisticsInfo.url;
+            var video = document.getElementsByClassName('danmu_live')[0];
+            danmuLiveOff();
+            livePlayer = mpegts.createPlayer({
+                type: 'mse',  // mse, mpegts, m2ts, flv
+                isLive: true,
+                url: url,
+                hasVideo: !audioOnly,
+            }, {
+                liveBufferLatencyChasing: true,
+                liveBufferLatencyMaxLatency: 10,
+                liveBufferLatencyMinRemain: 2.5,
+            });
+            livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
+                if (++liveRetry<3){
+                    if (errDetail!="HttpStatusCodeInvalid")
+                        danmuWrite('[Reload:'+liveRetry+':'+errType+'] '+errDetail, true, true);
+                    liveFromUrl();
+                } else {
+                    danmuWrite('[Quit:'+liveRetry+':'+errType+'] '+errDetail, true, true);
+                    danmuLiveOff();
+                }
+            });
+            livePlayer.attachMediaElement(video);
+            livePlayer.load();
+            livePlayer.volume=1;
+            livePlayer.muted=false;
+            livePlayer.play();
+            video.style.opacity='1';
+            var interval=setInterval(function lowLoadWatcher(){
+                if (livePlayer&&livePlayer.mediaInfo.hasVideo){
+                    var info=livePlayer.statisticsInfo;
+                    if (info.droppedFrames>500&&info.droppedFrames/info.decodedFrames>1/5){
+                        danmuWrite('[Warn:ForceAudio] drop/decode(1/5)='+info.droppedFrames+'/'+info.decodedFrames, true, true);
+                        liveFromUrl(url, true);
+                    } else
+                        return true;
+                }
+                clearInterval(interval);
+            }, 120e3);
+        } else {
+            comment('mpegts.js is not supported.');
         }
-        var video = document.getElementsByClassName('danmu_live')[0];
-        livePlayer = mpegts.createPlayer({
-            type: 'flv',  // could also be mpegts, m2ts, flv
-            isLive: true,
-            url: url?url:livePlayer.statisticsInfo.url,
-        }, {
-            liveBufferLatencyChasing: true,
-            liveBufferLatencyMaxLatency: 10,
-            autoCleanupSourceBuffer: true,
-        });
-        livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
-            if (++liveRetry<3){
-                danmuWrite('[Reload:'+liveRetry+'] '+errType+', '+errDetail, true, true);
-                livePlayer.pause();
-                liveFromUrl();
-            } else {
-                danmuWrite('[Quit:'+liveRetry+'] '+errType+', '+errDetail, true, true);
-                video.style.display='';
-                livePlayer.destroy();
-            }
-        });
-        livePlayer.attachMediaElement(video);
-        livePlayer.load();
-        livePlayer.volume=1;
-        livePlayer.muted=false;
-        livePlayer.play();
-        video.style.display='block';
-    } else {
-        comment('mpegts.js is not supported.');
     }
 }
 function danmuLiveOff(){
-    if (livePlayer)
+    if (livePlayer&&livePlayer.destroy)
         livePlayer.destroy();
+    livePlayer=undefined;
+    document.getElementsByClassName('danmu_live')[0].style.opacity='';
 }
 
 

@@ -55,7 +55,7 @@ def isEmptyPath(path):
         return True
     return False
 
-def crosAccess(url, data=None, method=None):
+def corsAccess(url, data=None, method=None):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -66,7 +66,7 @@ def crosAccess(url, data=None, method=None):
         with request.urlopen(req) as response:
             return response.read().decode("utf-8")
     except Exception:
-        que.put_nowait('[EXCEP] cros: <'+url+'>'+str(sys.exc_info()))
+        que.put_nowait('[EXCEP] cors: <'+url+'>'+str(sys.exc_info()))
         return ''
 
 def restart():
@@ -111,13 +111,13 @@ def controlRoom(path, data=None, method=None):
                 info['super_chat']=[]
             res=json.dumps(info)
             needExtra=False
-        elif (cmd[0:5]=='call:'):
+        elif (not cmd.find('call:')):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
             print('[call] '+cmd[5:])
             res='[CALLING]'
             needExtra=False
-        elif (cmd[0:3]=='js:'):
+        elif (not cmd.find('js:')):
             cmd=parse.unquote(ori_cmd)
             if info['pop']=='1':
                 info['pop']='9999'
@@ -126,8 +126,8 @@ def controlRoom(path, data=None, method=None):
             print('[js] '+cmd[3:])
             res='[JS-Executing]'+cmd[3:]
             needExtra=False
-        elif (cmd[0:5]=='cros:'):
-            res=crosAccess(parse.unquote(ori_cmd[5:]), data, method)
+        elif (not cmd.find('cors:')):
+            res=corsAccess(parse.unquote(ori_cmd[5:]), data, method)
             needExtra=False
         elif (cmd=='time'):
             res=int(time()*1000+100)
@@ -206,8 +206,6 @@ class MyBLiveClient(blivedm.BLiveClient):
 
 
 async def initDm(room_id):
-    # 参数1是直播间ID
-    # 如果SSL验证失败就把ssl设为False
     client = MyBLiveClient(room_id, ssl=True)
     future = client.start()
     try:

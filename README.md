@@ -36,9 +36,9 @@ Checked functions in the table above mean these are standalone, otherwise means 
 Extra code needed to add in the config file is in the function's comments before its code area.  
 
 ### 滴答清单(Ticktick Reminder)
-因为浏览器跨域限制，需要手动代理滴答清单订阅网址。  
+由于浏览器跨域限制，需要反向代理滴答清单订阅网址。  
 将该代码前注释中的`location /ics/ {..}`代码复制到Nginx配置文件中，并修改`https://xxx/basic.ics`处的网址为你的滴答清单任务订阅网址。  
-You need to add proxy to the Ticktick Reminder task subscription url to avoid browser's CROS error.  
+You need to add reverse proxy to the Ticktick Reminder task subscription url to avoid browser's CORS error.  
 Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/basic.ics` url to your personal subsciption url.  
 
 ### B站直播弹幕(Bilibili Live Danmu)
@@ -49,7 +49,7 @@ Note: the fullscreen mode (not the fullwindow mode) of danmu is adapted to other
 Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
 
 ### 智能家居Hue(Home Smart for Philips-Hue)
-适配飞利浦Hue智能家居的开关。Hue中继桥的api带CROS跨域操作头，可以不需要手动代理，但是为了稳定性，此处仍然提供手动代理的步骤：将该代码前注释中的`location /hue/ {..}`代码复制到Nginx配置文件中。如果不需要手动代理，则将网页代码中`hueBaseUrl`变量修改为`//philips-hue/api/`。  
+适配飞利浦Hue智能家居的开关。Hue中继桥的api带CORS跨域操作头，可以不需要手动代理，但是为了稳定性，此处仍然提供手动代理的步骤：将该代码前注释中的`location /hue/ {..}`代码复制到Nginx配置文件中。如果不需要手动代理，则将网页代码中`hueBaseUrl`变量修改为`//philips-hue/api/`。  
 为获取api授权操作码，按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件`Basic Settings`中变量`hueToken`为该值。  
-Smart home switch for Philips-Hue products. Response Header returned from Hue bridge api contains allow CROS *, therefore it's optional to proxy the request. Here are the setups if you want it more reliable: copy the `location /hue/ {..}` code to your Nginx config. If you want to disable the proxy, edit the content of the `hueBaseUrl` variable in the page source code file to `//philips-hue/api/`.  
+Smart home switch for Philips-Hue products. Response Header returned from Hue bridge api contains allow CORS *, therefore it's optional to proxy the request. Here are the setups if you want it more reliable: copy the `location /hue/ {..}` code to your Nginx config. If you want to disable the proxy, edit the content of the `hueBaseUrl` variable in the page source code file to `//philips-hue/api/`.  
 To get Hue api token: 1.Press the Hue Link button 2. Run hReg() 3. Change the content of the `hueToken` variable in the page source code file's `Basic Settings`.  
