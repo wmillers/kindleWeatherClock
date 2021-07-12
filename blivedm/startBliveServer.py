@@ -39,7 +39,8 @@ class Resquest(BaseHTTPRequestHandler):
                     res=res+danmu
                     break
                 sleep(1)
-        self.wfile.write((res if res else ' ').encode('utf-8'))
+        if res:
+            self.wfile.write(res.encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
@@ -75,8 +76,11 @@ def restart():
 def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
     ori_cmd='?'.join(path.split('?')[1:])
-    print(ori_cmd)
     cmd=ori_cmd.lower()
+    if cmd.find('cors:'):
+        print(ori_cmd)
+    else:
+        print(ori_cmd[:10]+'..'+ori_cmd[-10]+' | ', end='')
     needExtra=True
     if (cmd==''):
         res=''
