@@ -35,13 +35,13 @@ var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     :[];
 var isDanmuFullWindow=true;//danmu start in fullwindow mode (fullscreen mode activated by danmuSreenOnly())
 var isDanmuLiveVideo=true;//play live on roomId changed, only in fullscreen (not fullwindow) mode #danmuonly 
-var danmuFontSizeFullScreen="5.7vh";//only under fullscreen (not fullwindow) mode #danmuonly
+var danmuFontSizeFullScreen="3vw";//only under fullscreen (not fullwindow) mode #danmuonly
 var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CORS Access-Control-Allow-Origin *
 var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your token, to get: push bridge button and run hReg()
 //*******************END**********************
 
 if (!isOnKindle) console.warn('autostart only enabled on Kindle');
-window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));};
+window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));console.trace()};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
     document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
@@ -159,13 +159,13 @@ function hasModule(name){
     }
     .danmu_live {
         height: 90vh;
-        width: 50vw;
+        width: 65vw;
         object-fit: contain;
+        object-position: right;
         position: absolute;
         top: 5vh;
         right: 0;
         z-index: -1;
-        opacity: 0;
     }
     .time {
       font-size: 16rem;
@@ -248,7 +248,7 @@ function hasModule(name){
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
     <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info" onclick="event.stopPropagation()"></span><span class="danmu"></span><video class="danmu_live" onended="danmuLiveOff()">video live Only in #danmuOnly mode</video><div class="danmu_live" style="font-size: smaller; color: hsl(0, 0%, 40%); z-index: -2"></div></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info" onclick="event.stopPropagation()"></span><span class="danmu"></span><video class="danmu_live" onended="danmuLiveOff()">video live Only in #danmuOnly mode</video><div class="danmu_live" style="font-size: smaller; color: hsl(0, 0%, 40%); z-index: -2;"></div></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
@@ -319,11 +319,9 @@ var hash=location.hash;
 var isDanmuOnly = hash != (hash = hash.replace(/#danmuonly/i, ''));
 var isFastLoad = hash != (hash = hash.replace(/#fastload/i, ''))||isDanmuOnly;
 if (isDanmuOnly){
-    document.getElementsByClassName('cleaner')[0].style.display='none';
     reduceShadow=function und(){};
     killShadow=reduceShadow;
-
-    danmuSreenOnly();
+    setTimeout(danmuSreenOnly, 200);
 } else {
     setTimeout(function autoStart(){
         if (!forTestUse)
@@ -346,6 +344,8 @@ setTimeout(function isVisible(){
         notVisible();
 }, 10000);
 /*
+Note: #danmuOnly need css3 support.
+
 # To skip password and get short link in Nginx reverse proxy 
 location /kindle/ {
     access_log off;
@@ -356,16 +356,23 @@ location /kindle/ {
     proxy_pass "http://NEEDTOCHANGE/PATH/TO/FOLDER/kindle/";
 }
 */
+var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
+var danmu=document.getElementsByClassName('danmu')[0];
+var danmu_live = document.getElementsByClassName('danmu_live')[0];
+var danmu_live_info=document.getElementsByClassName('danmu_live')[1];
 var isMouseHidden=false;
 var mouseMoveTime=0;
 function danmuSreenOnly(){
     isDanmuOnly=true;
-    var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
     document.getElementsByClassName('danmu_info')[0].style.fontSize="3.5vh";
     danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: hsl(0,0%,60%);font-size: "+danmuFontSizeFullScreen+";left: -.01rem;";
+    danmu_live.style.opacity='0';
+    document.getElementsByClassName('cleaner')[0].style.display='none';
+    danmu.style.background='rgba(0, 0, 0, .5)';
+    danmu.innerHTML='<br><center>Due to browser limit, fullsceen & video need user-gesture.<br><u><b>CLICK</b></u> to start.<center>';
     danmu_fr.onmousemove=function showMouse(){
         var t=4e3;
         var now=new Date().getTime();
@@ -392,7 +399,7 @@ function danmuSreenOnly(){
         }
     };
     danmuClear=function und(){};
-    setTimeout(danmuSwitch, 500);
+    //setTimeout(danmuSwitch, 500);// user-gesture means a extra click to start
 }
 
 
@@ -1419,8 +1426,6 @@ if (!isNaN(parseInt(i))){
 }
 })();
 */
-var danmuStyle = document.getElementsByClassName('danmu_fr')[0].style;
-var danmu = document.getElementsByClassName('danmu')[0];
 var danmuReadCount = 0;
 var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStart = 0;
@@ -1440,6 +1445,7 @@ var danmuLast = '';
 var isDanmuWatch=true;
 var livePlayer;
 var liveRetry=0;
+var liveLastRoom='';
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1457,16 +1463,15 @@ function danmuSwitch() {
                 if (up != null)
                     if (up == '' && danmuPop <= 1)
                         danmuOff('<b>quit</b>');
-                    else {
-                        if (isDanmuOnly)
-                            danmuFullScreen();
+                    else
                         danmuOn(up);
-                    }
             } else
                 danmuOff('<b>connect</b>' + danmuReadCount);
     }
 }
 function danmuOn(roomId) {
+    if (isDanmuOnly)
+        danmuFullScreen(true);
     roomId=roomId.toString();
     if (roomId.toString().indexOf('http')==0)
         roomId=roomId.replace(/https?:\/\/live\.bilibili\.com\/(\d+)\S*/,'$1');
@@ -1479,7 +1484,7 @@ function danmuOn(roomId) {
     streamer[2] = space(streamer[0].length-1).split(' ');
     streamer[3] = streamer[2].slice();
     danmuTaskIndexs = [0, 0, 0];
-    danmuStyle.opacity = 1;
+    danmu_fr.style.opacity = 1;
     roomId = String(roomId);
     switch (roomId.slice(0, 2)) {
         case 'url':
@@ -1529,12 +1534,12 @@ function danmuAlter(beLess) {
         danmuTitle(0,12);
     if (beLess) {
         danmu.style.background = 'white';
-        danmuStyle.background = '';
-        danmuStyle.marginTop = '14rem';
-        danmuStyle.height = '15rem';
+        danmu_fr.style.background = '';
+        danmu_fr.style.marginTop = '14rem';
+        danmu_fr.style.height = '15rem';
 
-        danmuStyle.fontSize="";
-        danmuStyle.width="";
+        danmu_fr.style.fontSize="";
+        danmu_fr.style.width="";
         danmuInfoStyle.fontSize="";
         danmuInfoStyle.fontWeight="";
     } else {
@@ -1544,12 +1549,12 @@ function danmuAlter(beLess) {
             danmuInfoUpdate();//on danmuRoomId change => danmuParseStreamer();
         }
         danmu.style.background = '';
-        danmuStyle.background = isDanmuFullWindow?'rgba(255,255,255,.8)':'white';
-        danmuStyle.marginTop=isDanmuFullWindow?"-6rem":"9rem";
-        danmuStyle.height=isDanmuFullWindow?"41.6rem":"23rem";
+        danmu_fr.style.background = isDanmuFullWindow?'rgba(255,255,255,.8)':'white';
+        danmu_fr.style.marginTop=isDanmuFullWindow?"-6rem":"9rem";
+        danmu_fr.style.height=isDanmuFullWindow?"41.6rem":"23rem";
 
-        danmuStyle.fontSize=isDanmuFullWindow?"6rem":"";
-        danmuStyle.width=isDanmuFullWindow?"47.5rem":"";
+        danmu_fr.style.fontSize=isDanmuFullWindow?"6rem":"";
+        danmu_fr.style.width=isDanmuFullWindow?"47.5rem":"";
         danmuInfoStyle.fontSize=isDanmuFullWindow?"1.6rem":"";
         danmuInfoStyle.fontWeight=isDanmuFullWindow?"bold":"";
     }
@@ -1654,9 +1659,10 @@ function danmuRead(roomId, f) {
             danmuTaskIndexs[0] = setTimeout('danmuRead()', danmuTryToken > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? 2e3 : 10e3);
     } : undefined);
 }
-function danmuFullScreen(){
-    var danmu=document.getElementsByClassName('danmu_fr')[0];
+function danmuFullScreen(forceFullScreen){
     if (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullScreenElement || document.msFullscreenElement){
+        if (forceFullScreen)
+            return;
         if (document.exitFullscreen) {
             document.exitFullscreen();
         } else if (document.mozCancelFullScreen) {
@@ -1667,14 +1673,14 @@ function danmuFullScreen(){
             document.msCancelFullscreen();
         }
     } else {
-        if (danmu.requestFullscreen) {
-            danmu.requestFullscreen();
-        } else if (danmu.mozRequestFullScreen) {
-            danmu.mozRequestFullScreen();
-        } else if (danmu.webkitRequestFullScreen) {
-            danmu.webkitRequestFullScreen();
-        } else if (danmu.msRequestFullscreen) {
-            danmu.msRequestFullscreen();
+        if (danmu_fr.requestFullscreen) {
+            danmu_fr.requestFullscreen();
+        } else if (danmu_fr.mozRequestFullScreen) {
+            danmu_fr.mozRequestFullScreen();
+        } else if (danmu_fr.webkitRequestFullScreen) {
+            danmu_fr.webkitRequestFullScreen();
+        } else if (danmu_fr.msRequestFullscreen) {
+            danmu_fr.msRequestFullscreen();
         }
     }
 }
@@ -1683,7 +1689,7 @@ function danmuChangeRoomId(s){
         if (danmuRoomId != (danmuRoomId = s)){
             danmuParseStreamer();
             if (isDanmuOnly&&isDanmuLiveVideo)
-                liveFromRoom(danmuRoomId, !danmuPop);
+                liveFromRoom(danmuRoomId);
         }
     }
 }
@@ -1789,26 +1795,24 @@ function danmuParseStreamer(s, n) {
 }
 function danmuClear() {
     if (!isDanmuLive){
-        danmuStyle.opacity = 0;
+        danmu_fr.style.opacity = 0;
         document.getElementsByClassName('danmu_info')[0].innerHTML = '';
     }
 }
 function liveInfo(s){
-    var info=document.getElementsByClassName('danmu_live')[1];
-    info.style.opacity=".9";
-    info.innerHTML='<b>'+s+'</b><br>'+info.innerHTML;
+    danmu_live_info.innerHTML='<b>'+s+'</b><br>'+danmu_live_info.innerHTML;
 }
-function liveFromRoom(room, isQuiet){
-    if (!isQuiet)
-        liveInfo('[Load:'+room+'] start live video');//4,10000 3,400 2,250 1,150 0,80
+function liveFromRoom(room){
+    if (liveLastRoom!=String(room)){
+        liveLastRoom=String(room);
+        return;
+    }
+    danmu_live_info.style.opacity=".9";
+    liveInfo('[Load:'+room+'] start live video');//4,10000 3,400 2,250 1,150 0,80
     danmuRead('cors:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=2', function parse(s){
         s=JsonParse(s);
-        try {
-            if (typeof s.data!=undefined)
-                liveFromUrl(s.data.durl.slice(-2)[0].url);
-        } catch (e) {
-            console.error('[dUrlError@'+dateString()+'] ', s);
-        }
+        if (typeof s.data!="undefined")
+            liveFromUrl(s.data.durl.slice(-2)[0].url);
     });
     function liveFromUrl(url, audioOnly){
         if (mpegts.isSupported()){
@@ -1816,7 +1820,6 @@ function liveFromRoom(room, isQuiet){
                 liveRetry=0;
             else
                 url=livePlayer.statisticsInfo.url;
-            var video = document.getElementsByClassName('danmu_live')[0];
             danmuLiveOff(true);
             livePlayer = mpegts.createPlayer({
                 type: 'flv',  // mse, mpegts, m2ts, flv
@@ -1830,7 +1833,7 @@ function liveFromRoom(room, isQuiet){
             });
             livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
                 if (++liveRetry<3){
-                    if (errDetail!="HttpStatusCodeInvalid"&&!isQuiet)
+                    if (errDetail!="HttpStatusCodeInvalid")
                         liveInfo('[Reload:'+liveRetry+':'+errType+'] '+errDetail);
                     liveFromUrl();
                 } else {
@@ -1838,7 +1841,7 @@ function liveFromRoom(room, isQuiet){
                     danmuLiveOff();
                 }
             });
-            livePlayer.attachMediaElement(video);
+            livePlayer.attachMediaElement(danmu_live);
             mpegts.LoggingControl.enableAll=false;
             mpegts.LoggingControl.enableError=true;
             mpegts.LoggingControl.enableWarn=true;
@@ -1846,7 +1849,7 @@ function liveFromRoom(room, isQuiet){
             livePlayer.volume=1;
             livePlayer.muted=false;
             livePlayer.play();
-            video.style.opacity='1';
+            danmu_live.style.opacity='';
             setTimeout(function lowLoadWatcher(){
                 if (livePlayer&&livePlayer.mediaInfo&&livePlayer.mediaInfo.hasVideo){
                     var info=livePlayer.statisticsInfo;
@@ -1862,11 +1865,11 @@ function liveFromRoom(room, isQuiet){
     }
 }
 function danmuLiveOff(isQuiet){
+    liveLastRoom='';
     if (livePlayer&&livePlayer.destroy)
         livePlayer.destroy();
     livePlayer=undefined;
-    document.getElementsByClassName('danmu_live')[0].style.opacity='';
-    document.getElementsByClassName('danmu_live')[1].style.opacity='';
+    danmu_live.style.opacity='0';
     if (!isQuiet)
         danmuWrite('[danmu_live@'+dateString()+':onended]', true, true);
 }
