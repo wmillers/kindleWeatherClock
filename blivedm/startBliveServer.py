@@ -65,7 +65,11 @@ def corsAccess(url, data=None, method=None):
     req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
         with request.urlopen(req) as response:
-            return response.read().decode("utf-8")
+            status=dict({'code': response.status, 'from': url})
+            if (response.status>=400):
+                return json.dumps(status)
+            else:
+                return response.read().decode("utf-8")
     except Exception:
         que.put_nowait('[EXCEP] cors: <'+url+'>'+str(sys.exc_info()))
         return ''
@@ -77,10 +81,10 @@ def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
-    if cmd.find('cors:'):
-        print(ori_cmd)
-    else:
-        print(ori_cmd[:10]+'..'+ori_cmd[-10]+' | ', end='')
+    if not cmd.find('cors:'):
+        print(ori_cmd[:5]+'..'+ori_cmd[-10:]+'|', end='')
+    else:#if len(cmd.strip()):
+        print('['+ori_cmd+']', end='')
     needExtra=True
     if (cmd==''):
         res=''
@@ -250,7 +254,7 @@ def kill(p):
         print('skip Error when kill '+str(p))
 
 def main():
-    print('--- START at '+asctime()+' ---')
+    print('0--- START at '+asctime()+' ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
