@@ -254,7 +254,7 @@ def kill(p):
         print('skip Error when kill '+str(p))
 
 def main():
-    print('0--- START at '+asctime()+' ---')
+    print('--- START at '+asctime()+' ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
