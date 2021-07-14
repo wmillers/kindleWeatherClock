@@ -6,10 +6,10 @@
   <script>
 "use strict";
 /***************Basic settings***************
-Note: Most you need to configure is in Basic settings.
-    If you want extra modules to run normal, please
-    follow the instruction in the README.md file, and
-    add the `location xxx {}` things in this file to
+Note: Most you need to configure are in the Basic
+    settings. If you want to use extra modules, please
+    follow the instructions in README.md, and add
+    the `location xxx {}` things in this file to
     your nginx config.
 */
 var forTestUse=false;//If you are not sure, please change it to false
@@ -18,7 +18,7 @@ var info={
     description: '(bug-fix changes are in commit logs)',
     author: 'wmillers@github',
     support: ['time', 'weather',//those two are default modules
-        //'TO-DISABLE-//COMMENT-THE-LINE',
+        //'TO-DISABLE-EXTRA-MODULES//COMMENT-THE-LINE',
         'tomato',
         'ticklist',
         'danmu',
@@ -41,7 +41,7 @@ var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your to
 //*******************END**********************
 
 if (!isOnKindle) console.warn('autostart only enabled on Kindle');
-window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg));console.trace()};
+window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg))};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
     document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
@@ -242,13 +242,13 @@ function hasModule(name){
     }
   </style>
 </head>
-<body>
+<body onselectstart="return false">
   <div class="cleaner"><noscript><center>Javascript NOT support.</center></noscript></div>
   <div class="app"><div class="rotate">
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
     <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info" onclick="event.stopPropagation()"></span><span class="danmu"></span><video class="danmu_live" onended="danmuLiveOff()">video live Only in #danmuOnly mode</video><div class="danmu_live" style="font-size: smaller; color: hsl(0, 0%, 40%); z-index: -2;"></div></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span class="danmu"></span><video class="danmu_live" onended="danmuLiveOff()">video live Only in #danmuOnly mode</video><div class="danmu_live" style="font-size: smaller; color: hsl(0, 0%, 40%); z-index: -2;"></div></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
@@ -357,9 +357,11 @@ location /kindle/ {
 }
 */
 var danmu_fr=document.getElementsByClassName('danmu_fr')[0];
+var danmu_info=document.getElementsByClassName('danmu_info')[0];
 var danmu=document.getElementsByClassName('danmu')[0];
 var danmu_live = document.getElementsByClassName('danmu_live')[0];
 var danmu_live_info=document.getElementsByClassName('danmu_live')[1];
+
 var isMouseHidden=false;
 var mouseMoveTime=0;
 function danmuSreenOnly(){
@@ -367,12 +369,12 @@ function danmuSreenOnly(){
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
-    document.getElementsByClassName('danmu_info')[0].style.fontSize="3.5vh";
+    danmu_info.style.fontSize="3.5vh";
     danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: hsl(0,0%,60%);font-size: "+danmuFontSizeFullScreen+";left: -.01rem;";
     danmu_live.style.opacity='0';
     document.getElementsByClassName('cleaner')[0].style.display='none';
     danmu.style.background='rgba(0, 0, 0, .5)';
-    danmu.innerHTML='<br><center>Due to browser limit, fullsceen & video need user-gesture.<br><u><b>CLICK</b></u> to start.<center>';
+    danmu_info.innerHTML='<br><br><br><center>Due to browser\'s requirement,<br>fullSceen & video need user-gesture to activate.<br><br><u><b>CLICK</b></u> once to start<center>';
     danmu_fr.onmousemove=function showMouse(){
         var t=4e3;
         var now=new Date().getTime();
@@ -398,9 +400,14 @@ function danmuSreenOnly(){
             }
         }
     };
-    danmuClear=function und(){};
-    //setTimeout(danmuSwitch, 500);// user-gesture means a extra click to start
+    //danmuSwitch();// user-gesture means a extra click to start
 }
+document.onkeydown=function fs(event){
+    var e = event || window.event || arguments.callee.caller.arguments[0];
+    if(e && e.keyCode==13){ // enter 键
+        danmuFullScreen(true);
+    }
+};
 
 
 //Lunar Year
@@ -1455,10 +1462,11 @@ function space(n, s) {
 function danmuSwitch() {
     switch (isDanmuLive) {
         case 0:
+            danmu_info.onclick=function sink(){event.stopPropagation()};
             danmuOn('');
             break;
         default:
-            if (danmuPop <= 1) {
+            if (danmuPop <= 1 || isDanmuOnly) {
                 var up = prompt('Current: ' + danmuRoomId + '\nStreamer:\n' + streamer[0] + '\nControl:\n' + danmuControl);
                 if (up != null)
                     if (up == '' && danmuPop <= 1)
@@ -1513,13 +1521,18 @@ function danmuOff(s) {
     clearTimeout(danmuTaskIndexs[1]);
     clearTimeout(danmuTaskIndexs[2]);
     clearTimeout(danmuTaskIndexs[3]);
-    setTimeout(danmuClear, 10 * 60e3);
+    setTimeout(function danmuClear() {
+        if (!isDanmuLive&&!isDanmuOnly){
+            danmu_fr.style.opacity = 0;
+            danmu_info.innerHTML = '';
+        }
+    }, 10 * 60e3);
     danmuAlter(true);
     danmu.innerHTML = '<b>[OFF@'+ dateString() +']</b> ' + (s != undefined ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStart, 2, true) + '<br>' + (danmu.innerHTML).slice(0, danmuMax / 5) + '...';
     danmuPop = 0;
     danmuInfo();
 }
-function danmuTitle(s, end, i){//s == string (when end == undefined) OR start
+function danmuTitle(s, end, i){//s == string (when end == undefined) OR start, i for index
     if (i==undefined)
         i=streamer[1].indexOf(danmuRoomId);
     if (typeof end=="number")
@@ -1529,7 +1542,6 @@ function danmuTitle(s, end, i){//s == string (when end == undefined) OR start
     return streamer[3][i]==undefined||!streamer[3][i].trim()?'... ':streamer[3][i];
 }
 function danmuAlter(beLess) {
-    var danmuInfoStyle=document.getElementsByClassName('danmu_info')[0].style;
     if (isDanmuFullWindow&&(beLess||danmuPop==1))
         danmuTitle(0,12);
     if (beLess) {
@@ -1540,8 +1552,8 @@ function danmuAlter(beLess) {
 
         danmu_fr.style.fontSize="";
         danmu_fr.style.width="";
-        danmuInfoStyle.fontSize="";
-        danmuInfoStyle.fontWeight="";
+        danmu_info.style.fontSize="";
+        danmu_info.style.fontWeight="";
     } else {
         danmuRoomStatCollect();
         if (isDanmuLive == 1) {
@@ -1555,8 +1567,8 @@ function danmuAlter(beLess) {
 
         danmu_fr.style.fontSize=isDanmuFullWindow?"6rem":"";
         danmu_fr.style.width=isDanmuFullWindow?"47.5rem":"";
-        danmuInfoStyle.fontSize=isDanmuFullWindow?"1.6rem":"";
-        danmuInfoStyle.fontWeight=isDanmuFullWindow?"bold":"";
+        danmu_info.style.fontSize=isDanmuFullWindow?"1.6rem":"";
+        danmu_info.style.fontWeight=isDanmuFullWindow?"bold":"";
     }
 }
 function setDanmuPop(p) {
@@ -1660,9 +1672,9 @@ function danmuRead(roomId, f) {
     } : undefined);
 }
 function danmuFullScreen(forceFullScreen){
-    if (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullScreenElement || document.msFullscreenElement){
-        if (forceFullScreen)
-            return;
+    if (!isDanmuOnly)
+        return;
+    if (!forceFullScreen && (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullScreenElement || document.msFullscreenElement)){
         if (document.exitFullscreen) {
             document.exitFullscreen();
         } else if (document.mozCancelFullScreen) {
@@ -1725,7 +1737,7 @@ function danmuInfo() {
     }
     if (danmuTryToken > 3)
         status = ' ⁉' + danmuTryToken;
-    document.getElementsByClassName('danmu_info')[0].innerHTML = atag((!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", '刷新 Refresh') + '</b></span><br>' + (liveStatus?'<small>' +liveStatus.slice(1) + ' [' +dateString() + ']</small><br>':'') + danmuSuperChat;
+    danmu_info.innerHTML = atag((!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ') + dTrends, false, 'danmuFullScreen()', '全屏 FullScreen') + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", '刷新 Refresh') + '</b></span><br>' + (liveStatus?'<small>' +liveStatus.slice(1) + ' [' +dateString() + ']</small><br>':'') + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
         return (isOnKindle?'<a':'<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"'))+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
@@ -1765,38 +1777,26 @@ function danmuRoomStatCollect(n) {
 function danmuParseStreamer(s, n) {
     clearTimeout(danmuTaskIndexs[3]);
     if (isDanmuLive == 1) {
+        if (n==undefined)
+            n=-1;
+        n=(n+1)%streamer[1].length;
+        danmuTaskIndexs[3] = setTimeout(function getRealId(){
+            danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + (s?streamer[1][n]:danmuRoomId), function collect(s){
+                danmuParseStreamer(s, n);
+            });
+        }, !s&&danmuRoomId?10e3: (danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3)));
         if (s) {
-            var i;
-            if (n==undefined)
-                n=0;
-            else
-                i=n;
-            n=(n+1)%streamer[1].length;
-            danmuTaskIndexs[3] = setTimeout(function getRealId(){
-                danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n], function count(s){danmuParseStreamer(s, n);});
-            }, danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3));
             var data = JsonParse(s).data;
             if (data)
                 danmuRead("cors:https://api.bilibili.com/x/space/acc/info?mid=" + data.uid, function a(s) {
                     var stat = JsonParse(s);
                     if (stat.code == 0) {
-                        var s = [stat.data.name, stat.data.live_room.title];
+                        s = [stat.data.name, stat.data.live_room.title];
                         var limit=(isDanmuFullWindow?28:18)-streamerCount;//(28, 18)-6=(22, 12)
-                        danmuTitle(((s[0].length + s[1].length > limit ? s[0].slice(-3) + s[1] : s[0] + s[1])+ ' ').slice(0, limit), '', i);
+                        danmuTitle(((s[0].length + s[1].length > limit ? s[0].slice(-3) + s[1] : s[0] + s[1])+ ' ').slice(0, limit), '', n);
                     }
                 });
-        } else {
-            if (danmuRoomId)
-                danmuRead('cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=' + danmuRoomId, danmuParseStreamer);
-            else
-                setTimeout('danmuParseStreamer()', 30e3);
         }
-    }
-}
-function danmuClear() {
-    if (!isDanmuLive){
-        danmu_fr.style.opacity = 0;
-        document.getElementsByClassName('danmu_info')[0].innerHTML = '';
     }
 }
 function liveInfo(s){
@@ -1870,8 +1870,11 @@ function danmuLiveOff(isQuiet){
         livePlayer.destroy();
     livePlayer=undefined;
     danmu_live.style.opacity='0';
-    if (!isQuiet)
-        danmuWrite('[danmu_live@'+dateString()+':onended]', true, true);
+    liveInfo('[danmu_live@'+dateString()+':onended]', true, true);
+    setTimeout(function clearInfo(){
+        if (!livePlayer)
+            danmu_live_info.opacity='0';
+    }, 10*60e3);
 }
 
 
