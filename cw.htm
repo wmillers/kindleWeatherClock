@@ -393,10 +393,10 @@ function danmuSreenOnly(){
     };
     danmuAlter=function danmuAlterScreenOnly(beLess){
         if (!beLess){
-            danmuRoomStatCollect();
+            danmuRoomTime();
             if (isDanmuLive == 1) {
                 danmuRead();
-                danmuInfoUpdate();// on danmuRoomId change => danmuParseStreamer();
+                danmuInfoUpdate();// on danmuRoomId change => danmuRoomTitle();
             }
         }
     };
@@ -1555,10 +1555,10 @@ function danmuAlter(beLess) {
         danmu_info.style.fontSize="";
         danmu_info.style.fontWeight="";
     } else {
-        danmuRoomStatCollect();
+        danmuRoomTime();
         if (isDanmuLive == 1) {
             danmuRead();
-            danmuInfoUpdate();//on danmuRoomId change => danmuParseStreamer();
+            danmuInfoUpdate();//on danmuRoomId change => danmuRoomTitle();
         }
         danmu.style.background = '';
         danmu_fr.style.background = isDanmuFullWindow?'rgba(255,255,255,.8)':'white';
@@ -1674,32 +1674,36 @@ function danmuRead(roomId, f) {
 function danmuFullScreen(forceFullScreen){
     if (!isDanmuOnly)
         return;
-    if (!forceFullScreen && (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullScreenElement || document.msFullscreenElement)){
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        } else if (document.webkitCancelFullScreen) {
-            document.webkitCancelFullScreen();
-        } else if (document.msCancelFullscreen) {
-            document.msCancelFullscreen();
+    try {
+        if (!forceFullScreen && (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullScreenElement || document.msFullscreenElement)){
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitCancelFullScreen) {
+                document.webkitCancelFullScreen();
+            } else if (document.msCancelFullscreen) {
+                document.msCancelFullscreen();
+            }
+        } else {
+            if (danmu_fr.requestFullscreen) {
+                danmu_fr.requestFullscreen();
+            } else if (danmu_fr.mozRequestFullScreen) {
+                danmu_fr.mozRequestFullScreen();
+            } else if (danmu_fr.webkitRequestFullScreen) {
+                danmu_fr.webkitRequestFullScreen();
+            } else if (danmu_fr.msRequestFullscreen) {
+                danmu_fr.msRequestFullscreen();
+            }
         }
-    } else {
-        if (danmu_fr.requestFullscreen) {
-            danmu_fr.requestFullscreen();
-        } else if (danmu_fr.mozRequestFullScreen) {
-            danmu_fr.mozRequestFullScreen();
-        } else if (danmu_fr.webkitRequestFullScreen) {
-            danmu_fr.webkitRequestFullScreen();
-        } else if (danmu_fr.msRequestFullscreen) {
-            danmu_fr.msRequestFullscreen();
-        }
+    } catch (e){
+        console.trace();
     }
 }
 function danmuChangeRoomId(s){
     if (parseInt(s)){
         if (danmuRoomId != (danmuRoomId = s)){
-            danmuParseStreamer();
+            danmuRoomTitle();
             if (isDanmuOnly&&isDanmuLiveVideo)
                 liveFromRoom(danmuRoomId);
         }
@@ -1743,13 +1747,13 @@ function danmuInfo() {
         return (isOnKindle?'<a':'<a style="text-decoration: none;color: inherit;" '+ (href?'href="'+href+'" target="_blank"':'href="javascript:void(0)"'))+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
     }
 }
-function danmuRoomStatCollect(n) {
+function danmuRoomTime(n) {
     clearTimeout(danmuTaskIndexs[2]);
     if (isDanmuLive) {
         if (n == undefined)
             n = 0;
         danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n++ % streamer[1].length], parseLiveTime);
-        danmuTaskIndexs[2] = setTimeout('danmuRoomStatCollect(' + n + ')', danmuPop == 1 || n % streamer[1].length == 0 || danmuTryToken >= 3 ? 4 * 60e3 : 10e3);
+        danmuTaskIndexs[2] = setTimeout('danmuRoomTime(' + n + ')', danmuPop == 1 || n % streamer[1].length == 0 || danmuTryToken >= 3 ? 4 * 60e3 : 10e3);
     }
     function parseLiveTime(s) {//'101m'
         var stat = JsonParse(s);
@@ -1774,29 +1778,33 @@ function danmuRoomStatCollect(n) {
         }
     }
 }
-function danmuParseStreamer(s, n) {
+function danmuRoomTitle(n) {
     clearTimeout(danmuTaskIndexs[3]);
     if (isDanmuLive == 1) {
-        if (n==undefined)
-            n=-1;
-        n=(n+1)%streamer[1].length;
-        danmuTaskIndexs[3] = setTimeout(function getRealId(){
-            danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + (s?streamer[1][n]:danmuRoomId), function collect(s){
-                danmuParseStreamer(s, n);
-            });
-        }, !s&&danmuRoomId?10e3: (danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3)));
-        if (s) {
-            var data = JsonParse(s).data;
-            if (data)
-                danmuRead("cors:https://api.bilibili.com/x/space/acc/info?mid=" + data.uid, function a(s) {
-                    var stat = JsonParse(s);
-                    if (stat.code == 0) {
-                        s = [stat.data.name, stat.data.live_room.title];
-                        var limit=(isDanmuFullWindow?28:18)-streamerCount;//(28, 18)-6=(22, 12)
-                        danmuTitle(((s[0].length + s[1].length > limit ? s[0].slice(-3) + s[1] : s[0] + s[1])+ ' ').slice(0, limit), '', n);
-                    }
-                });
+        var i, t;
+        if (n==undefined){
+            n=0;
+            i=danmuRoomId;
+            t=danmuRoomId?10e3:60e3;
+        } else {
+            n=(n+1)%streamer[1].length;
+            i=streamer[1][n];
+            t=danmuTryToken >= 3 || danmuPop==1 ? 600e3 : (streamer[3].indexOf('')==-1? 300e3 : 60e3);
         }
+        danmuTaskIndexs[3] = setTimeout("danmuRoomTitle("+n+")", t);
+        danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + i, function collect(s){parseRoomTitle(s, i);});
+    }
+    function parseRoomTitle(s, i){
+        var data = JsonParse(s).data;
+        if (data)
+            danmuRead("cors:https://api.bilibili.com/x/space/acc/info?mid=" + data.uid, function a(s) {
+                var stat = JsonParse(s);
+                if (stat.code == 0) {
+                    s = [stat.data.name, stat.data.live_room.title];
+                    var limit=(isDanmuFullWindow?28:18)-streamerCount;// (28, 18)-6=(22, 12)
+                    danmuTitle(((s[0].length + s[1].length > limit ? s[0].slice(-3) + s[1] : s[0] + s[1])+ ' ').slice(0, limit), '', streamer[1].indexOf(i));
+                }
+            });
     }
 }
 function liveInfo(s){
