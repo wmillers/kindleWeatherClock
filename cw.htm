@@ -370,10 +370,11 @@ function danmuSreenOnly(){
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
     danmu_info.style.fontSize=parseFloat(danmuFontSizeFullScreen[0])/1.5+danmuFontSizeFullScreen[1];
-    danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: hsl(0,0%,60%);font-size: "+danmuFontSizeFullScreen.join('')+";left: -.01rem;";
+    danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: hsl(0,0%,60%);font-size: "+danmuFontSizeFullScreen.join('')+";left: -.01rem;background-size: 120%;";
     danmu_live.style.opacity='0';
     document.getElementsByClassName('cleaner')[0].style.display='none';
     danmu.style.background='rgba(0, 0, 0, .5)';
+    danmu_info.style.textShadow='2px 2px 0 black, -2px -2px 0 black, -2px 2px 0 black, 2px -2px 0 black';
     danmu_info.innerHTML='<br><br><br><center><big>Due to browser\'s requirement,<br>fullSceen & video need user-gesture to activate.<br><br><u><b>CLICK</b></u> once to start</big><center>';
     danmu_fr.onmousemove=function showMouse(){
         var t=4e3;
@@ -1587,12 +1588,12 @@ function setDanmuPop(p) {
         } else if (old == 9999 || (old == 1 && p > 1))
             danmuAlter(false);
         if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&isDanmuLiveVideo){
-            if (p<5e3)
+            if (p<8e4)
                 setLiveWidth(true);
-            else if (p>10e3)
+            else if (p>10e4)
                 setLiveWidth(false);
             if (!isLiveOn())
-                liveFromRoom();
+                liveFromRoom('', 'changePop');
         }
     }
 }
@@ -1720,7 +1721,7 @@ function danmuChangeRoomId(s){
         if (danmuRoomId != (danmuRoomId = String(s))){
             danmuRoomTitle();
             if (isDanmuOnly&&isDanmuLiveVideo)
-                liveFromRoom();
+                liveFromRoom('', 'changeRoom');
         }
     }
 }
@@ -1822,92 +1823,93 @@ function danmuRoomTitle(n) {
             });
     }
 }
-function liveInfo(title, detail){
-    var s=dateString()+'@'+(title?'['+title+']':'')+' '+(detail?detail:'');
+function liveInfo(title, detail, forceLog){
+    var s=(title?'[':'')+dateString()+'@'+(title?title+']':'')+' '+(detail?detail:'');
     danmu_live_info.innerHTML='<b>'+s+'</b><br>'+danmu_live_info.innerHTML;
-    if (forTestUse)
-        console.log(dateString(), s);
+    if (forTestUse||forceLog)
+        console.log(dateString(), '['+title+']', detail);
 }
 function isLiveOn(){
     return livePlayer!=undefined;
 }
-function liveFromRoom(room){
-    if (room==undefined)
+function liveFromRoom(room, description){
+    if (!mpegts.isSupported())
+        comment('mpegts.js is not supported.');
+    if (!parseInt(room))
         room=danmuRoomId;
     if (liveLastRoom!=String(room))
-        liveLastRoom=String(room);//????
-    livePlayer={};
+        liveLastRoom=String(room);//forget why
+    liveRetry=0;
+    danmuLiveGetLock();//alse to get livePlayer locked
     danmu_live_info.style.opacity=".9";
-    liveInfo('Load:'+room, 'start live video');//4,10000 3,400 2,250 1,150 0,80
+    liveInfo('Load:'+room+(description?':'+description:''), 'get url');//4,10000 3,400 2,250 1,150 0,80
     danmuTrace();
     danmuRead('cors:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=2', function parse(s){
         s=JsonParse(s);
-        if (typeof s.data!="undefined")
+        if (typeof s.data!="undefined"){
             liveFromUrl(s.data.durl.slice(-2)[0].url);
+            liveInfo('Live:qn'+s.data.current_qn, 'start video', true);//4,10000 3,400 2,250 1,150 0,80
+        }
     });
     function liveFromUrl(url, audioOnly){
-        if (mpegts.isSupported()){
-            if (url)
-                liveRetry=0;
-            else
-                url=livePlayer.statisticsInfo.url;
-            danmuLiveOff(true);
-            livePlayer = mpegts.createPlayer({
-                type: 'flv',  // mse, mpegts, m2ts, flv
-                isLive: true,
-                url: url,
-                hasVideo: !audioOnly,
-            }, {
-                liveBufferLatencyChasing: true,
-                liveBufferLatencyMaxLatency: 10,
-                liveBufferLatencyMinRemain: 2.5,
-            });
-            livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
-                if (++liveRetry<3){
-                    //if (errDetail!="HttpStatusCodeInvalid")
-                        liveInfo('Reload:'+liveRetry+':'+errType, errDetail);
-                    liveFromUrl();
-                } else {
-                    liveInfo('Quit:'+liveRetry+':'+errType, errDetail);
-                    danmuLiveOff();
+        if (!url)
+            url=livePlayer.statisticsInfo.url;
+        danmuLiveGetLock();//necessary
+        livePlayer = mpegts.createPlayer({
+            type: 'flv',  // mse, mpegts, m2ts, flv
+            isLive: true,
+            url: url,
+            hasVideo: !audioOnly,
+        }, {
+            liveBufferLatencyChasing: true,
+            liveBufferLatencyMaxLatency: 10,
+            liveBufferLatencyMinRemain: 2.5,
+        });
+        livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
+            if (++liveRetry<3){// errDetail=="HttpStatusCodeInvalid"
+                liveInfo('Reload:'+liveRetry+':'+errType, errDetail);
+                liveFromUrl();
+            } else {
+                liveInfo('Quit:'+liveRetry+':'+errType, errDetail, true);
+                danmuLiveOff();
+            }
+        });
+        livePlayer.attachMediaElement(danmu_live);
+        mpegts.LoggingControl.enableAll=false;
+        mpegts.LoggingControl.enableError=true;
+        mpegts.LoggingControl.enableWarn=true;
+        livePlayer.load();
+        livePlayer.volume=1;
+        livePlayer.muted=false;
+        livePlayer.play();
+        danmu_live.style.opacity='';
+        setTimeout(function lowLoadWatcher(){
+            if (livePlayer&&livePlayer.mediaInfo&&livePlayer.mediaInfo.hasVideo){
+                var info=livePlayer.statisticsInfo;
+                if (info.droppedFrames>500&&info.droppedFrames/info.decodedFrames>1/(3-1)){
+                    liveInfo('Warn:ForceAudio', 'drop('+info.droppedFrames+'/'+(info.decodedFrames+info.droppedFrames)+') > 1/3');
+                    liveFromUrl('', true);
                 }
-            });
-            livePlayer.attachMediaElement(danmu_live);
-            mpegts.LoggingControl.enableAll=false;
-            mpegts.LoggingControl.enableError=true;
-            mpegts.LoggingControl.enableWarn=true;
-            livePlayer.load();
-            livePlayer.volume=1;
-            livePlayer.muted=false;
-            livePlayer.play();
-            danmu_live.style.opacity='';
-            setTimeout(function lowLoadWatcher(){
-                if (livePlayer&&livePlayer.mediaInfo&&livePlayer.mediaInfo.hasVideo){
-                    var info=livePlayer.statisticsInfo;
-                    if (info.droppedFrames>500&&info.droppedFrames/info.decodedFrames>1/(3-1)){
-                        liveInfo('Warn:ForceAudio', 'drop('+info.droppedFrames+'/'+(info.decodedFrames+info.droppedFrames)+') > 1/3');
-                        liveFromUrl('', true);
-                    }
-                }
-            }, 120e3);
-        } else {
-            comment('mpegts.js is not supported.');
-        }
+            }
+        }, 120e3);
     }
 }
 function danmuTrace(force){
     if (forTestUse||force)
         console.warn(isDanmuLive, danmuPop, danmuRoomId);
 }
-function danmuLiveOff(){
+function danmuLiveGetLock(){
+    danmuLiveOff(true);
+}
+function danmuLiveOff(getLock){
     liveLastRoom='';
     if (livePlayer&&livePlayer.destroy){
         livePlayer.destroy();
-        livePlayer=undefined;
+        livePlayer=getLock?{}:undefined;
         liveInfo('Ended:danmu_live');
     }
     danmu_live.style.opacity='0';
-    danmuTrace()
+    danmuTrace();
     setTimeout(function clearInfo(){
         if (!livePlayer)
             danmu_live_info.opacity='0';
