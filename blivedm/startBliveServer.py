@@ -27,20 +27,19 @@ class Resquest(BaseHTTPRequestHandler):
             return
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
         needExtra, cmd_res=controlRoom(self.path, data, method)
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
             count=0
-            while count<60:
+            while count<15:
                 count+=1
                 danmu=readFromLive()
                 if (danmu and danmu!='<br>'):
                     res=res+danmu
                     break
                 sleep(1)
-        if res:
-            self.wfile.write(res.encode('utf-8'))
+        self.end_headers() 
+        return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
