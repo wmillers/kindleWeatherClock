@@ -25,9 +25,6 @@ class Resquest(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
             return
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
         needExtra, cmd_res=controlRoom(self.path, data, method)
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
@@ -41,7 +38,15 @@ class Resquest(BaseHTTPRequestHandler):
                 sleep(1)
         print('<'+str(res)[:20]+'>')
         sys.stdout.flush()
-        return self.wfile.write(res.encode('utf-8')) if res.strip() else self.finish()
+        if res:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html; charset=utf-8')
+            self.end_headers()
+            return self.wfile.write(res.encode('utf-8'))
+        else:
+            self.send_response(204)
+            self.end_headers()
+            return self.end_headers()
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))

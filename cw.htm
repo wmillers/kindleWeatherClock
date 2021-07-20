@@ -286,16 +286,17 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4) {
-            if (xmlhttp.status == 200) {
-                if (f)
-                    f(xmlhttp.responseText, path);
-            } else if (fOnfailed){
-                var s=xmlhttp.status;
-                if (!s)
-                    s+=":CertConfirmMayRequire<F12>";
-                else if (s=='404'||s=='403'||s=='502')
-                    s+='Error<F12>';
-                fOnfailed(s, path);
+            var s=xmlhttp.status;
+            switch (String(s).slice(0,1)){
+                case '2':
+                    if (f)
+                        f(xmlhttp.responseText, path);
+                    break;
+                case '0':
+                case '4':
+                case '5':
+                    fOnfailed(s+(s?'Error<F12>':":CertConfirmMayRequire<F12>"), path);
+                    break;
             }
             if (fOnBoth)
                 fOnBoth();
