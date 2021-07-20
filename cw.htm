@@ -292,7 +292,7 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
             } else if (fOnfailed){
                 var s=xmlhttp.status;
                 if (!s)
-                    s+="CertConfirmMayRequire<F12>";
+                    s+=":CertConfirmMayRequire<F12>";
                 else if (s=='404'||s=='403'||s=='502')
                     s+='Error<F12>';
                 fOnfailed(s, path);
