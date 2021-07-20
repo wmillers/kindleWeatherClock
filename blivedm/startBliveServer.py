@@ -39,7 +39,7 @@ class Resquest(BaseHTTPRequestHandler):
                     res=res+danmu
                     break
                 sleep(1)
-        if not res.trim():
+        if not res.strip():
             res='\n'
         return self.wfile.write(res.encode('utf-8'))
 

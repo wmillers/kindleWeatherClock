@@ -310,7 +310,6 @@ function JsonParse(s, valueOnError){
     try {
         return JSON.parse(s);
     } catch (e) {
-        console.trace();
         console.warn('[JSON@'+dateString()+':Invalid] <'+s+'>');
         return valueOnError==undefined?false:valueOnError;
     }
