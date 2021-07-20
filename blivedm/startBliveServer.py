@@ -36,16 +36,10 @@ class Resquest(BaseHTTPRequestHandler):
                     res=res+danmu
                     break
                 sleep(1)
-        print('<'+str(res)[:20]+'>')
-        sys.stdout.flush()
-        if res:
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            self.end_headers()
-            return self.wfile.write(res.encode('utf-8'))
-        else:
-            self.send_response(204)
-            return self.end_headers()
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.end_headers()
+        return self.wfile.write(('\n' if not res.strip() else res).encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))

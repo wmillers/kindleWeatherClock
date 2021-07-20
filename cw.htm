@@ -289,6 +289,7 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
             var s=xmlhttp.status;
             switch (String(s).slice(0,1)){
                 case '2':
+                case '3':
                     if (f)
                         f(xmlhttp.responseText, path);
                     break;
