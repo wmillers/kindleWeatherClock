@@ -45,7 +45,6 @@ class Resquest(BaseHTTPRequestHandler):
             return self.wfile.write(res.encode('utf-8'))
         else:
             self.send_response(204)
-            self.end_headers()
             return self.end_headers()
 
     def do_POST(self):
