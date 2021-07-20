@@ -288,9 +288,12 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
         if (xmlhttp.readyState == 4) {
             if (xmlhttp.status == 200) {
                 if (f)
-                    f(xmlhttp.responseText);
-            } else if (fOnfailed)
-                fOnfailed(xmlhttp.status);
+                    f(xmlhttp.responseText, path);
+            } else if (fOnfailed){
+                if (!s) s="CertConfirmMayRequire<F12>";
+                if (s=='404'||s=='403'||s=='502') s+='Error<F12>';
+                fOnfailed(s, path);
+            }
             if (fOnBoth)
                 fOnBoth();
         }
@@ -1680,7 +1683,7 @@ function danmuSC(l) {
 }
 function danmuRead(roomId, f) {
     if (++danmuRetry >= 10) {
-        danmuOff('<b>(〃>_<;〃) R</b>' + danmuRetry + '>9 <b>Id</b>' + roomId);
+        danmuOff('<b>(〃>_<;〃) R</b>' + danmuRetry + '>9 <b>Id</b>' + roomId?roomId:danmuRoomId);
         return;
     } else if (danmuRetry > 3)
         danmuInfo();
@@ -1693,9 +1696,12 @@ function danmuRead(roomId, f) {
         else
             f(s);
         danmuReadCount++;
-    }, function fail(n) {
-        if (isDanmuLive && n >= 400 && n < 600)
-            danmuWrite('[local] server return: ' + n + 'R' + danmuRetry + 'S' + Math.floor(getOffsetTime() / 1000) % 3600, false, true);
+    }, function fail(s, p) {
+        if (isDanmuLive){
+            s='[local:' + s + '] R' + danmuRetry + ':' + p;
+            console.warn(dateString(), s);
+            danmuWrite(s, false, true);
+        }
     }, '', '', f == undefined ? function both() {
         var t = getOffsetTime() - danmuLoadTime;
         if (forTestUse&&t >= 5e3)
@@ -1949,10 +1955,12 @@ function liveGetLock(){
 function liveRotate(){
     var isNorm=!danmu_live.style.transform;
     danmu_live.style.transform=isNorm?"rotate(90deg)":'';
-    danmu_live.style.width=isNorm?'120vh':'90vw';
-    danmu_live.style.height=isNorm?'50vw':'95vh';
+    danmu_live.style.width=isNorm?'120vh':'';
+    danmu_live.style.height=isNorm?'50vw':'';
     danmu_live.style.top=isNorm?'5vh':'';
-    danmu_live.style.right=isNorm?'-12.5vw':'-2.5vw';
+    danmu_live.style.right=isNorm?'-12.5vw':'';
+    if (!isNorm)
+        setLiveWidth(true);
 
 }
 function liveOff(getLock){
@@ -2023,8 +2031,6 @@ function hCollect(f) {
     }, hFail);
 }
 function hFail(s) {
-    if (!s) s="HUE cert need to re-confirm, more in F12";
-    if (s=='404'||s=='403'||s=='502') s+='> network ERROR, F12 to check URL';
     console.warn(s);
     comment('<a href="'+hueBaseUrl+hueToken+'">'+s+'</a>');
 }

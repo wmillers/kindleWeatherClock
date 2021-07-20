@@ -41,6 +41,7 @@ class Resquest(BaseHTTPRequestHandler):
                 sleep(1)
         if res:
             self.wfile.write(res.encode('utf-8'))
+        self.finish()
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
