@@ -39,7 +39,8 @@ class Resquest(BaseHTTPRequestHandler):
                     res=res+danmu
                     break
                 sleep(1)
-        print('<'+str(res)+'>', end='')
+        print('<'+str(res)[:20]+'>')
+        sys.stdout.flush()
         return self.wfile.write(res.encode('utf-8')) if res.strip() else self.finish()
 
     def do_POST(self):
