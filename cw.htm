@@ -296,7 +296,7 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
                 case '0':
                 case '4':
                 case '5':
-                    fOnfailed(s+(s?'Error<F12>':":CertConfirmMayRequire<F12>"), path);
+                    fOnfailed(s+(s?'Error(F12)':":CertConfirmMayRequire(F12)"), path);
                     break;
             }
             if (fOnBoth)
@@ -1546,7 +1546,7 @@ function danmuOff(s) {
     clearTimeout(danmuTaskIndexs[1]);
     clearTimeout(danmuTaskIndexs[2]);
     clearTimeout(danmuTaskIndexs[3]);
-    streamer[2]=streamer[3]=undefined;
+    streamer[2]=streamer[3]=[];
     setTimeout(function danmuClear() {
         if (!isDanmuLive&&!isDanmuOnly){
             danmu_fr.style.opacity = 0;
@@ -1558,7 +1558,7 @@ function danmuOff(s) {
     danmuPop = 0;
     danmuInfo();
 }
-function danmuTitle(s, end, i){//s == string (when end == undefined) OR start, i for index
+function danmuTitle(s, end, i){// s == string (when end == undefined) OR start, i for index
     if (i==undefined)
         i=streamer[1].indexOf(danmuRoomId);
     if (typeof end=="number")
@@ -1859,6 +1859,7 @@ function liveInfo(title, detail, forceLog){
     danmu_live_info.innerHTML='<b>'+s+'</b><br>'+danmu_live_info.innerHTML;
     if (forTestUse||forceLog)
         console.log(dateString(), '['+title+']', detail);
+    return s;
 }
 function isLiveOn(){
     return livePlayer!=undefined;
@@ -1876,13 +1877,13 @@ function liveFromRoom(room, description){
         s=JsonParse(s);
         if (typeof s.data!="undefined"){
             liveFromUrl(s.data.durl.slice(-2)[0].url);
-            liveInfo('Live:qn'+s.data.current_qn, 'start video');//4,10000 3,400 2,250 1,150 0,80
+            danmuWrite(liveInfo('Live:qn'+s.data.current_qn, 'start video'), true, true);//4,10000 3,400 2,250 1,150 0,80
         }
     });
     function liveFromUrl(url, audioOnly){
         if (!url)
             url=livePlayer.statisticsInfo.url;
-        liveGetLock();//necessary
+        liveGetLock();// necessary
         livePlayer = mpegts.createPlayer({
             type: 'flv',  // mse, mpegts, m2ts, flv
             isLive: true,
@@ -1894,9 +1895,9 @@ function liveFromRoom(room, description){
             liveBufferLatencyMinRemain: 2,
         });
         livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
-            if (++liveRetry<3){// errDetail=="HttpStatusCodeInvalid"
+            if (++liveRetry<5){// errDetail=="HttpStatusCodeInvalid"
                 liveInfo('Reload:'+liveRetry+':'+errType, errDetail);
-                liveFromUrl();
+                setTimeout(liveFromUrl, Math.pow(liveRetry)*1e3);
             } else {
                 liveInfo('Quit:'+liveRetry+':'+errType, errDetail, true);
                 liveOff();
@@ -1918,12 +1919,13 @@ function liveFromRoom(room, description){
                 var ratio=Math.floor(livePlayer.statisticsInfo.decodedFrames/drop*100)/100;
                 if (drop>1000)
                     if (ratio<1){
-                        liveInfo('Warn:lag:forceAudio', 'drop('+drop+'):ratio('+ratio+') < 1');
                         liveFromUrl('', true);
+                        return liveInfo('Warn:lag:forceAudio', 'drop('+drop+'):ratio('+ratio+') < 1');
                     } else if (ratio<1.8){
-                        liveInfo('Warn:lag:forceSlowRate', 'drop('+drop+'):ratio('+ratio+') < 1.8');
                         danmu_live.playbackRate=.9;
+                        return liveInfo('Warn:lag:forceSlowRate', 'drop('+drop+'):ratio('+ratio+') < 1.8');
                     }
+                danmuWrite('[frame:info] drop('+drop+'):ratio('+ratio+')', true, true);
             }
         }, 120e3);
     }

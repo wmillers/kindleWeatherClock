@@ -27,6 +27,7 @@ class Resquest(BaseHTTPRequestHandler):
             return
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.end_headers()
         needExtra, cmd_res=controlRoom(self.path, data, method)
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
@@ -38,7 +39,6 @@ class Resquest(BaseHTTPRequestHandler):
                     res=res+danmu
                     break
                 sleep(1)
-        self.end_headers() 
         return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
 
     def do_POST(self):
