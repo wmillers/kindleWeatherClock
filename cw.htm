@@ -15,7 +15,7 @@ Note: Most you need to configure are in the Basic
 var forTestUse=false;//If you are not sure, please change it to false
 var info={
     version: '1.6',
-    description: '(bug-fix changes are in commit logs)',
+    description: '(changes are in commit logs)',
     author: 'wmillers@github',
     support: ['time', 'weather',//those two are default modules
         //'TO-DISABLE-EXTRA-MODULES//COMMENT-THE-LINE',
@@ -1481,7 +1481,6 @@ var danmuLast = '';
 var isDanmuWatch=true;
 var livePlayer;
 var liveRetry=0;
-var isLiveLarger=false;;
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1514,7 +1513,7 @@ function danmuOn(roomId) {
         roomId=roomId.replace(/https?:\/\/live\.bilibili\.com\/(\d+)\S*/,'$1');
     if (streamer[0].indexOf(roomId) != -1)
         roomId = streamer[1][streamer[0].indexOf(roomId)];
-    danmuWrite('[ON@'+dateString()+(roomId?':room'+roomId:'')+']'+(isDanmuOnly&&isDanmuLiveVideo?' & live video':''), true, true);
+    danmuWrite('[ON@'+dateString()+(roomId?':room'+roomId:'')+']', true, true);
     danmuStartTime = getOffsetTime();
     danmuRetry = 0;
     danmuPop = 0;
@@ -1621,22 +1620,13 @@ function setDanmuPop(p) {
         }
     }
 }
-function setLiveWidth(isLager){
-    if (isLager!=isLiveLarger){
-        isLiveLarger=isLager;
-        danmu_live_info.style.top=isLager?'0px':'';
-        danmu_live.style.width=isLager?'90vw':'';
-        danmu_live.style.height=isLager?'95vh':'';
-        danmu_live.style.right=isLager?'-2.5vw':'';
-    }
-}
 function danmuBold(s) {return '<b>' + s + '</b>';}
 function danmuReverse(s) {return '<span style="margin-left:2rem"><small>' + s + '</small></span>';}
-function danmuWrite(s, isBold, isReverse) {
+function danmuWrite(s, isBold, isReverse, isInSameLine) {
     if (isBold) s = danmuBold(s);
     if (isReverse) s = danmuReverse(s);
     var buffer = danmu.innerHTML;
-    danmu.innerHTML = (s + (buffer ? '<br>' + buffer : '')).slice(0, danmuMax);
+    danmu.innerHTML = (s + (buffer ? (isInSameLine ? ' ' : '<br>' + buffer) : '')).slice(0, danmuMax);
 }
 function danmuShow(s) {
     if (!s)
@@ -1877,7 +1867,7 @@ function liveFromRoom(room, description){
         s=JsonParse(s);
         if (typeof s.data!="undefined"){
             liveFromUrl(s.data.durl.slice(-2)[0].url);
-            danmuWrite(liveInfo('Live:qn'+s.data.current_qn, 'start video'), true, true);//4,10000 3,400 2,250 1,150 0,80
+            danmuWrite(liveInfo('Live:qn'+s.data.current_qn, 'start video'), true, true, true);//4,10000 3,400 2,250 1,150 0,80
         }
     });
     function liveFromUrl(url, audioOnly){
@@ -1925,19 +1915,17 @@ function liveFromRoom(room, description){
                         danmu_live.playbackRate=.9;
                         return liveInfo('Warn:lag:forceSlowRate', 'drop('+drop+'):ratio('+ratio+') < 1.8');
                     }
-                danmuWrite('[frame:info] drop('+drop+'):ratio('+ratio+')', true, true);
+                return liveInfo('Frame:info', 'drop('+drop+'):ratio('+ratio+')');
             }
         }, 120e3);
     }
 }
 function setLiveWidth(isLager){
-    if (isLager!=isLiveLarger){
-        isLiveLarger=isLager;
-        danmu_live_info.style.top=isLager?'0px':'';
-        danmu_live.style.width=isLager?'90vw':'';
-        danmu_live.style.height=isLager?'95vh':'';
-        danmu_live.style.right=isLager?'-2.5vw':'';
-    }
+    isLager=isLager||!danmu_live.style.right;
+    danmu_live_info.style.top=isLager?'0px':'';
+    danmu_live.style.width=isLager?'90vw':'';
+    danmu_live.style.height=isLager?'95vh':'';
+    danmu_live.style.right=isLager?'-2.5vw':'';
 }
 function liveChangeVolume(value, isQuiet){
     if (livePlayer&&typeof livePlayer.volume=='number'){

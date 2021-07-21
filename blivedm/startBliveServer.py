@@ -90,7 +90,7 @@ def controlRoom(path, data=None, method=None):
     elif (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
-                res='[RECV] Valid Room_id: '+cmd
+                res='[RECV] Valid Room_id: <b>'+cmd+'</b>'
                 new_room_id.value=room_id
                 info['pop']='1'
             else:
@@ -229,7 +229,6 @@ async def initDm(room_id):
 def runDm(s, room_id):
     global que
     que=s
-    aprint('[LIVE] New room: <b>'+str(room_id)+'</b>')
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
