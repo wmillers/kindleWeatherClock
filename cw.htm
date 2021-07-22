@@ -163,7 +163,6 @@ function hasModule(name){
         object-fit: contain;
         object-position: right;
         font-family: sans-serif;
-        font-size: smaller;
         color: hsl(0, 0%, 40%);
         position: absolute;
         top: 5vh;
@@ -252,7 +251,7 @@ function hasModule(name){
     <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
     <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
     <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span class="danmu"></span><video class="danmu_live" onended="liveOff()">video live Only in #danmuOnly mode</video><small><div class="danmu_live" style="z-index: -2;"></div></small></div>
+    <div class="danmu_fr" onclick="danmuSwitch()"><span class="danmu_info"></span><span class="danmu"></span><video class="danmu_live" onended="liveOff()">video live Only in #danmuOnly mode</video><div class="danmu_live"></div></div>
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="initDateFromServer(true)">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
@@ -381,11 +380,11 @@ function danmuSreenOnly(){
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
-    danmu_info.style='font-size:'+(parseFloat(danmuFontSizeFullScreen[0])/1.5+danmuFontSizeFullScreen[1]);
+    danmu_info.style='font-size: '+(parseFloat(danmuFontSizeFullScreen[0])/1.5+danmuFontSizeFullScreen[1]);
     danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: rgba(255, 255, 255, .4);font-size: "+danmuFontSizeFullScreen.join('')+";left: -.01rem";
     document.getElementsByClassName('cleaner')[0].style.display='none';
     danmu.style='background: rgba(0, 0, 0, .15); background-size: 120%';
-    danmu_live_info.style.opacity=".7";
+    danmu_live_info.style="top: 0px; z-index: -2;opacity: .6;font-size: "+danmu_info.style.fontSize;
     danmu_info.innerHTML='<br><br><br><center><big>Due to browser\'s requirement,<br>fullSceen & video need user-gesture to activate.<br><br><u><b>CLICK</b></u> once to start</big><center>';
     danmuAlter=function danmuAlterScreenOnly(beLess){
         if (!beLess){
@@ -416,7 +415,7 @@ function danmuSreenOnly(){
         if (!danmu_live.ended&&danmu_live.paused)
             setTimeout(function act(){
                 if (danmu_live.paused){
-                    liveInfo('Warn:longPaused', '', true);
+                    liveInfo('pausedWarn', '', true);
                     liveFromRoom();
                 }
             }, (2+Math.random())*10e3);
@@ -1773,7 +1772,7 @@ function danmuInfo() {
     if (dTrends.indexOf('.') != -1) {
         dTrends = dTrends.split('.');
         var a = ['sub', 'small', 'sup'][danmuPopTrends + 1];
-        dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + dTrends[1].slice(1);
+        dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + (dTrends[1]?dTrends[1].slice(1):'-');
         dTrends = dTrends.join('');
     }
     if (danmuRetry > 3)
@@ -1846,10 +1845,10 @@ function danmuRoomTitle(n) {
 }
 function liveInfo(title, detail, forceLog){
     var s=(title?title+']':'')+(detail?' '+detail:'');
-    danmu_live_info.innerHTML='<b>'+(title?'[':'')+dateString()+'@'+s+'</b><br>'+danmu_live_info.innerHTML;
+    danmu_live_info.innerHTML=('<b>'+(title?'[':'')+dateString()+'@'+s+'</b><br>'+danmu_live_info.innerHTML).slice(0, 800)+'..';
     s='['+s;
     if (forTestUse||forceLog)
-        console.log(dateString(), s);
+        console.log(dateString('hms'), s);
     return s;
 }
 function isLiveOn(){
@@ -1868,12 +1867,21 @@ function liveFromRoom(room, description){
         s=JsonParse(s);
         if (typeof s.data!="undefined"){
             liveFromUrl(s.data.durl.slice(-2)[0].url);
-            danmuWrite(liveInfo('Live:qn'+s.data.current_qn, 'start video'), true, true, true);//4,10000 3,400 2,250 1,150 0,80
+            danmuWrite(liveInfo('Live:qn'+s.data.current_qn, 'Start'), true, true, true);//4,10000 3,400 2,250 1,150 0,80
         }
     });
+    var lastUrlCache='';
     function liveFromUrl(url, audioOnly){
-        if (!url)
-            url=livePlayer.statisticsInfo.url;
+        if (url)
+            lastUrlCache=url;
+        else {
+            if (lastUrlCache)
+                url=lastUrlCache;
+            else {
+                liveInfo('Quit:'+liveRetry, 'Empty lastUrlCache', true);
+                return false;
+            }
+        }
         liveGetLock();// necessary
         livePlayer = mpegts.createPlayer({
             type: 'flv',  // mse, mpegts, m2ts, flv
@@ -1888,7 +1896,7 @@ function liveFromRoom(room, description){
         livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
             if (++liveRetry<5){// errDetail=="HttpStatusCodeInvalid"
                 liveInfo('Reload:'+liveRetry+':'+errType, errDetail);
-                setTimeout(liveFromUrl, Math.pow(liveRetry)*1e3);
+                setTimeout(liveFromUrl, Math.pow(liveRetry, 2)*1e3);
             } else {
                 liveInfo('Quit:'+liveRetry+':'+errType, errDetail);
                 liveOff();
@@ -1911,19 +1919,18 @@ function liveFromRoom(room, description){
                 if (drop>1000)
                     if (ratio<1){
                         liveFromUrl('', true);
-                        return liveInfo('Warn:lag:forceAudio', 'drop('+drop+'):ratio('+ratio+') < 1', true);
+                        return liveInfo('warnLag:forceAudio', 'D'+drop+':R'+ratio+' < 1', true);
                     } else if (ratio<1.8){
                         danmu_live.playbackRate=.9;
-                        return liveInfo('Warn:lag:forceSlowRate', 'drop('+drop+'):ratio('+ratio+') < 1.8', true);
+                        return liveInfo('warnLag:forceSlowRate', 'D'+drop+':R'+ratio+' < 1.8', true);
                     }
-                return liveInfo('Frame:info', 'drop('+drop+'):ratio('+ratio+')', true);
+                return liveInfo('frameInfo', 'D'+drop+':R'+ratio, true);
             }
         }, 120e3);
     }
 }
 function setLiveWidth(isLager){
     isLager=isLager||!danmu_live.style.right;
-    danmu_live_info.style.top=isLager?'0px':'';
     danmu_live.style.width=isLager?'90vw':'';
     danmu_live.style.height=isLager?'95vh':'';
     danmu_live.style.right=isLager?'-2.5vw':'';
