@@ -90,7 +90,7 @@ def controlRoom(path, data=None, method=None):
     elif (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
-                res='[RECV] Valid Room_id: <b>'+cmd+'</b>'
+                res='[RECV] RoomId<b>'+cmd+'</b>'
                 new_room_id.value=room_id
                 info['pop']='1'
             else:
@@ -221,7 +221,6 @@ async def initDm(room_id):
         # future = client.stop()
         # 或者
         # future.cancel()
-
         await future
     finally:
         await client.close()

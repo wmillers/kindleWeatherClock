@@ -779,7 +779,7 @@ var help = {
 };
 [].push.apply(help.help = help.func, help.vari);
 function correctPrompt() {
-    var userInput = prompt(timeOffsetFormat(3) + '\nTo Manually change kindle system time:\n;st ' + dateString('', 'YMdhm') + '\n\nPlease ENTER number:\nformat: ' + dateString('', 'hms').replace(/:/g, '') + ' (hhmmss->' + dateString('', 'hms') + ')\n* 123456 means reset *\n' + help.help);
+    var userInput = prompt('Change kindle time: [;st ' + dateString('YMdhm') + ']\nDisable sleep: [~ds]\nPlease INPUT Time (hhmmss) or Cmd:\n' + 'Format: [' + dateString('hms').replace(/:/g, '') + '] ([123456] means reset)\nCMDs: [' + help.help+']');
     if (!timeCorrect(userInput))
         try {
             if (help.vari.indexOf(userInput) != -1)
@@ -1212,7 +1212,12 @@ function dMs(t, ms) {return (t - getOffsetTime()) / (!ms ? 1 : ms);}
 function dateString(timeStamp, format) {
     var s = '';
     var all = 'YMdhms';
-    var date = timeStamp ? new Date(timeStamp) : getOffsetDate();
+    var date = getOffsetDate();
+    if (timeStamp)
+        if (timeStamp.match(/\d/))
+            date = new Date(timeStamp);
+        else
+            format = timeStamp;
     if (!format) format = 'hm';
     var res = [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
     for (var i = 0; i < all.length; i++)
@@ -1326,7 +1331,7 @@ function showIcs(keep) {
     } else {
         if (tickImg) t.removeChild(tickImg);
         var limit = (tickListStatus % 3 == 1) ? 5 : tickListMaxLine;
-        var s = '<tr><td style="opacity:.3">' + dateString(0) + '<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
+        var s = '<tr><td style="opacity:.3">' + dateString() + '<span style="opacity:0">100.00</span></td><td style="font-size:1.5rem;opacity:0;line-height:0">1000</td></tr>';
         var cross30;
         for (var j in tickList) {
             var l = tickList[j];
@@ -1608,7 +1613,7 @@ function setDanmuPop(p) {
             danmuAlter(true);
         else if (p == 1) {
             danmuAlter(true);
-            danmuWrite('TRANSMIT' + dateString(getOffsetTime(), 'hm'), true);
+            danmuWrite('TRANSMIT' + dateString(), true);
         } else if (old == 9999 || (old == 1 && p > 1))
             danmuAlter(false);
         if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&isDanmuLiveVideo){
@@ -1654,7 +1659,7 @@ function danmuShow(s) {
         if (sn[i][0] == '[' && sn[i].indexOf(']') != -1)
             sn[i] = danmuReverse(sn[i]);
         if (sn[i] && sn[i].indexOf('[CAFFEINE]') == -1)
-            s.push((danmuPop <= 1 ? '<small>' + dateString(false, 'hm') + ' </small>' : '') + sn[i]);
+            s.push((danmuPop <= 1 ? '<small>' + dateString() + ' </small>' : '') + sn[i]);
     }
     s = s.join("<br>");
     if (danmuPop != 1 && s.indexOf('[RECV]') == -1 && s.indexOf('[SLEEP]') != -1)
@@ -1768,11 +1773,11 @@ function danmuInfo() {
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamer[2][i]&&danmuRoomId!=i)
                 liveStatus+='| '+atag(streamer[2][i]+' '+(streamer[3][i]==undefined?'':streamer[3][i]), false, "danmuOn("+streamer[1][i]+")", streamer[0][i]);
-    var dTrends = String(danmuPop < 1e4 ? (danmuPop < 1e3 ? danmuPop : Math.floor(danmuPop / 1e2) / 10) : Math.floor(danmuPop / 1e3) / 10 + '万');
+    var dTrends = danmuPop < 1e4 ? (danmuPop < 1e3 ? String(danmuPop) : Math.floor(danmuPop / 1e2) / 10 + 'K'): Math.floor(danmuPop / 1e3) / 10 + '万';
     if (dTrends.indexOf('.') != -1) {
         dTrends = dTrends.split('.');
         var a = ['sub', 'small', 'sup'][danmuPopTrends + 1];
-        dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + (dTrends[1]?dTrends[1].slice(1):'-');
+        dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + dTrends[1].slice(1);
         dTrends = dTrends.join('');
     }
     if (danmuRetry > 3)
@@ -1919,10 +1924,10 @@ function liveFromRoom(room, description){
                 if (drop>1000)
                     if (ratio<1){
                         liveFromUrl('', true);
-                        return liveInfo('warnLag:forceAudio', 'D'+drop+':R'+ratio+' < 1', true);
+                        return liveInfo('lagWarn:forceAudio', 'D'+drop+':R'+ratio+' < 1', true);
                     } else if (ratio<1.8){
                         danmu_live.playbackRate=.9;
-                        return liveInfo('warnLag:forceSlowRate', 'D'+drop+':R'+ratio+' < 1.8', true);
+                        return liveInfo('lagWarn:forceSlowRate', 'D'+drop+':R'+ratio+' < 1.8', true);
                     }
                 return liveInfo('frameInfo', 'D'+drop+':R'+ratio, true);
             }
