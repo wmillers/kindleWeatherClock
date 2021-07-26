@@ -37,9 +37,10 @@ Extra code needed to add in the config file is in the function's comments before
 
 ### 滴答清单(Ticktick Reminder)
 由于浏览器跨域限制，需要反向代理滴答清单订阅网址。  
-将该代码前注释中的`location /ics/ {..}`代码复制到Nginx配置文件中，并修改`https://xxx/basic.ics`处的网址为你的滴答清单任务订阅网址。  
+将该代码前注释中的`location /ics/ {..}`代码复制到Nginx配置文件中，并修改`https://xxx/basic.ics`处的网址为你的滴答清单任务订阅网址。另外请将`//TIMEZONE-NOTE`所在行的时区信息`DTSTART;TZID=`修改为滴答清单使用的。  
 You need to add reverse proxy to the Ticktick Reminder task subscription url to avoid browser's CORS error.  
 Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/basic.ics` url to your personal subsciption url.  
+Also, edit the `DTSTART;TZID=` timezone to your Ticktick Reminder used in the line where commented with `//TIMEZONE-NOTE`.
 
 ### B站直播弹幕(Bilibili Live Danmu)
 备注：弹幕全屏功能（不是全窗口功能）在其他系统的浏览器中也可以使用，开启方法为在网址后添加`#danmuOnly()`或者点击星期栏输入`danmuOnly()`。

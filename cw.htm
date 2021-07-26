@@ -1255,7 +1255,7 @@ function getIcs() {httpReq("/ics/", function a(s) {readIcs(s); showIcs(true);}, 
 function readIcs(s) {
     s = s.replace(/\r/g, '').split('\n');
     var r = [];
-    var tag = ['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER', 'RRULE'];
+    var tag = ['DTSTART', 'DTSTART;VALUE=DATE', 'SUMMARY', 'DESCRIPTION', 'TRIGGER', 'RRULE', 'DTSTART;TZID=Asia/Shanghai'];//TIMEZONE-NOTE
     for (var i = 0; i < s.length; i++) {
         var splitter = s[i].indexOf(':');
         var line = [s[i].slice(0, splitter).trim(), s[i].slice(splitter + 1).trim()];
@@ -1263,19 +1263,25 @@ function readIcs(s) {
             if (line[1] == 'VEVENT')
                 r.push({});
         } else if (tag.indexOf(line[0]) != -1 && r.length != 0 && r[r.length - 1][line[0]] == undefined) {
-            if (line[0] == tag[0])
-                line[1] = Date.parse(line[1].slice(0, 4) + '-' + line[1].slice(4, 6) + '-' + line[1].slice(6, 11) + ':' + line[1].slice(11, 13) + ':' + line[1].slice(13)) + (new Date().getTimezoneOffset() + 480) * 60 * 1000;
-            else if (line[0] == tag[1]) {
+            switch (line[0]){
+            case tag[6]:
+                line[0]=tag[0];
+            case tag[0]:
+                line[1] = Date.parse(line[1].slice(0, 4) + '-' + line[1].slice(4, 6) + '-' + line[1].slice(6, 11) + ':' + line[1].slice(11, 13) + ':' + line[1].slice(13) + (line[1].slice(-1).toUpperCase()!='Z'?'Z':'')) + (new Date().getTimezoneOffset() + 480) * 60 * 1000;//TIMEZONE-NOTE
+                break;
+            case tag[1]:
                 line[0] = tag[0]
                 line[1] = Date.parse(line[1].slice(0, 4) + '-' + line[1].slice(4, 6) + '-' + line[1].slice(6, 8) + 'T08:00:00Z');
                 r[r.length - 1]['isDateOnly'] = true;
-            } else if (line[0] == tag[3]) {
+                break;
+            case tag[3]:
                 for (var j = i + 1; j < s.length && s[j][0] == ' '; j++)
                     line[1] += s[j].slice(1);
                 line[1] = line[1].replace(/\\n|\\|\n/g, '').trim();
                 if (line[1].slice(0, 2) == '- ' && line[1].indexOf(' - ') != -1)
                     line[1] = line[1].slice(2).replace(/ - /g, ' / ');
-            } else if (line[0] == tag[5]) {
+                break;
+            case tag[5]:
                 r[r.length - 1]['FREQ'] = '';
                 line[1] = line[1].split(';');
                 for (var j in line[1]) {
@@ -1352,12 +1358,18 @@ function showIcs(keep) {
                     cross30 = adD;
                 if (adD >= 30 && cross30 < 30) {
                     cross30 = 31;
-                    td_divider = ' style="border-top:3px dotted;"';
+                    td_divider = ' style="border-top:3px dotted;';
                 } else
-                    td_divider = '';
-                var sude = (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25) ? [l[i].SUMMARY.slice(0, 10), (l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim()] : [(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim(), ''];
+                    td_divider = ' style="';
+                if (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25){
+                    var sum=l[i].SUMMARY.slice(0, 10);
+                    var des=(l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim();
+                } else {
+                    var sum=(l[i].SUMMARY + ' ' + l[i].DESCRIPTION).trim();
+                    var des='';
+                }
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + '>' + dateString(l[i].DTSTART, 'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1.2rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sude[0] + '</span>' + '<span style="background:white;">' + sude[1] + '</span></td></tr>';
+                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + (l[i].isDateOnly?'text-align: center;':"") + '">' + dateString(l[i].DTSTART, l[i].isDateOnly?'Md':'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1.2rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sum + '</span>' + '<span style="background:white;">' + des + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
@@ -2029,7 +2041,7 @@ var home = document.getElementsByClassName('home')[0];
 var hueUser = {"devicetype": 'A 3-switch kindle-based controller.'};
 var switchs = {};//{1:{on:false, name:"Somelight", reachable:true}}
 var hLast = 0;
-var hPreventNetworkError=(hueBaseUrl=='/hue/')?false:true;
+var hPreventNetworkError=hueBaseUrl!='/hue/';
 function hHelp() {
     hFail('1. Press the Hue Link button 2. Run hReg() 3. Change the hueToken in this page file');
     alert('hueToken in *Basic Settings* is invalid');
@@ -2090,7 +2102,7 @@ function hSwitch(n) {
                         hCollect();
                     else
                         comment(JSON.stringify(s));
-                }, hFail, JSON.stringify({'on': !switchs[n].on}), 'PUT', isFastLoad?window.close:undefined);
+                }, hFail, JSON.stringify({'on': !switchs[n].on}), 'PUT', isFastLoad&&!isDanmuOnly?window.close:undefined);
             });
         });
 }
