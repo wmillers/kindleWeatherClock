@@ -46,8 +46,8 @@ Also, edit the `DTSTART;TZID=` timezone to your Ticktick Reminder used in the li
 备注：弹幕全屏功能（不是全窗口功能）在其他系统的浏览器中也可以使用，开启方法为在网址后添加`#danmuOnly()`或者点击星期栏输入`danmuOnly()`。
 Note: the fullscreen mode (not the fullwindow mode) of danmu is adapted to other platform (Win 10, ios, Android). To use it add the `#danmuOnly()` behind the url link ,or click the week on the page and input `danmuOnly()` in the prompt window.
 
-根据`cw.htm`文件弹幕功能代码段前的注释安装依赖。将`location /blive/ {..}`中内容复制到Nginx配置文件中。进入`blivedm`文件夹，`python3 startBliveServer.py`运行弹幕获取服务端。  
-Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`.  
+根据`cw.htm`文件弹幕功能代码段前的注释安装依赖。将`location /blive/ {..}`中内容复制到Nginx配置文件中。进入`blivedm`文件夹，`python3 startBliveServer.py`运行弹幕获取服务端。如果要修改内置的房间号，搜索`var streamer`，必填内容为`[0]`主播名、`[1]`房间数字id，`[4]`为选填的对应房间预置音量（0到1之间的小数）。  
+Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`. If you want to change the preset room, search and edit content after `var streamer`. The followings are neccessary: `streamer[0]` streamer's name, `[1]` streamer's room id (number) and the optional one: `[4]` preset live video volume (float, between 0 and 1).  
 
 ### 智能家居Hue(Home Smart for Philips-Hue)
 适配飞利浦Hue智能家居的开关。Hue中继桥的api带CORS跨域操作头，可以不需要手动代理，但是为了稳定性，此处仍然提供手动代理的步骤：将该代码前注释中的`location /hue/ {..}`代码复制到Nginx配置文件中。如果不需要手动代理，则将网页代码中`hueBaseUrl`变量修改为`//philips-hue/api/`。  
