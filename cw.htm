@@ -33,7 +33,7 @@ var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     //'danmu',
     'home']
     :[];
-var isDanmuFullWindow=true;//danmu start in fullwindow mode (fullscreen mode activated by danmuSreenOnly())
+var isDanmuFullWindow=true;//danmu start in fullwindow mode (not fullscreen)
 var isDanmuLiveVideo=true;//play live on roomId changed, only in fullscreen (not fullwindow) mode #danmuonly 
 var danmuFontSizeFullScreen=["3", "vw"];//only under fullscreen (not fullwindow) mode #danmuonly
 var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CORS Access-Control-Allow-Origin *
@@ -100,6 +100,16 @@ function hasModule(name){
       z-index: 3;
       font-size: 1.5rem;
     }
+    .home.less {
+        left: 24rem;
+        width: 20rem;
+        font-size: 3rem;
+        font-weight: bold;
+    }
+    .home.more {
+        left: 20rem;
+        width: 24rem;
+    }
     .h_switch {
       height: 20rem;
       width: 4rem;
@@ -119,23 +129,23 @@ function hasModule(name){
       overflow: hidden;
       text-shadow: 2px 2px 0 white, -2px -2px 0 white, -2px 2px 0 white, 2px -2px 0 white;
     }
-    .tl_to {
+    .tickList .tomato {
       display:inline;
       margin-left:-1.6rem;
       position:absolute;
       background: white;
       width: 1.5rem;
     }
-    .tl_co {
+    .tickList .countdown {
       text-align:right;
       font-size:1.5rem;
     }
-    .tl_sude {
+    .tickList .content {
       display: block;
       padding: 0;
       word-break: break-all;
     }
-    .tl_su {
+    .tickList .summary {
       font-size: 1.5rem;
       padding: .16rem 0;
       float: left;
@@ -153,6 +163,33 @@ function hasModule(name){
       word-break: break-all;
       white-space: pre-wrap;
     }
+    .danmu_fr.fullscreen {
+        margin-top: 0;
+        position: fixed;
+        top: 0;
+        margin-left: 0;
+        width: 100%;
+        height: 100%;
+        background: hsl(0,0%,4%);
+        color: rgba(255, 255, 255, .2);
+        left: -.01rem;
+    }
+    .danmu_fr.less {
+        margin-top: 14rem;
+        height: 15rem;
+    }
+    .danmu_fr.more {   
+        background: white;
+        margin-top: 9rem;
+        height: 23rem;
+    }
+    .danmu_fr.fullwindow {
+        background: rgba(255,255,255,.8);
+        margin-top: -6rem;
+        height: 41.6rem;
+        font-size: 6rem;
+        width: 47.5rem;
+    }
     .danmu_info{
       display: block;
       font-size: .6rem;
@@ -169,6 +206,18 @@ function hasModule(name){
         right: 0;
         opacity: 0;
         z-index: -1;
+    }
+    .danmu_live.large {
+        width: 90vw;
+        height: 95vh;
+        right: -2.5vw;
+    }
+    .danmu_live.rotate {
+        transform: rotate(90deg);
+        width: 120vh;
+        height: 50vw;
+        top: 5vh;
+        right: -12.5vw;
     }
     .time {
       font-size: 16rem;
@@ -269,7 +318,7 @@ var basket = document.getElementsByClassName('basket')[0];
 function comment(s, isJam) {
     var lag = 30 * 60 * 1000;
     s = s == undefined ? 'und' : String(s);
-    setTimeout("clearComment()", lag + 1000);
+    setTimeout(clearComment, lag + 1000);
     if (basket.innerHTML.length == 0 || isJam)
         basket.innerHTML = s;
     else
@@ -331,7 +380,7 @@ var isFastLoad = hash != (hash = hash.replace(/#fastload/i, ''))||isDanmuOnly;
 if (isDanmuOnly){
     reduceShadow=function und(){};
     killShadow=reduceShadow;
-    setTimeout(danmuSreenOnly, 200);
+    setTimeout(danmuOnly, 200);
 } else {
     setTimeout(function autoStart(){
         if (!forTestUse)
@@ -377,14 +426,16 @@ var danmuScrollNum='';
 
 var isMouseHidden=false;
 var mouseMoveTime=0;
-function danmuSreenOnly(){
-    danmuMax=3e3;
+//FullScreen
+function danmuOnly(){
+    danmuMax=4e3;
     isDanmuOnly=true;
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
     danmu_info.style='font-size: '+(parseFloat(danmuFontSizeFullScreen[0])/1.5+danmuFontSizeFullScreen[1]);
-    danmu_fr.style="margin-top: 0;position: fixed;top: 0;margin-left: 0;width: 100%;height: 100%;background: hsl(0,0%,4%);color: rgba(255, 255, 255, .3);font-size: "+danmuFontSizeFullScreen.join('')+";left: -.01rem";
+    danmu_fr.classList.add('fullscreen');
+    danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
     document.getElementsByClassName('cleaner')[0].style.display='none';
     danmu.style='background: rgba(0, 0, 0, .15); background-size: 120%';
     danmu_live_info.style="top: 0px; z-index: -2;opacity: .6;font-size: "+danmu_info.style.fontSize;
@@ -433,7 +484,7 @@ function danmuSreenOnly(){
     danmu_fr.onwheel=function changeVolume(e){
         event.preventDefault();
         if (isDanmuScrollInput)
-            danmuScrollCurrentNum=(danmuScrollCurrentNum==undefined)?0:Math.abs(danmuScrollCurrentNum-(e.deltaY>0?1:-1))%10;
+            danmuScrollCurrentNum=(danmuScrollCurrentNum==undefined)?0:(danmuScrollCurrentNum-(e.deltaY>0?1:-1)+10)%10;
         else
             liveChangeVolume(-e.deltaY/500);
         danmuInfo();
@@ -1364,9 +1415,8 @@ function showIcs(keep) {
                     cross30 = adD;
                 if (adD >= 30 && cross30 < 30) {
                     cross30 = 31;
-                    td_divider = ' style="border-top:3px dotted;';
-                } else
-                    td_divider = ' style="';
+                    td_divider = 'border-top:3px dotted; ';
+                }
                 if (l[i].SUMMARY.length + l[i].DESCRIPTION.length > 25){
                     var sum='<b>'+l[i].SUMMARY.slice(0, 10)+'</b>';
                     var des=(l[i].SUMMARY.slice(10) + (l[i].SUMMARY.length > 10 && l[i].DESCRIPTION ? ': ' : '') + l[i].DESCRIPTION.slice(0, 200 - Math.min(10, l[i].SUMMARY.length) * 6)).trim();
@@ -1375,7 +1425,7 @@ function showIcs(keep) {
                     var des='';
                 }
                 var freq = (l[i].FREQ) ? '<sup style="font-size:xx-small;border-radius:20%;border:solid">' + l[i].FREQ + '</sup>' : '';
-                s += '<tr style' + (!dD ? '="font-weight:bold"' : '') + '><td' + td_divider + (l[i].isDateOnly?'text-align: center;':"") + '">' + dateString(l[i].DTSTART, l[i].isDateOnly?'Md':'Mdhm') + '</td><td class="tl_co" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1.2rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tl_to" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="tl_sude"><span class="tl_su"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sum + '</span>' + '<span style="background:white;">' + des + '</span></td></tr>';
+                s += '<tr style="' + td_divider + (!dD ? 'font-weight:bold; ' : '') + '"><td style="' + (l[i].isDateOnly?'text-align: center;':"") + '">' + dateString(l[i].DTSTART, l[i].isDateOnly?'Md':'Mdhm') + '</td><td class="countdown" style="color:hsl(0,0%,' + Math.floor(adD / (!j ? 120 : 480) * 100) + '%);'+(dD<0?'font-size: 1.2rem':'')+'">' + (adD < 7 ? '<img class="tImg" style="height:1.5rem;margin-left:-2rem"><div class="tomato" style="height:' + Math.ceil(adD / 10 * 2) / 2 * 1.5 + 'rem"></div>' : '') + (dD ? dD : '') + '</td><td class="content"><span class="summary"> ' + (!dD ? '<i>' + dHour(l[i].DTSTART) + 'h</i> ' : '') + freq + sum + '</span>' + '<span style="background:white;">' + des + '</span></td></tr>';
             }
         }
         tickTable.innerHTML = s;
@@ -1494,8 +1544,8 @@ if (!isNaN(parseInt(i))){
 var danmuReadCount = 0;
 var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStartTime = 0;
-var streamer = [['dd', 'wt', 'us', 'fu', 'dv', 'tr', 'tr1'],
-    [16548, 733, 4650105, 1954990, 23306811, 2155342, 23132295]];
+var streamer = [['dd', 'wt', 'us', 'fu', 'hs', 'dv', 'tr', 'tr1'],
+    [16548, 733, 4650105, 1954990, 23251644, 23306811, 2155342, 23132295]];
 streamer[2] = space(streamer[0].length-1).split(' ');
 streamer[3] = streamer[2].slice();
 streamer[4] = [.5, .7, .3, .2, .5, .3, 1];
@@ -1565,11 +1615,11 @@ function danmuOn(roomId, withoutFullScreen) {
             break;
         default:
             isDanmuLive = 1;
-            danmuRead(roomId)
-            danmuInfo();
+            danmuRead(roomId);
     }
     danmuAlter(false);
-    setDanmuRoomId(roomId. true);
+    setDanmuRoomId(roomId, true);
+    danmuInfo();
 }
 function danmuOff(s) {
     if (!isDanmuLive)
@@ -1607,12 +1657,8 @@ function danmuAlter(beLess) {
         danmuTitle(0,12);
     if (beLess) {
         danmu.style.background = 'white';
-        danmu_fr.style.background = '';
-        danmu_fr.style.marginTop = '14rem';
-        danmu_fr.style.height = '15rem';
-
-        danmu_fr.style.fontSize="";
-        danmu_fr.style.width="";
+        danmu_fr.classList.remove('more', 'fullwindow');
+        danmu_fr.classList.add('less');
         danmu_info.style.fontSize="";
         danmu_info.style.fontWeight="";
     } else {
@@ -1622,12 +1668,8 @@ function danmuAlter(beLess) {
             danmuInfoUpdate();//on danmuRoomId change => danmuRoomTitle();
         }
         danmu.style.background = '';
-        danmu_fr.style.background = isDanmuFullWindow?'rgba(255,255,255,.8)':'white';
-        danmu_fr.style.marginTop=isDanmuFullWindow?"-6rem":"9rem";
-        danmu_fr.style.height=isDanmuFullWindow?"41.6rem":"23rem";
-
-        danmu_fr.style.fontSize=isDanmuFullWindow?"6rem":"";
-        danmu_fr.style.width=isDanmuFullWindow?"47.5rem":"";
+        danmu_fr.classList.remove('less');
+        danmu_fr.classList.add('more', 'fullwindow');
         danmu_info.style.fontSize=isDanmuFullWindow?"1.6rem":"";
         danmu_info.style.fontWeight=isDanmuFullWindow?"bold":"";
     }
@@ -1647,13 +1689,19 @@ function setDanmuPop(p) {
         } else if (old == 9999 || (old == 1 && p > 1))
             danmuAlter(false);
         if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&isDanmuLiveVideo){
-            if (p<6e4)
+            if (forTestUse)
+                console.log(p);//(1, 1e4) [2e4, 6e4) (9e4, )
+            if (p<1e4){
+                setLiveWidth(true);
+                danmu_fr.style.fontSize=(parseFloat(danmuFontSizeFullScreen[0])/1.35+danmuFontSizeFullScreen[1]);
+            } else if (p>=2e4&&p<6e4)
                 setLiveWidth(true);
             else if (p>9e4)
                 setLiveWidth(false);
             if (isLiveOff())
                 liveFromRoom('changePop');
         }
+        danmuInfo();
     }
 }
 function danmuWrite(s, isBold, isReverse, isInSameLine, stillShowDuplicate) {
@@ -1778,6 +1826,7 @@ function setDanmuRoomId(s, force){
             if (isDanmuOnly&&isDanmuLiveVideo)
                 liveFromRoom('changeRoom');
             danmuRoomTitle();
+            danmuInfo();
         }
     }
 }
@@ -1792,7 +1841,6 @@ function danmuInfoUpdate(s) {
                 danmuSC(info.super_chat);
                 var p = parseInt(info.pop);
                 setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
-                danmuInfo();
             }
         }
     }
@@ -1800,7 +1848,7 @@ function danmuInfoUpdate(s) {
 function danmuInfo() {
     var status = ['OFF', streamer[2][danmuRoomIndex] ? streamer[2][danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
-    var extraButton=isDanmuOnly?atag(' ▼<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'</small>')+' ', false, 'hSwitch(1)', '灯 Let there be light')+atag('▲'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 scroll to input number, click once to next, twice to confirm '):'';
+    var extraButton=isDanmuOnly?atag(' ▲<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 Let there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 scroll to input number, click once to next, twice to confirm '):'';
     if (!isOnKindle)
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamer[2][i]&&danmuRoomId!=i)
@@ -1959,8 +2007,10 @@ function liveFromRoom(description){
         });
         livePlayer.attachMediaElement(danmu_live);
         mpegts.LoggingControl.enableAll=false;
-        //mpegts.LoggingControl.enableError=true;// only on http code error, useless
-        //mpegts.LoggingControl.enableWarn=true;// too many audio frame correction warns
+        if (forTestUse){
+            mpegts.LoggingControl.enableError=true;// only on http code error, useless
+            mpegts.LoggingControl.enableWarn=true;// too many audio frame correction warns
+        }
         livePlayer.load();
         livePlayer.volume=streamer[4][danmuRoomIndex];
         livePlayer.muted=false;
@@ -1988,10 +2038,8 @@ function liveFromRoom(description){
     }
 }
 function setLiveWidth(isLager){
-    isLager=isLager||!danmu_live.style.right;
-    danmu_live.style.width=isLager?'90vw':'';
-    danmu_live.style.height=isLager?'95vh':'';
-    danmu_live.style.right=isLager?'-2.5vw':'';
+    danmu_live.classList.toggle('large', isLager);
+    danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
 }
 function liveChangeVolume(value){
     if (livePlayer&&typeof livePlayer.volume=='number'){
@@ -2007,14 +2055,7 @@ function liveGetLock(s){
     liveOff(true, s?s:'getLock', 'DimGray');
 }
 function liveRotate(){
-    var isNorm=!danmu_live.style.transform;
-    danmu_live.style.transform=isNorm?"rotate(90deg)":'';
-    danmu_live.style.width=isNorm?'120vh':'';
-    danmu_live.style.height=isNorm?'50vw':'';
-    danmu_live.style.top=isNorm?'5vh':'';
-    danmu_live.style.right=isNorm?'-12.5vw':'';
-    if (!isNorm)
-        setLiveWidth(true);
+    danmu_live.classList.toggle('rotate');
 
 }
 function liveOff(getLock, s, bgColor){
@@ -2129,10 +2170,8 @@ function hUpdate() {
         hCollect();
     else {
         home.innerHTML = '';
-        home.style.left = l >= 3 ? "20rem" : "24rem";
-        home.style.width = l >= 3 ? "24rem" : "20rem";
-        home.style.fontSize = l<3 ? "3rem" : "";
-        home.style.fontWeight = l<3 ? "bold" : "";
+        home.classList.toggle('more', l>=3);
+        home.classList.toggle('less', l<3);
         for (var i in switchs) {
             var hs = document.createElement('div');
             var sdcolor=(switchs[i].on ? "black" : "white");
