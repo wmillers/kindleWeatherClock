@@ -93,6 +93,8 @@ def controlRoom(path, data=None, method=None):
                 res='[RECV] RoomId<b>'+cmd+'</b>'
                 new_room_id.value=room_id
                 info['pop']='1'
+            elif room_id==0:
+                res='[RECV] Room keeps'
             else:
                 res='[err] Not in safe range: '+cmd
             needExtra=False
