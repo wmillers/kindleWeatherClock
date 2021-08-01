@@ -40,12 +40,12 @@ var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CORS Access-Control-A
 var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your token, to get: push bridge button and run hReg()
 //*******************END**********************
 
-if (!isOnKindle) console.warn('autostart only enabled on Kindle');
+if (!isOnKindle) console.warn('[autostart:disabled] notKindle');
 window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg))};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
     document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
-    confirm('JS failed, need reload?')?f5():comment('No need to reload');
+    confirm('JS failed, need reload?')?f5():console.error(comment('[js:failed] reloadRejected'));
     }
 }, 4000);
 if (forTestUse)
@@ -98,15 +98,11 @@ function hasModule(name){
       left: 24rem;
       width: 20rem;
       z-index: 3;
-      font-size: 1.5rem;
-    }
-    .home.less {
-        left: 24rem;
-        width: 20rem;
-        font-size: 3rem;
-        font-weight: bold;
+      font-size: 3rem;
+      font-weight: bold;
     }
     .home.more {
+        font-size: 2.5rem;
         left: 20rem;
         width: 24rem;
     }
@@ -494,7 +490,7 @@ function danmuOnly(){
         event.preventDefault();
         var d=e.deltaY<0?1:-1;//~500
         if (isDanmuScrollInput)
-            danmuScrollCurrentNum=(danmuScrollCurrentNum==undefined)?d:(danmuScrollCurrentNum+d+10)%10;
+            danmuScrollCurrentNum=((danmuScrollCurrentNum==undefined?0:danmuScrollCurrentNum)+d+10)%10;
         else
             liveChangeVolume(d/10);
         danmuInfo();
@@ -1576,6 +1572,7 @@ var isDanmuWatch=true;
 var livePlayer;
 var liveRetry=0;
 var liveRetryTimer=0;
+var liveFrameTimer=0;
 function space(n, s) {
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -1603,12 +1600,13 @@ function danmuSwitch() {
 function danmuOn(roomId, withoutFullScreen) {
     if (isDanmuOnly&&!withoutFullScreen)
         danmuFullScreen(true);
-    roomId=String(roomId);
+    roomId=roomId==undefined?'':String(roomId);
     if (roomId.indexOf('http')==0)
         roomId=roomId.replace(/https?:\/\/live\.bilibili\.com\/(\d+)\S*/,'$1');
     if (streamer[0].indexOf(roomId) != -1)
         roomId = streamer[1][streamer[0].indexOf(roomId)];
-    danmuWrite('[ON@'+dateString()+(roomId?':room'+roomId:'')+']', true, true);
+    if (!roomId)
+        danmuWrite('[ON@'+dateString()+']', true, true);
     danmuStartTime = getOffsetTime();
     danmuRetry = 0;
     danmuPop = 0;
@@ -1667,7 +1665,8 @@ function danmuAlter(beLess) {
         danmuTitle(0,12);
     if (beLess) {
         danmu.style.background = 'white';
-        danmu_fr.classList.remove('more', 'fullwindow');
+        danmu_fr.classList.remove('more');
+        danmu_fr.classList.remove('fullwindow');
         danmu_fr.classList.add('less');
         danmu_info.style.fontSize="";
         danmu_info.style.fontWeight="";
@@ -1679,7 +1678,8 @@ function danmuAlter(beLess) {
         }
         danmu.style.background = '';
         danmu_fr.classList.remove('less');
-        danmu_fr.classList.add('more', 'fullwindow');
+        danmu_fr.classList.add('more');
+        danmu_fr.classList.add('fullwindow');
         danmu_info.style.fontSize=isDanmuFullWindow?"1.6rem":"";
         danmu_info.style.fontWeight=isDanmuFullWindow?"bold":"";
     }
@@ -1838,7 +1838,7 @@ function setDanmuRoomId(s, force){
             danmuRoomTitle();
         }
     } else if (!s)
-        danmuRoomTitle();
+        setTimeout(danmuRoomTitle, 10e3);
 }
 function danmuInfoUpdate(s) {
     clearTimeout(danmuTaskIndexs[1]);
@@ -1858,7 +1858,7 @@ function danmuInfoUpdate(s) {
 function danmuInfo() {
     var status = ['OFF', streamer[2][danmuRoomIndex] ? streamer[2][danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
-    var extraButton=isDanmuOnly?atag(' ▲<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 Let there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 scroll to input number, click once to next, twice to confirm '):'';
+    var extraButton=isDanmuOnly?atag(' ▲<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 \nLet there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 \nscroll to input number, click once to next, twice to confirm'):'';
     if (!isOnKindle)
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamer[2][i]&&danmuRoomId!=i)
@@ -2007,11 +2007,11 @@ function liveFromRoom(description){
             liveBufferLatencyMinRemain: 2,
         });
         livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
+            clearTimeout(liveRetryTimer);
             if (++liveRetry<5){// errDetail=="HttpStatusCodeInvalid"
                 liveInfo('Reload:'+liveRetry+':'+errType, errDetail, true, 'burlywood');
-                liveRetryTimer=setTimeout(liveFromUrl, Math.pow(liveRetry, 2)*1e3);
+                liveRetryTimer=setTimeout(liveFromUrl, Math.pow(liveRetry+1, 2)*1e3);
             } else {
-                clearTimeout(liveRetryTimer);
                 liveInfo('Quit:'+liveRetry+':'+errType, errDetail);
                 liveOff(false, liveRetry+':'+errDetail);
             }
@@ -2028,7 +2028,8 @@ function liveFromRoom(description){
         danmu_live.playbackRate=1;
         livePlayer.play();
         danmu_live.style.opacity='1';
-        setTimeout(function lowLoadWatcher(){
+        clearTimeout(liveFrameTimer);
+        liveFrameTimer=setTimeout(function lowLoadWatcher(){
             if (livePlayer&&livePlayer.mediaInfo&&livePlayer.mediaInfo.hasVideo){
                 var drop=livePlayer.statisticsInfo.droppedFrames;
                 var ratio=Math.floor(livePlayer.statisticsInfo.decodedFrames/drop*100)/100;
@@ -2049,7 +2050,10 @@ function liveFromRoom(description){
     }
 }
 function setLiveWidth(isLager){
-    danmu_live.classList.toggle('large', isLager);
+    if (isLager)
+        danmu_live.classList.add('large');
+    else
+        danmu_live.classList.remove('large');
     danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
 }
 function liveChangeVolume(value){
@@ -2181,8 +2185,10 @@ function hUpdate() {
         hCollect();
     else {
         home.innerHTML = '';
-        home.classList.toggle('more', l>=3);
-        home.classList.toggle('less', l<3);
+        if (l>=3)
+            home.classList.add('more');
+        else
+            home.classList.remove('more');
         for (var i in switchs) {
             var hs = document.createElement('div');
             var sdcolor=(switchs[i].on ? "black" : "white");
