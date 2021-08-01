@@ -949,7 +949,7 @@ function weather(connected) {
         ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
         document.getElementById('net').innerHTML = '完成上一次同步';
     } else {
-        console.warn('iframe refresh is disabled in test and Windows');
+        console.warn('[iframeRefresh:disabled] notTestAndWindows');
         document.getElementById('net').innerHTML = '测试模式';
     }
     document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
@@ -1550,13 +1550,12 @@ if (!isNaN(parseInt(i))){
 var danmuReadCount = 0;
 var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStartTime = 0;
-var streamer = [['dd', 'wt', 'us', 'fu', 'hs', 'dv', 'tr', 'tr1'],
-    [16548, 733, 4650105, 1954990, 23251644, 23306811, 2155342, 23132295]];
+var streamer = [['dd', 'wt', 'us', 'fu', 'hs', 'dv', 'tr', 'tr1', 'tz'],
+    [16548, 733, 4650105, 1954990, 23251644, 23306811, 2155342, 23132295, 3807617]];
 streamer[2] = space(streamer[0].length-1).split(' ');
 streamer[3] = streamer[2].slice();
-streamer[4] = [.5, .7, .3, .2, .5, .3, 1];
+streamer[4] = [.4, .8, .3, .15, .5, .3, .5, .5, 1];
 streamer[4][-1]=.5;
-var streamerCount=streamer[0].length;
 var danmuControl = ['history 历史弹幕', 'bye 停止', 'kick 下线', 'info 统计', 'w 切换 watch', 'js[:] 远程脚本', 'time 时间戳', 'f 全屏', 'url 添加 #danmuonly'];
 var danmuRoomId = '';
 var danmuRoomIndex=-1;
@@ -1700,14 +1699,8 @@ function setDanmuPop(p) {
             danmuAlter(false);
         if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&isDanmuLiveVideo){
             if (forTestUse)
-                console.log(p);//(1, 1e4) [2e4, 6e4) (9e4, )
-            if (p<1e4){
-                setLiveWidth(true);
-                danmu_fr.style.fontSize=(parseFloat(danmuFontSizeFullScreen[0])/1.35+danmuFontSizeFullScreen[1]);
-            } else if (p>=2e4&&p<6e4)
-                setLiveWidth(true);
-            else if (p>9e4)
-                setLiveWidth(false);
+                console.log(p);
+            setLiveWidth();
             if (isLiveOff())
                 liveFromRoom('changePop');
         }
@@ -1870,9 +1863,11 @@ function danmuInfo() {
         dTrends[1] = '<' + a + '>' + dTrends[1][0] + '</' + a + '>' + dTrends[1].slice(1);
         dTrends = dTrends.join('');
     }
+    var signal=Math.floor(streamer[2].filter(function f(s){return s!=''}).length/streamer[2].length*5);
+    signal=new Array(signal+1).join('•')+new Array(5-signal+1).join('◦');
     if (danmuRetry > 3)
         status = ' ⁉' + danmuRetry;
-    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + streamer[2].reduce(function a(s, n) {return s + (n ? '•' : '◦')}, '') + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1) + atag(' [' +dateString() + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>':'') + danmuSuperChat;
+    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamer[2].join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1) + atag(' [' +dateString() + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>':'') + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
         return (isOnKindle?'<a':'<a style="text-decoration: none;color: inherit;' + (href?'" href="'+href+'" target="_blank"':'cursor: pointer"'))+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
@@ -1944,7 +1939,7 @@ function danmuRoomTitle(n) {
                 var stat = JsonParse(s);
                 if (stat.code == 0) {
                     s = [stat.data.name, stat.data.live_room.title];
-                    var limit=(isDanmuFullWindow?28:18)-streamerCount;// (28, 18)-6=(22, 12)
+                    var limit=isDanmuFullWindow?23:13;
                     danmuTitle(((s[0].length + s[1].length > limit ? s[0].slice(-3) + s[1] : s[0] + s[1])+ ' ').slice(0, limit), '', streamer[1].indexOf(i));
                     danmuInfo();
                 }
@@ -2050,11 +2045,23 @@ function liveFromRoom(description){
     }
 }
 function setLiveWidth(isLager){
-    if (isLager)
+    if (danmuPop>1&&isLager==undefined)//(1, 1e4) [2e4, 7e4) [8e4, )
+        if (danmuPop<1e4){
+            isLager=true;
+            danmu_fr.style.fontSize=(parseFloat(danmuFontSizeFullScreen[0])/1.35+danmuFontSizeFullScreen[1]);
+        } else if (danmuPop>=2e4&&danmuPop<7e4)
+            isLager=true;
+        else if (danmuPop>=8e4){
+            isLager=false;
+            danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
+        }
+    if (isLager){
         danmu_live.classList.add('large');
-    else
+        danmu.style.color='';
+    } else if (isLager!=undefined){
         danmu_live.classList.remove('large');
-    danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
+        danmu.style.color='rgba(255, 255, 255, .3)';
+    }
 }
 function liveChangeVolume(value){
     if (livePlayer&&typeof livePlayer.volume=='number'){
