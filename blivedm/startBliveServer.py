@@ -90,7 +90,7 @@ def controlRoom(path, data=None, method=None):
     elif (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
-                res='[RECV] RoomId<b>'+cmd+'</b>'
+                res='[RECV] Room<b>'+cmd+'</b>'
                 new_room_id.value=room_id
                 info['pop']='1'
             elif room_id==0:
