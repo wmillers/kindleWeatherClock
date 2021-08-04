@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-import sys, os
+import sys, os, subprocess
 import blivedm
 from time import sleep, time, asctime
 from multiprocessing import Process, Queue, Value
@@ -109,7 +109,7 @@ def controlRoom(path, data=None, method=None):
         elif (cmd=='upgrade'):
             new_room_id.value=-3
             info['pop']='1'
-            res='[UPGRADE] it takes a while'
+            res='[UPGRADE] it depends on network'
             needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
@@ -178,8 +178,11 @@ def initServer(r, c1, c2, c3):
     server = ThreadedHTTPServer(host, Resquest)
     try:
         server.serve_forever()
-    except KeyboardInterrupt:
-        pass
+    except Exception as e:
+        print('[initServer:8099] '+str(e))
+    else:
+        print('[initServer:8099] normal exit')
+    new_room_id.value=-1
 
 
 def aprint(a):
@@ -289,22 +292,18 @@ def main():
             if (new_room_id.value<0):
                 if (new_room_id.value==-1):
                     print('[deactivate] goodbye')
-                    kill(p)
-                    kill(c)
                     isOn=False
-                if (new_room_id.value==-2):
+                elif (new_room_id.value==-2):
                     print('[kick&kill] but no new room, restart script')
                     setSleep(que, status_code, 3)
                     isOn=False
                     room_id=0
-                    kill(p)
-                    kill(c)
                     os.execv(sys.executable, ['python3'] + sys.argv)
-                if (new_room_id.value==-3):
+                elif (new_room_id.value==-3):
                     if (os.access('replaceBlive.sh', os.X_OK)):
                         print('[upgrade] it takes a while')
                         setSleep(que, status_code, 3)
-                        os.execv(sys.executable, ['bash', 'replaceBlive.sh'])
+                        subprocess.call('./replaceBlive.sh')
                     else:
                         setSleep(que, status_code, 4)
             elif (new_room_id.value!=room_id):
@@ -319,6 +318,7 @@ def main():
                 c.start()
             new_room_id.value=0
     print('***  END  at '+asctime()+' ***')
+    sys.exit()
 
 if __name__ == '__main__':
     main()
