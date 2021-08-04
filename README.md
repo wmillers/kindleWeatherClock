@@ -3,15 +3,15 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wmillers/kindleweatherclock/badge/master)](https://www.codefactor.io/repository/github/wmillers/kindleweatherclock/overview/master)  
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/wmillers/kindleWeatherClock?color=dodgerblue&style=flat-square)
 ![last_commit](https://img.shields.io/github/last-commit/wmillers/kindleWeatherClock.svg?color=aquamarine&style=flat-square)  
-## 介绍(Introduce):  
-前言：本多功能 Kindle 页面的部分功能由于部署在服务端所以额外需要安装，请务必阅读本文“可选-需要手动部署”段并修改附带的`nginx.conf`实例文件。
+## 介绍 Introduce:  
+前言：多功能 Kindle 页面的部分功能由于部署在服务端所以额外需要安装，请务必阅读本文“可选-需要手动部署”段修改并应用附带的`nginx.conf`实例文件。  
 Preface: some functions of this Kindle Page need to be mannually installed due to their dependancy on the server. Please follow the section Optional-How-to-Install and edit the `nginx.conf` example file (or create a new config file) as your own's one.
 
 功能包括时间显示、天气预报、番茄时钟、滴答清单、B站直播弹幕、智能家居Hue。屏幕尺寸适配KPW3，如有需要可以自行调整css。  
 Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu & Home Smart for Philips-Hue. Display For KPW3, but you can change it by edit css.
 
-## 功能(Function):
-|ZH|EN|Default|How to run|使用按钮|
+## 功能 Function:
+|ZH|EN|Default|Activate|使用方式|
 |-|-|-|-|-|
 |时间显示|Time Display|√|-|-|
 |天气预报|Weather|√|-|-|
@@ -30,27 +30,27 @@ danmu <b>TOMAMATO<br>
 同步时间：2019-05-26 03:54:00 完成上一次同步</font>
 
 ## 可选-需要手动部署(Optional-How-to-Install):
-上功能表中打勾项表示无需额外安装，在Kindle中打开网页即可，打叉项表示该功能需要额外安装（需要一个Nginx服务端）。  
-需要在服务端配置文件中添加的代码在每个功能块的注释中。  
+功能表中打勾项表示无需额外安装，Kindle中打开网页即可使用，打叉项表示该功能需要额外安装（Nginx服务端）。  
+在服务端配置文件中需要添加的代码包含在每个功能块的注释中。  
 Checked functions in the table above mean these are standalone, otherwise means these are relied on a running Nginx server with a proper config.  
-Extra code needed to add in the config file is in the function's comments before its code area.  
+Extra codes for the config file are in the function's comments before its code area.  
 
 ### 滴答清单(Ticktick Reminder)
 由于浏览器跨域限制，需要反向代理滴答清单订阅网址。  
 将该代码前注释中的`location /ics/ {..}`代码复制到Nginx配置文件中，并修改`https://xxx/basic.ics`处的网址为你的滴答清单任务订阅网址。另外请将`//TIMEZONE-NOTE`所在行的时区信息`DTSTART;TZID=`修改为滴答清单使用的。  
 You need to add reverse proxy to the Ticktick Reminder task subscription url to avoid browser's CORS error.  
 Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/basic.ics` url to your personal subsciption url.  
-Also, edit the `DTSTART;TZID=` timezone to your Ticktick Reminder used in the line where commented with `//TIMEZONE-NOTE`.
+Also, change the `DTSTART;TZID=` timezone with your Ticktick Reminder used. You can find it with the comment `//TIMEZONE-NOTE`.
 
 ### B站直播弹幕(Bilibili Live Danmu)
-备注：弹幕全屏功能（不是全窗口功能）在其他系统的浏览器中也可以使用，开启方法为在网址后添加`#danmuOnly()`或者点击星期栏输入`danmuOnly()`。
+备注：弹幕全屏功能（不是全窗口功能）为其他系统的浏览器中所属功能，开启方法为在网址后添加`#danmuOnly()`或者点击星期栏输入`danmuOnly()`。  
 Note: the fullscreen mode (not the fullwindow mode) of danmu is adapted to other platform (Win 10, ios, Android). To use it add the `#danmuOnly()` behind the url link ,or click the week on the page and input `danmuOnly()` in the prompt window.
 
-根据`cw.htm`文件弹幕功能代码段前的注释安装依赖。将`location /blive/ {..}`中内容复制到Nginx配置文件中。进入`blivedm`文件夹，`python3 startBliveServer.py`运行弹幕获取服务端。如果要修改内置的房间号，搜索`var streamer`，必填内容为`[0]`主播名、`[1]`房间数字id，`[4]`为选填的对应房间预置音量（0到1之间的小数）。  
-Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`. If you want to change the preset room, search and edit content after `var streamer`. The followings are neccessary: `streamer[0]` streamer's name, `[1]` streamer's room id (number) and the optional one: `[4]` preset live video volume (float, between 0 and 1).  
+根据`cw.htm`文件弹幕功能代码段前的注释安装依赖。将`location /blive/ {..}`中内容复制到Nginx配置文件中。进入`blivedm`文件夹，`python3 startBliveServer.py`运行弹幕获取服务端。如果要修改内置的房间号，搜索`var streamer`，必填内容为`[0]`主播名、`[1]`房间数字id。  
+Install `python3` requirements by the command line I write in the comments before the `danmu` code area. Copy `location /blive/ {..}` to your nginx config. `cd` into `blivedm` folder, run the danmu receive server by `python3 startBliveServer.py`. If you want to change the preset room, search and edit content after `var streamer`. The followings are neccessary: `streamer[0]` streamer's name, `[1]` streamer's room id (number).  
 
 ### 智能家居Hue(Home Smart for Philips-Hue)
-适配飞利浦Hue智能家居的开关。Hue中继桥的api带CORS跨域操作头，可以不需要手动代理，但是为了稳定性，此处仍然提供手动代理的步骤：将该代码前注释中的`location /hue/ {..}`代码复制到Nginx配置文件中。如果不需要手动代理，则将网页代码中`hueBaseUrl`变量修改为`//philips-hue/api/`。  
+适配飞利浦Hue智能家居的开关。Hue中继桥的api自带CORS跨域操作头，可以不需要手动代理，但是为了稳定性，此处仍然提供手动代理的步骤：将该代码前注释中的`location /hue/ {..}`代码复制到Nginx配置文件中。如果不需要手动代理，则将网页代码中`hueBaseUrl`变量修改为`//philips-hue/api/`。  
 为获取api授权操作码，按下Hue中继桥的配对按钮，在本页运行hReg()，记录返回的凭证，并手动修改页面文件`Basic Settings`中变量`hueToken`为该值。  
 Smart home switch for Philips-Hue products. Response Header returned from Hue bridge api contains allow CORS *, therefore it's optional to proxy the request. Here are the setups if you want it more reliable: copy the `location /hue/ {..}` code to your Nginx config. If you want to disable the proxy, edit the content of the `hueBaseUrl` variable in the page source code file to `//philips-hue/api/`.  
 To get Hue api token: 1.Press the Hue Link button 2. Run hReg() 3. Change the content of the `hueToken` variable in the page source code file's `Basic Settings`.  
