@@ -18,7 +18,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] failed on file not exist']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self, data=None, method=None):
         if (isEmptyPath(self.path)):
@@ -73,9 +73,6 @@ def corsAccess(url, data=None, method=None):
         que.put_nowait('[EXCEP] cors: <'+url+'>'+str(sys.exc_info()))
         return ''
 
-def restart():
-    return os.execv(sys.executable, ['python3'] + sys.argv)
-
 def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
     ori_cmd='?'.join(path.split('?')[1:])
@@ -108,6 +105,11 @@ def controlRoom(path, data=None, method=None):
             new_room_id.value=-2
             info['pop']='1'
             res='[SLEEP] & [KCIK] restart OK'
+            needExtra=False
+        elif (cmd=='upgrade'):
+            new_room_id.value=-3
+            info['pop']='1'
+            res='[UPGRADE] it takes a while'
             needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
@@ -198,7 +200,7 @@ class MyBLiveClient(blivedm.BLiveClient):
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity='<sup><b>'+('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')+'</b></sup>'
-        level='<sup><b>'+str(danmaku.user_level)+'</b></sup>' if danmaku.user_level>=15 else ''
+        level='<sup><b>'+str(int(danmaku.user_level/5)*5)+'</b></sup>' if danmaku.user_level>=15 else ''
         aprint(f"<small><small>{identity}{level}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>")
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
@@ -275,7 +277,7 @@ def main():
         print('[wait] No preset room id, wait for client request')
         setSleep(que, status_code, 1)
     while isOn:
-        sleep(1)
+        sleep(.5)
         if (status_code.value==0 and que.qsize()>1000):
             print('[sleep] blive off, request room_id to wake up')
             kill(c)
@@ -297,7 +299,14 @@ def main():
                     room_id=0
                     kill(p)
                     kill(c)
-                    restart()
+                    os.execv(sys.executable, ['python3'] + sys.argv)
+                if (new_room_id.value==-3):
+                    if (os.access('replaceBlive.sh', os.X_OK)):
+                        print('[upgrade] it takes a while')
+                        setSleep(que, status_code, 3)
+                        os.execv(sys.executable, ['bash', 'replaceBlive.sh'])
+                    else:
+                        setSleep(que, status_code, 4)
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))

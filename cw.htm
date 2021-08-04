@@ -1600,9 +1600,8 @@ function danmuSwitch() {
 function danmuOn(roomId, withoutFullScreen) {
     if (isDanmuOnly&&!withoutFullScreen)
         danmuFullScreen(true);
-    roomId=roomId==undefined?'':String(roomId);
-    if (roomId.indexOf('http')==0)
-        roomId=roomId.replace(/https?:\/\/live\.bilibili\.com\/(\d+)\S*/,'$1');
+    roomId=roomId?String(roomId):'';
+    roomId=roomId.replace(/live\.bilibili\.com\/(?:h5\/)(\d+)\S*/,'$1');
     if (streamer[0].indexOf(roomId) != -1)
         roomId = streamer[1][streamer[0].indexOf(roomId)];
     if (!roomId)
@@ -1937,19 +1936,18 @@ function danmuRoomTitle(n) {
                 }
             });
             if (n==undefined&&danmuRoomId)
-                danmuRead("cors:https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=" + data.room_id, function a(s) {
+                danmuRead("cors:https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=" + data.room_id, function history(s) {
                     var stat = JsonParse(s);
                     if (stat.code == 0) {
-                        s=stat.data.room.slice(-5);
+                        s=stat.data.room;
                         var l=[];
                         for (var i=0;i<s.length;i++)
                             l.push(' *<small>'+s[i].nickname+'</small><b> '+s[i].text+'</b>');
-                        tasks(function act(e){danmuWrite(e)}, l, 500);
+                        tasks(function act(e){danmuWrite(e)}, l, 300);
                     }
                 });
         }
     }
-    function getHistory(long_id){}
 }
 function liveInfo(title, detail, forceLog, bgColor){
     if (detail==undefined)
