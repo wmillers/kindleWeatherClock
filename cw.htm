@@ -434,7 +434,7 @@ var isMouseHidden=false;
 var mouseMoveTime=0;
 //FullScreen
 function danmuOnly(){
-    danmuMax=4e3;
+    danmuMax=80;
     isDanmuOnly=true;
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
@@ -1551,13 +1551,13 @@ if (!isNaN(parseInt(i))){
 var danmuReadCount = 0;
 var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStartTime = 0;
-var streamer = [['nc', 'dd', 'wt', 'us', 'fu', 'hs', 'dv', 'tr', 'tr1', 'tz', 'sg', 'tr2'],
-    [1220, 16548, 733, 4650105, 1954990, 23251644, 23306811, 2155342, 23132295, 3807617, 6655, 22212511]];
+var streamer = [['nc', 'dd', 'wt', 'us', 'fu', 'hs', 'dv', 'tr', 'tr1', 'tz', 'sg', 'tr2', 'wysygrn'],
+    [1220, 16548, 733, 4650105, 1954990, 23251644, 23306811, 2155342, 23132295, 3807617, 6655, 22212511, 22637261]];
 var liveVol = [.5, .4, .8, .3, .15,, .3,,, 1, 1];
 var liveDefaultVol=.5;
 var streamerTime = Array(streamer[0].length);
 var streamerTitle = Array(streamer[0].length);
-var danmuControl = ['history 历史弹幕', 'bye 停止', 'kick 下线', 'info 统计', 'w 切换 watch', 'js[:] 远程脚本', 'time 时间戳', 'f 全屏', 'url 添加 #danmuonly'];
+var danmuControl = ['history 历史弹幕', 'bye 停止', 'kick 下线', 'info 统计', 'w 切换 watch', 'js[:] 远程脚本', 'time 时间戳', 'f 全屏', 'url 添加 #danmuonly', 'upgrade 更新'];
 var danmuRoomId = '';
 var danmuRoomIndex=-1;
 var danmuFirstRoom='';
@@ -1565,7 +1565,7 @@ var danmuSuperChat = '';
 var danmuPop = 0;
 var danmuPopTrends = 0;
 var danmuTaskIndexs = [0, 0, 0];//read,info,time (& title)
-var danmuMax = 1600;
+var danmuMax = 50;
 var danmuRetry = 0;
 var danmuLast = '';
 var isDanmuWatch=true;
@@ -1644,7 +1644,7 @@ function danmuOff(s) {
         }
     }, 10 * 60e3);
     danmuAlter(true);
-    danmu.innerHTML = '<b>[OFF@'+ dateString() +']</b> ' + (s != undefined ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStartTime, 2, true) + '<br>' + (danmu.innerHTML).slice(0, danmuMax / 5) + '...';
+    danmuWrite('<b>[OFF@'+ dateString() +']</b> ' + (s != undefined ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStartTime, 2, true));
     danmuPop = 0;
     danmuInfo();
 }
@@ -1705,12 +1705,16 @@ function setDanmuPop(p) {
         danmuInfo();
     }
 }
-function danmuWrite(s, isBold, isReverse, isInSameLine, stillShowDuplicate) {
+function danmuWrite(s, isBold, isReverse, isInSameLine, stillShowDuplicate){
     if (!stillShowDuplicate&&danmuLast == (danmuLast = s)) return;
     if (isBold) s = '<b>' + s + '</b>';
     if (isReverse) s = ' <small>' + s + '</small>';
-    var buffer = danmu.innerHTML;
-    danmu.innerHTML = (s + (buffer ? (isInSameLine ? ' |' : '<br>') + buffer.replace(/^ +&gt;/, ''): '')).slice(0, danmuMax);
+    //danmu.insertBefore(document.createRange().createContextualFragment(s+(isInSameLine ? ' |' : '<br>')), danmu.firstChild);
+    danmu.insertAdjacentHTML('afterbegin', s+(isInSameLine ? ' |' : '<br>'));
+    var len=danmu.childNodes.length;
+    if (len>danmuMax*1.3)
+        for (var i=len-1;i>danmuMax;i--)
+            danmu.removeChild(danmu.childNodes[i]);
     return s;
 }
 function danmuShow(s) {
@@ -1789,7 +1793,7 @@ function danmuRead(roomId, f) {
             comment(Math.floor(t / 1000), getOffsetTime() - danmuStartTime > 10 * 60e3);
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
-            danmuTaskIndexs[0] = setTimeout(danmuRead, danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? 500 : 2e3 : 10e3);
+            danmuTaskIndexs[0] = setTimeout(danmuRead, danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 10e4 ? 50 : 500 : 2e3 : 10e3);
     } : undefined);
 }
 function danmuFullScreen(forceFullScreen){
@@ -1941,9 +1945,9 @@ function danmuRoomTitle(n) {
                     if (stat.code == 0) {
                         s=stat.data.room;
                         var l=[];
-                        for (var i=0;i<s.length;i++)
+                        for (var i=isDanmuOnly?0:5;i<s.length;i++)
                             l.push(' *<small>'+s[i].nickname+'</small><b> '+s[i].text+'</b>');
-                        tasks(function act(e){danmuWrite(e)}, l, 300);
+                        tasks(function act(e){danmuWrite(e)}, l, isDanmuOnly?300:1e3);
                     }
                 });
         }

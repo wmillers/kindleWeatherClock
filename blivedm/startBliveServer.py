@@ -113,7 +113,7 @@ def controlRoom(path, data=None, method=None):
             needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
-            if (status_code.value==0 and que.qsize()<5):
+            if (status_code.value!=0 and que.qsize()>5):
                 status_code.value=0
             info['status_code']=status_code.value
             info['status']=status[status_code.value]
@@ -203,7 +203,7 @@ class MyBLiveClient(blivedm.BLiveClient):
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity='<sup><b>'+('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')+'</b></sup>'
-        level='<sup><b>'+str(int(danmaku.user_level/5)*5)+'</b></sup>' if danmaku.user_level>=15 else ''
+        level='<sup><b>'+str(int(danmaku.user_level/5))+'</b></sup>' if danmaku.user_level>=15 else ''
         aprint(f"<small><small>{identity}{level}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>")
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
@@ -298,6 +298,7 @@ def main():
                     setSleep(que, status_code, 3)
                     isOn=False
                     room_id=0
+                    kill(p)
                     os.execv(sys.executable, ['python3'] + sys.argv)
                 elif (new_room_id.value==-3):
                     if (os.access('replaceBlive.sh', os.X_OK)):
@@ -318,7 +319,7 @@ def main():
                 c.start()
             new_room_id.value=0
     print('***  END  at '+asctime()+' ***')
-    sys.exit()
+    os._exit()
 
 if __name__ == '__main__':
     main()
