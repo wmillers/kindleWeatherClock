@@ -32,13 +32,13 @@ class Resquest(BaseHTTPRequestHandler):
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
             count=0
-            while count<15/.2:
+            while count<15/.1:
                 count+=1
                 danmu=readFromLive()
                 if (danmu and danmu!='<br>'):
                     res=res+danmu
                     break
-                sleep(.2)
+                sleep(.1)
         return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
 
     def do_POST(self):

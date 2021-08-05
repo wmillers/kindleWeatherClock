@@ -1793,7 +1793,7 @@ function danmuRead(roomId, f) {
             comment(Math.floor(t / 1000), getOffsetTime() - danmuStartTime > 10 * 60e3);
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
-            danmuTaskIndexs[0] = setTimeout(danmuRead, danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 10e4 ? 50 : 500 : 2e3 : 10e3);
+            danmuTaskIndexs[0] = setTimeout(danmuRead, danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 10e4 ? 20 : 500 : 2e3 : 10e3);
     } : undefined);
 }
 function danmuFullScreen(forceFullScreen){
@@ -1844,10 +1844,14 @@ function danmuInfoUpdate(s) {
         if (s){
             var info = JsonParse(s);
             if (info) {
-                setDanmuRoomId(info.room_id);
-                danmuSC(info.super_chat);
-                var p = parseInt(info.pop);
-                setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
+                if (danmuRoomId&&info.room_id==0)
+                    danmuOn(danmuRoomId);
+                else {
+                    setDanmuRoomId(info.room_id);
+                    danmuSC(info.super_chat);
+                    var p = parseInt(info.pop);
+                    setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
+                }
             }
         }
     }
