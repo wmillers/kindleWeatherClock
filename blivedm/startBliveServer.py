@@ -36,7 +36,7 @@ class Resquest(BaseHTTPRequestHandler):
         if needExtra:
             count=0
             while count<3:
-                danmu=readFromLive(5)
+                danmu=readFromLive()
                 if (danmu and danmu!='<br>'):
                     res=res+danmu
                     break
@@ -150,20 +150,16 @@ def controlRoom(path, data=None, method=None):
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
 
-def readFromLive(timeOut):
+def readFromLive():
     global history, que, status_code, info, status
     res, tmp='', ''
-
     do=True
     while do or not que.empty():
         do=False
-        if timeOut>0:
-            try:
-                tmp=que.get(timeout=timeOut)
-            except Exception as e:
-                pass
-        else:
-            tmp=que.get_nowait()
+        try:
+            tmp=que.get(timeout=5)
+        except Exception as e:
+            pass
         if tmp:
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
@@ -174,8 +170,8 @@ def readFromLive(timeOut):
                         info['super_chat']=info['super_chat'][3:]
                 elif (tmp[1:-1]=="1" and info['pop']!='9999' or tmp[1:-1]!="1"):
                     info['pop']=tmp[1:-1]
-            res=tmp+('<br>' if tmp and res else '')+res
-
+            else:
+                res=tmp+('<br>' if res else '')+res
     if (len(history)>100):
         history=history[50:]
     if (status_code.value!=0):
@@ -307,7 +303,7 @@ def main():
                     print('[deactivate] goodbye')
                     isOn=False
                 elif (new_room_id.value==-2):
-                    print('[kick&kill] but no new room, restart script')
+                    print('[kick&kill] restart script '+str(sys.argv))
                     setSleep(que, status_code, 3)
                     isOn=False
                     room_id=0

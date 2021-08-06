@@ -44,7 +44,7 @@ if (!isOnKindle) console.warn('[autostart:disabled] notKindle');
 window.onerror=function handler(msg, source, line, col, e){comment((line?'['+line+']':'')+(e?e.stack:msg))};
 setTimeout(function isLoaded(){
     if (typeof loaded=="undefined"){
-    document.getElementsByClassName('cleaner')[0].innerHTML="<center>js FAILED</center>";
+    document.getElementsByClassName('cleaner')[0].innerHTML='<center><a href=".">js FAILED</a></center>';
     confirm('JS failed, need reload?')?f5():console.error(comment('[js:failed] reloadRejected'));
     }
 }, 4000);
@@ -339,18 +339,24 @@ function clearComment() {
 }
 function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function () {
+    xmlhttp.onreadystatechange = function handle() {
         if (xmlhttp.readyState == 4) {
-            var s=xmlhttp.status;
-            switch (String(s).slice(0,1)){
+            var s=String(xmlhttp.status);
+            var e='';
+            switch (s.slice(0,1)){
                 case '2':
                 case '3':
+                case 'SUCC':
                     (typeof f=="function"?f:console.log)(xmlhttp.responseText, path);
                     break;
                 case '0':
+                    e='CertConfirm';
                 case '4':
+                    e='ServerForbidden';
                 case '5':
-                    (typeof fOnfailed=="function"?fOnfailed:comment)(s+(s?'Error':":CertConfirm")+"(F12)", path);
+                    e='GatewayError';
+                case 'ERROR':
+                    (typeof fOnfailed=="function"?fOnfailed:comment)(s+':'+e+"(F12)", path);
                     break;
             }
             if (fOnBoth)
@@ -1790,7 +1796,7 @@ function danmuRead(roomId, f) {
             danmuWrite(s, false, true);
         }
     }, '', '', f == undefined ? function both() {
-        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 10e4 ? 50 : 500 : 2e3 : 5e3
+        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 60e4 ? 50 : 500 : 2e3 : 5e3
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
             danmuTaskIndexs[0] = setTimeout(danmuRead, t);
@@ -1955,7 +1961,7 @@ function danmuRoomTitle(n) {
                         var l=[];
                         for (var i=isDanmuOnly?0:5;i<s.length;i++)
                             l.push(' *<small>'+s[i].nickname+'</small><b> '+s[i].text+'</b>');
-                        tasks(function act(e){danmuWrite(e)}, l, isDanmuOnly?100:1e3);
+                        tasks(function act(e){danmuWrite(e)}, l, isDanmuOnly?50:1e3);
                     }
                 });
         }
