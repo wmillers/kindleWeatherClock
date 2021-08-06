@@ -20,6 +20,9 @@ history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
 status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
 class Resquest(BaseHTTPRequestHandler):
+    def log_request(code, size):
+        pass
+
     def do_GET(self, data=None, method=None):
         if (isEmptyPath(self.path)):
             self.send_response(404)
@@ -32,13 +35,13 @@ class Resquest(BaseHTTPRequestHandler):
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
             count=0
-            while count<10+14.5/.5:
-                count+=1
-                danmu=readFromLive()
+            while count<3:
+                danmu=readFromLive(5)
                 if (danmu and danmu!='<br>'):
                     res=res+danmu
                     break
-                sleep(.05 if count<10 else .5)
+                count+=1
+                sleep(1)
         return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
 
     def do_POST(self):
@@ -147,14 +150,21 @@ def controlRoom(path, data=None, method=None):
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
 
-def readFromLive():
+def readFromLive(timeOut):
     global history, que, status_code, info, status
-    res=''
-    if (not que.empty()):
-        if (len(history)>100):
-            history=history[50:]
-        while not que.empty():
+    res, tmp='', ''
+
+    do=True
+    while do or not que.empty():
+        do=False
+        if timeOut>0:
+            try:
+                tmp=que.get(timeout=timeOut)
+            except Exception as e:
+                pass
+        else:
             tmp=que.get_nowait()
+        if tmp:
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
@@ -162,13 +172,16 @@ def readFromLive():
                     info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
                     if (len(info['super_chat'])>9):
                         info['super_chat']=info['super_chat'][3:]
-                elif (tmp[1:-1]=="1" and info['pop']!='9999') or tmp[1:-1]!="1":
+                elif (tmp[1:-1]=="1" and info['pop']!='9999' or tmp[1:-1]!="1"):
                     info['pop']=tmp[1:-1]
-                continue
             res=tmp+('<br>' if tmp and res else '')+res
+
+    if (len(history)>100):
+        history=history[50:]
     if (status_code.value!=0):
         res=status[status_code.value]+'<br>'+res
     return res
+
 
 def initServer(r, c1, c2, c3):
     global que, new_room_id, status_code, last_room_id
@@ -281,12 +294,12 @@ def main():
         setSleep(que, status_code, 1)
     while isOn:
         sleep(.5)
-        if (status_code.value==0 and que.qsize()>1000):
+        if (status_code.value==0 and que.qsize()>10000):
             print('[sleep] blive off, request room_id to wake up')
             kill(c)
             room_id=0
             last_room_id.value=0
-            clear_que(que, 50)
+            clear_que(que, 100)
             setSleep(que, status_code, 2)
         if (new_room_id.value!=0):
             if (new_room_id.value<0):

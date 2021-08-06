@@ -451,7 +451,7 @@ function danmuOnly(){
             danmuRoomTime();
             if (isDanmuLive == 1) {
                 danmuRead();
-                danmuInfoUpdate();// setDanmuRoomId || danmuRoomTime => danmuRoomTitle();
+                danmuInfoUpdate();
             }
         }
     };
@@ -631,7 +631,7 @@ function sumDateFromServer(calculate) {
         if (Math.abs(timeOffset - initTimeOffset) > 200) {
             dTimeOffset = timeOffset - initTimeOffset;
             if (uptime > 3600 * 1000) {
-                var newHardwareLagRate = Math.floor((uptime / 1000 / 3600) / (dTimeOffset / 1000) * 100) / 100;
+                var newHardwareLagRate = ((uptime / 1000 / 3600) / (dTimeOffset / 1000)).toFixed(2);
                 dOffsetPerSecond = "1s/" + newHardwareLagRate + "h" + "(" + oldHardwareLagRate + ")";
                 if (uptime > 3 * 24 * 3600 * 1000) hardwareLagRate = newHardwareLagRate;
             }
@@ -1553,7 +1553,7 @@ var isDanmuLive = 0;// 0 off, 1 live, other
 var danmuStartTime = 0;
 var streamer = [['nc', 'dd', 'wt', 'us', 'fu', 'hs', 'dv', 'tr', 'tr1', 'tz', 'sg', 'tr2', 'wysygrn'],
     [1220, 16548, 733, 4650105, 1954990, 23251644, 23306811, 2155342, 23132295, 3807617, 6655, 22212511, 22637261]];
-var liveVol = [.5, .4, .8, .3, .15,, .3,,, 1, 1];
+var liveVol = [.5, .4, .8, .3,      .15,         ,       .3,        ,         ,       1,    1,         ,       .4];
 var liveDefaultVol=.5;
 var streamerTime = Array(streamer[0].length);
 var streamerTitle = Array(streamer[0].length);
@@ -1754,7 +1754,7 @@ function danmuShow(s) {
         danmuAlter(false);
     if (s)
         danmuWrite(s);
-    if (s || danmuPop == 9999)
+    if (s && danmuPop == 9999)
         danmuInfo();
 }
 function danmuSC(l) {
@@ -1766,13 +1766,15 @@ function danmuSC(l) {
             danmuSuperChat += '<b>￥' + l[i][1] + '</b><small>[+' + l[i][0] + '分]</small> ' + l[i][2] + '<br>';
     }
 }
+function getNanoSecond(){
+    return (window.performance.now()/1e3%10).toFixed(6);
+}
 function danmuRead(roomId, f) {
     if (++danmuRetry >= 10) {
         danmuOff('<b>(〃>_<;〃) R</b>' + danmuRetry + '>9 <b>Id</b>' + roomId?roomId:danmuRoomId);
         return;
     } else if (danmuRetry > 3)
         danmuInfo();
-    var danmuLoadTime = getOffsetTime();
     httpReq("/blive/" + (roomId ? '?' + roomId : ''), function succ(s) {
         if (s.indexOf('[EXCEP]') == -1)
             danmuRetry = 0;
@@ -1788,12 +1790,10 @@ function danmuRead(roomId, f) {
             danmuWrite(s, false, true);
         }
     }, '', '', f == undefined ? function both() {
-        var t = getOffsetTime() - danmuLoadTime;
-        if (forTestUse&&t >= 5e3)
-            comment(Math.floor(t / 1000), getOffsetTime() - danmuStartTime > 10 * 60e3);
+        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 10e4 ? 50 : 500 : 2e3 : 5e3
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
-            danmuTaskIndexs[0] = setTimeout(danmuRead, danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 10e4 ? 20 : 500 : 2e3 : 10e3);
+            danmuTaskIndexs[0] = setTimeout(danmuRead, t);
     } : undefined);
 }
 function danmuFullScreen(forceFullScreen){
@@ -1833,6 +1833,7 @@ function setDanmuRoomId(s, force){
                 danmuFirstRoom=danmuRoomId;
             if (isDanmuOnly&&isDanmuLiveVideo)
                 liveFromRoom('changeRoom');
+            danmuRoomTitle();
             danmuRoomTime();
         }
     }
@@ -1864,7 +1865,7 @@ function danmuInfo() {
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamerTime[i]&&danmuRoomId!=i)
                 liveStatus+='| '+atag(streamerTime[i]+' '+(streamerTitle[i]?streamerTitle[i]:''), false, "danmuOn("+streamer[1][i]+")", streamer[0][i]);
-    var dTrends = danmuPop < 1e4 ? (danmuPop < 1e3 ? String(danmuPop) : Math.floor(danmuPop / 1e2) / 10 + 'K'): Math.floor(danmuPop / 1e3) / 10 + '万';
+    var dTrends = danmuPop < 1e4 ? (danmuPop < 1e3 ? String(danmuPop) : (danmuPop / 1e3).toFixed(1) + 'K'): (danmuPop / 1e4).toFixed(1) + '万';
     if (dTrends.indexOf('.') != -1) {
         dTrends = dTrends.split('.');
         var a = ['sub', 'small', 'sup'][danmuPopTrends + 1];
@@ -1954,7 +1955,7 @@ function danmuRoomTitle(n) {
                         var l=[];
                         for (var i=isDanmuOnly?0:5;i<s.length;i++)
                             l.push(' *<small>'+s[i].nickname+'</small><b> '+s[i].text+'</b>');
-                        tasks(function act(e){danmuWrite(e)}, l, isDanmuOnly?300:1e3);
+                        tasks(function act(e){danmuWrite(e)}, l, isDanmuOnly?100:1e3);
                     }
                 });
         }
@@ -2041,7 +2042,7 @@ function liveFromRoom(description){
         liveFrameTimer=setTimeout(function lowLoadWatcher(){
             if (livePlayer&&livePlayer.mediaInfo&&livePlayer.mediaInfo.hasVideo){
                 var drop=livePlayer.statisticsInfo.droppedFrames;
-                var ratio=Math.floor(livePlayer.statisticsInfo.decodedFrames/drop*100)/100;
+                var ratio=(livePlayer.statisticsInfo.decodedFrames/drop).toFixed(2);
                 if (drop>1000)
                     if (ratio<1){
                         liveFromUrl('', true);
