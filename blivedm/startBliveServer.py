@@ -18,7 +18,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] failed on file not exist']
+status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self, data=None, method=None):
         if (isEmptyPath(self.path)):
@@ -32,13 +32,13 @@ class Resquest(BaseHTTPRequestHandler):
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
             count=0
-            while count<15/.1:
+            while count<10+14.5/.5:
                 count+=1
                 danmu=readFromLive()
                 if (danmu and danmu!='<br>'):
                     res=res+danmu
                     break
-                sleep(.1)
+                sleep(.05 if count<10 else .5)
         return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
 
     def do_POST(self):
@@ -303,10 +303,10 @@ def main():
                 elif (new_room_id.value==-3):
                     if (os.access('replaceBlive.sh', os.X_OK)):
                         print('[upgrade] it takes a while')
-                        setSleep(que, status_code, 3)
+                        setSleep(que, status_code, 4)
                         subprocess.call('./replaceBlive.sh')
                     else:
-                        setSleep(que, status_code, 4)
+                        que.put_nowait('[upgrade] failed on file not exist')
             elif (new_room_id.value!=room_id):
                 if (room_id!=0):
                     print('[kill] room id: '+str(room_id))

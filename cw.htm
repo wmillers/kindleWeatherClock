@@ -1697,7 +1697,7 @@ function setDanmuPop(p) {
             danmuAlter(false);
         if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&isDanmuLiveVideo){
             if (forTestUse)
-                console.log(p);
+                console.log('Pop', p);
             setLiveWidth();
             if (isLiveOff())
                 liveFromRoom('changePop');
@@ -1833,7 +1833,7 @@ function setDanmuRoomId(s, force){
                 danmuFirstRoom=danmuRoomId;
             if (isDanmuOnly&&isDanmuLiveVideo)
                 liveFromRoom('changeRoom');
-            danmuRoomTitle();
+            danmuRoomTime();
         }
     }
 }
@@ -1844,12 +1844,12 @@ function danmuInfoUpdate(s) {
         if (s){
             var info = JsonParse(s);
             if (info) {
-                if (danmuRoomId&&info.room_id==0)
+                var p = parseInt(info.pop);
+                if (danmuRoomId&&info.room_id==0&&p<=1)
                     danmuOn(danmuRoomId);
                 else {
                     setDanmuRoomId(info.room_id);
                     danmuSC(info.super_chat);
-                    var p = parseInt(info.pop);
                     setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
                 }
             }
@@ -1897,10 +1897,11 @@ function danmuScrollInput(){
 function danmuRoomTime(n) {
     clearTimeout(danmuTaskIndexs[2]);
     if (isDanmuLive) {
-        if (n == undefined)
-            n = 0;
-        danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + streamer[1][n++ % streamer[1].length], parseTime);
-        danmuTaskIndexs[2] = setTimeout('danmuRoomTime(' + n + ')', danmuPop == 1 || n % streamer[1].length == 0 || danmuRetry >= 3 ? 5*60e3 : 3e3);
+        if (n==undefined)
+            n=!danmuRoomId?0:-1;
+        var i=n==-1||n>=streamer[1].length?danmuRoomId:streamer[1][n];
+        danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + i, parseTime);
+        danmuTaskIndexs[2] = setTimeout('danmuRoomTime(' + (n+1)%streamer[1].length + ')', danmuPop == 1 || n>=streamer[1].length-1 || danmuRetry >= 5 ? 5*60e3 : 2e3);
     }
     function parseTime(s) {//'101m'
         var stat = JsonParse(s);
@@ -1909,11 +1910,13 @@ function danmuRoomTime(n) {
             var i = streamer[1].indexOf(stat.short_id);
             if (i == -1)
                 i = streamer[1].indexOf(stat.room_id);
-            if (i != -1 && streamerTime[i] != (streamerTime[i] = humanTill(stat.live_time))){
+            if (streamerTime[i] != (streamerTime[i] = humanTill(stat.live_time))){
                 danmuInfo();
                 danmuRoomTitle(i);
             }
         }
+        if (forTestUse)
+            console.log('time', i, streamer[1][i], streamerTime[i]);
         function humanTill(t){
             if (t>0){
                 t=getOffsetTime(0, true) / 1000 - t;
