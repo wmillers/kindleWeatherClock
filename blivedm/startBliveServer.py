@@ -211,7 +211,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f"<small><small>{identity}{level}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>")
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>50)):
+        if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>=20*100)):
             identity='<sup><b>'+(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')+'</b></sup>'
             aprint(f'<small>{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):

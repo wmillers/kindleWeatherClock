@@ -1839,7 +1839,7 @@ function setDanmuRoomId(s, force){
                 danmuFirstRoom=danmuRoomId;
             if (isDanmuOnly&&isDanmuLiveVideo)
                 liveFromRoom('changeRoom');
-            danmuRoomInfo();
+            danmuRoomInfo(-1);
         }
     }
 }
@@ -1900,27 +1900,27 @@ function danmuScrollInput(){
     danmuScrollCurrentNum=undefined;
     danmuStatus();
 }
-function danmuRoomInfo(n){//time, title, last10danmus
+function danmuRoomInfo(n){//time, title, lastDanmu
     clearTimeout(danmuTaskIndexs[2]);
     if (isDanmuLive) {
-        var isInit=n==undefined;
-        if (n==undefined)
-            n=!danmuRoomId?0:-1;
-        var i=n==-1||n>=streamer[1].length?danmuRoomId:streamer[1][n];
+        var isSetNewRoom=n==-1&&danmuRoomId;
+        if (n==undefined) n=0;
+        var i=isSetNewRoom?danmuRoomId:streamer[1][n];
+        n=(n+1)%streamer[1].length;
         danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + i, parseTime);
-        danmuTaskIndexs[2] = setTimeout('danmuRoomInfo(' + (n+1)%streamer[1].length + ')', danmuPop == 1 || n>=streamer[1].length-1 || danmuRetry >= 5 ? 5*60e3 : 2e3);
+        danmuTaskIndexs[2] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry >= 5 ? 5*60e3 : 2e3);
     }
     function parseTime(s){//'101m'
         var stat = JsonParse(s);
         if (stat.code == 0) {
-            stat = stat.data;
-            var i = streamer[1].indexOf(stat.short_id);
+            var data = stat.data;
+            var i = streamer[1].indexOf(data.short_id);
             if (i == -1)
-                i = streamer[1].indexOf(stat.room_id);
-            if (streamerTime[i] != (streamerTime[i] = humanTill(stat.live_time)))
-                parseTitle(stat);
-            if (isInit&&danmuRoomId)
-                parseLastDanmu(stat);
+                i = streamer[1].indexOf(data.room_id);
+            if (streamerTime[i] != (streamerTime[i] = humanTill(data.live_time))&&streamerTime[i])
+                parseTitle(data);
+            if (isSetNewRoom)
+                parseLastDanmu(data);
         }
         if (forTestUse)
             console.log('time', i, streamer[1][i], streamerTime[i]);
@@ -1954,7 +1954,7 @@ function danmuRoomInfo(n){//time, title, last10danmus
                 var l=[];
                 for (var i=!isOnKindle?0:5;i<s.length;i++)
                     l.push(' *<small>'+s[i].nickname+'</small><b> <big>'+s[i].text+'</big></b>');
-                tasks(function act(e){danmuWrite(e)}, l, !isOnKindle?100:1e3);//render limit
+                tasks(function act(e){danmuWrite(e)}, l, !isOnKindle?100:1e3);//render speed limit
             }
         });
     }
