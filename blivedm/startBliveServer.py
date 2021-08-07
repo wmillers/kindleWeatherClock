@@ -211,12 +211,11 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f"<small><small>{identity}{level}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>")
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        if (gift.coin_type!='silver'):
+        if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>50)):
             identity='<sup><b>'+(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')+'</b></sup>'
-            aprint(f'<small>{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')# （{gift.coin_type}币x{gift.total_coin}）')
-
+            aprint(f'<small>{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
-        aprint(f'<big><b>{message.username}</b> 购买 <b>{message.gift_name}</b></big>')
+        aprint(f'<big><b>{message.username}</b> 成为<b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
         identity='<sup><b>'+(str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')+'</b></sup>'
