@@ -140,7 +140,7 @@ def controlRoom(path, data=None, method=None):
             except Exception as e:
                 res=str(e)
             finally:
-                res='<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText);}</script><div style="white-space: pre-wrap; font-family: monospace;" id="ansi">\n'+res+'</div>'
+                res='<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}</script><pre id="ansi">\n'+res.replace('<', '&lt')+'</pre>'
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
@@ -301,7 +301,10 @@ def main():
                     if (os.access('replaceBlive.sh', os.X_OK)):
                         print('[upgrade] it takes a while')
                         setSleep(que, status_code, 4)
-                        subprocess.call('./replaceBlive.sh')
+                        try:
+                            subprocess.run('source replaceBlive.sh', shell=True, executable="/bin/bash")
+                        except Exception as e:
+                            que.put_nowait(str(e))
                     else:
                         que.put_nowait('[upgrade] failed on file not exist')
             elif (new_room_id.value!=room_id):
