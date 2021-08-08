@@ -29,8 +29,8 @@ class Resquest(BaseHTTPRequestHandler):
             self.end_headers()
             return
         self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
+        # self.send_header('Content-type', 'text/html; charset=utf-8')
+        # self.end_headers()
         needExtra, cmd_res=controlRoom(self.path, data, method)
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
@@ -136,11 +136,11 @@ def controlRoom(path, data=None, method=None):
             res=int(time()*1000+100)
         elif (not cmd.find('s4f_:')):
             try:
-                res=subprocess.run(parse.unquote(ori_cmd[5:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=5, shell=True).stdout.decode()
+                res=subprocess.run(parse.unquote(ori_cmd[5:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10, shell=True).stdout.decode()
             except Exception as e:
                 res=str(e)
             finally:
-                res='<span style="white-space: pre-wrap; font-family: monospace;">'+res+'</span>'
+                res='<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js" type="text/javascript"></script><script>var a=document.getElementById("ansi");a.innerText=new AnsiUp.ansi_to_html(a.innerText);</script><div style="white-space: pre-wrap; font-family: monospace;" id="ansi">\n'+res+'</div>'
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
