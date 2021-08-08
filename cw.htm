@@ -343,23 +343,18 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth) {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function handle() {
         if (xmlhttp.readyState == 4) {
-            var s=String(xmlhttp.status);
-            var e='';
-            switch (s.slice(0,1)){
-                case '2':
-                case '3':
-                case 'SUCC':
-                    (typeof f=="function"?f:console.log)(xmlhttp.responseText, path);
-                    break;
-                case '0':
-                    e='CertConfirm';
-                case '4':
-                    e='ServerForbidden';
-                case '5':
+            var s=parseInt(xmlhttp.status);
+            if (s>=100&&s<400){
+                (typeof f=="function"?f:console.log)(xmlhttp.responseText, path);
+            } else {
+                var e='';
+                if (s>=500)
                     e='GatewayError';
-                case 'ERROR':
-                    (typeof fOnfailed=="function"?fOnfailed:comment)(s+':'+e+"(F12)", path);
-                    break;
+                else if (s>=400)
+                    e='ServerForbidden';
+                else
+                    e='CertConfirm';
+                (typeof fOnfailed=="function"?fOnfailed:comment)(s+':'+e+"(F12)", path);
             }
             if (fOnBoth)
                 fOnBoth();

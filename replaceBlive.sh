@@ -5,7 +5,7 @@ if [[ "$EUID" = 0 ]]; then
 fi
 echo start upgrade >> blive.log
 cd kindleWeatherClock/
-for((i=0;i<3;i++));
+for((i=0;i<5;i++));
 do
     echo start git pull
     git pull
