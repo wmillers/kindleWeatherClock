@@ -79,9 +79,10 @@ def controlRoom(path, data=None, method=None):
         print(ori_cmd[:5]+'..'+ori_cmd[-10:]+'|', end='')
     else:#if len(cmd.strip()):
         print('['+ori_cmd+']', end='')
-    needExtra=True
+    needExtra=False
     if (cmd==''):
         res=''
+        needExtra=True
     elif (str(cmd).isdigit()):
             room_id=int(cmd)
             if (room_id>0 and room_id<999999999999):
@@ -92,7 +93,6 @@ def controlRoom(path, data=None, method=None):
                 res='[RECV] Room keeps'
             else:
                 res='[err] Not in safe range: '+cmd
-            needExtra=False
     else:
         if (cmd=='history'):
             res=cmd+': '+'<br>'.join(history)
@@ -103,12 +103,10 @@ def controlRoom(path, data=None, method=None):
             new_room_id.value=-2
             info['pop']='1'
             res='[SLEEP] & [KCIK] restart OK'
-            needExtra=False
         elif (cmd=='upgrade'):
             new_room_id.value=-3
             info['pop']='1'
             res='[UPGRADE] it depends on network'
-            needExtra=False
         elif (cmd=='info'):
             info['que_size']=que.qsize()
             if (status_code.value!=0 and que.qsize()>5):
@@ -119,13 +117,11 @@ def controlRoom(path, data=None, method=None):
                 info['room_id']=last_room_id.value
                 info['super_chat']=[]
             res=json.dumps(info)
-            needExtra=False
         elif (not cmd.find('call:')):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
             print('[call] '+cmd[5:])
             res='[CALLING]'
-            needExtra=False
         elif (not cmd.find('js:')):
             cmd=parse.unquote(ori_cmd)
             if info['pop']=='1':
@@ -134,21 +130,17 @@ def controlRoom(path, data=None, method=None):
             que.put_nowait('[JS]'+cmd[3:])
             print('[js] '+cmd[3:])
             res='[JS-Executing]'+cmd[3:]
-            needExtra=False
         elif (not cmd.find('cors:')):
             res=corsAccess(parse.unquote(ori_cmd[5:]), data, method)
-            needExtra=False
         elif (cmd=='time'):
             res=int(time()*1000+100)
-            needExtra=False
         elif (not cmd.find('s4f_:')):
             try:
                 res=subprocess.run(parse.unquote(ori_cmd[5:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=5, shell=True).stdout.decode()
             except Exception as e:
                 res=str(e)
             finally:
-                res=res.replace('\n', '<br>')
-            needExtra=False
+                res='<span style="white-space: pre-wrap; font-family: monospace;">'+res+'</span>'
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
