@@ -18,7 +18,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no preset room id given', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
+status=['', '[SLEEP] no room (be CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
 class Resquest(BaseHTTPRequestHandler):
     def log_request(code, size):
         pass
@@ -141,6 +141,14 @@ def controlRoom(path, data=None, method=None):
         elif (cmd=='time'):
             res=int(time()*1000+100)
             needExtra=False
+        elif (not cmd.find('s4f_:')):
+            try:
+                res=subprocess.run(parse.unquote(ori_cmd[5:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=5, shell=True).stdout.decode()
+            except Exception as e:
+                res=str(e)
+            finally:
+                res=res.replace('\n', '<br>')
+            needExtra=False
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
@@ -148,13 +156,11 @@ def controlRoom(path, data=None, method=None):
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
     res, tmp='', ''
-    do=True
-    while do or not que.empty():
-        do=False
+    while True:
         try:
-            tmp=que.get(timeout=timeout)
+            tmp=que.get(timeout=timeout if not tmp else .01)
         except Exception as e:
-            pass
+            break
         else:
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
@@ -197,9 +203,9 @@ class MyBLiveClient(blivedm.BLiveClient):
     # 演示如何自定义handler
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
 
-    async def __on_vip_enter(self, command):
-        print(command)
-    _COMMAND_HANDLERS['WELCOME'] = __on_vip_enter  # 老爷入场
+    #async def __on_vip_enter(self, command):
+        #print(command)
+    #_COMMAND_HANDLERS['WELCOME'] = __on_vip_enter  # 老爷入场
 
     async def _on_receive_popularity(self, popularity: int):
         #aprint(f'当前人气值：{popularity}')
@@ -226,7 +232,6 @@ async def initDm(room_id):
     client = MyBLiveClient(room_id, ssl=True)
     future = client.start()
     try:
-        # 5秒后停止，测试用
         # await asyncio.sleep(5)
         # future = client.stop()
         # 或者
@@ -240,7 +245,6 @@ def runDm(s, room_id):
     que=s
     sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
-
 
 
 def clear_que(q, n):
@@ -266,7 +270,6 @@ def main():
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
     last_room_id=Value(ctypes.c_longlong, 0)
-    sleep(0.5)# To wait Restart
     p = Process(target=initServer, args=(que,new_room_id,status_code,last_room_id,))
     p.start()
     c=False
@@ -283,8 +286,7 @@ def main():
         print('[wait] No preset room id, wait for client request')
         setSleep(que, status_code, 1)
     while isOn:
-        sleep(.5)
-        if (status_code.value==0 and que.qsize()>10000):
+        if (status_code.value==0 and que.qsize()>5000):
             print('[sleep] blive off, request room_id to wake up')
             kill(c)
             room_id=0
@@ -321,6 +323,7 @@ def main():
                 c = Process(target=runDm, args=(que,room_id,))
                 c.start()
             new_room_id.value=0
+        sleep(.5)
     print('***  END  at '+asctime()+' ***')
     os._exit()
 
