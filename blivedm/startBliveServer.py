@@ -17,8 +17,8 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
 history=[]
-info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no room (be CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 1000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
+info=dict({'pop':0, 'que_size':0, 'flow':0,  'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
+status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
 class Resquest(BaseHTTPRequestHandler):
     def log_request(code, size):
         pass
@@ -140,7 +140,7 @@ def controlRoom(path, data=None, method=None):
             except Exception as e:
                 res=str(e)
             finally:
-                res='<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}</script><pre id="ansi">\n'+res.replace('<', '&lt')+'</pre>'
+                res='<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}</script><pre style="background: #202124" id="ansi">\n'+res.replace('<', '&lt;')+'</pre>'
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
@@ -148,12 +148,14 @@ def controlRoom(path, data=None, method=None):
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
     res, tmp='', ''
+    count=0
     while True:
         try:
             tmp=que.get(timeout=timeout if not tmp else .01)
         except Exception as e:
             break
         else:
+            count+=1
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
@@ -165,8 +167,9 @@ def readFromLive(timeout=5):
                     info['pop']=tmp[1:-1]
             else:
                 res=tmp+('<br>' if res else '')+res
-    if (len(history)>100):
-        history=history[50:]
+    info['flow']=round((info['flow']+count)/2, 1)
+    if (len(history)>1000):
+        history=history[500:]
     if (status_code.value!=0):
         res=status[status_code.value]+'<br>'+res
     return res

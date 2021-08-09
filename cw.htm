@@ -1568,6 +1568,7 @@ var danmuSuperChat = '';
 var danmuRoomSign='';
 var danmuPop = 0;
 var danmuPopTrends = 0;
+var danmuFlow = 0;
 var danmuTaskIndexs = [0, 0, 0];//read,info,time (& title)
 var danmuMax = 50;
 var danmuRetry = 0;
@@ -1613,6 +1614,7 @@ function danmuOn(roomId, withoutFullScreen){
     danmuStartTime = getOffsetTime();
     danmuRetry = 0;
     danmuPop = 0;
+    danmuFlow = 0;
     danmu_fr.style.opacity = 1;
     switch (roomId.slice(0, 2)){
         case 'url':
@@ -1742,7 +1744,6 @@ function danmuShow(s){
     danmuWrite(s);
     if (danmuPop != 1 && s.indexOf('[RECV]') == -1 && s.indexOf('[SLEEP]') != -1)
         setDanmuPop(1);
-
     function parseJS(s){
         var r = decodeURI(s).split(';');
         setTimeout(function run(){
@@ -1848,6 +1849,7 @@ function danmuStatusUpdate(s){
                 if (danmuRoomId&&info.room_id==0&&p<=1)
                     danmuOn(danmuRoomId);
                 else {
+                    danmuFlow=info.flow;
                     setDanmuRoomId(info.room_id);
                     danmuSC(info.super_chat);
                     setDanmuPop(parseInt(info.que_size) > 5 && p == 1 ? 2 : p);
@@ -1859,7 +1861,7 @@ function danmuStatusUpdate(s){
 function danmuStatus(){
     var status = ['OFF', streamerTime[danmuRoomIndex] ? streamerTime[danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
-    var extraButton=isDanmuOnly?atag(' ▲<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 \nLet there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 \nscroll to input number, click once to next, twice to confirm'):'';
+    var extraButton=isDanmuOnly?atag((danmuFlow?danmuFlow:'▲')+'<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 \nLet there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 \nscroll to input number, click once to next, twice to confirm'):'';
     if (!isOnKindle)
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamerTime[i]&&danmuRoomId!=i)
@@ -1875,7 +1877,7 @@ function danmuStatus(){
     signal=new Array(signal+1).join('•')+new Array(6-signal+1).join('◦');
     if (danmuRetry > 3)
         status = ' ⁉' + danmuRetry;
-    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, '', danmuRoomSign) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1) + atag(' [' +dateString() + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>':'') + danmuSuperChat;
+    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + ' ' + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, '', danmuRoomSign) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1) + atag(' [' +dateString() + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>':'') + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
         return (isOnKindle?'<a':'<a style="text-decoration: none;color: inherit;' + (href?'" href="'+href+'" target="_blank"':'cursor: pointer"'))+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
@@ -1898,11 +1900,7 @@ function danmuRoomInfo(n){//time, title, lastDanmu
     var isSetNewRoom=n==-1&&danmuRoomId;
     if (!isSetNewRoom) clearTimeout(danmuTaskIndexs[2]);
     if (isDanmuLive){
-        var i;
-        if (n==-1)
-            i=danmuRoomId?danmuRoomId:streamer[1][n=0];
-        else
-            i=streamer[1][n==undefined?n=0:n];
+        var i=n==-1?(danmuRoomId?danmuRoomId:streamer[1][n=0]):streamer[1][n==undefined?n=0:n];
         n=(n+1)%streamer[1].length;
         danmuRead("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + i, parseTime);
         if (!isSetNewRoom) danmuTaskIndexs[2] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry >= 5 ? 5*60e3 : 2e3);
