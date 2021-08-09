@@ -34,8 +34,7 @@ var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     'home']
     :[];
 var isDanmuFullWindow=false;//danmu start in fullwindow mode (not fullscreen)
-var isDanmuLiveVideo=true;//play live on roomId changed, only in fullscreen (not fullwindow) mode #danmuonly 
-var danmuFontSizeFullScreen=["5.5", "vh"];//only under fullscreen (not fullwindow) mode #danmuonly
+var isDanmuLiveVideo=true;//play live on roomId changed, only in fullscreen (not fullwindow) mode #danmuonly
 var hueBaseUrl = '/hue/';//'//philips-hue/api/' if no need CORS Access-Control-Allow-Origin *
 var hueToken = "UDp1xs0RpZiOho4oX7PY-L7fpAOe8pYnOMTK1tfo";//replace with your token, to get: push bridge button and run hReg()
 //*******************END**********************
@@ -166,6 +165,7 @@ function hasModule(name){
         margin-left: 0;
         width: 100%;
         height: 100%;
+        font-size: 5.5vh;
         background: hsl(0,0%,4%);
         color: rgba(255, 255, 255, .2);
         left: -.01rem;
@@ -192,6 +192,10 @@ function hasModule(name){
       display: block;
       font-size: .6rem;
     }
+    .danmu_info.fullscreen {
+        background: rgba(0, 0, 0, .2);
+        font-size: .67em;
+    }
     .danmu.fullscreen {
         background: rgba(0, 0, 0, .2);
         background-size: 120%;
@@ -202,12 +206,12 @@ function hasModule(name){
         height: 90vh;
         width: 65vw;
         object-fit: contain;
-        object-position: right;
+        object-position: right bottom;
         font-family: sans-serif;
         color: hsl(0, 0%, 40%);
         position: absolute;
         top: 5vh;
-        right: 0;
+        right: 0px;
         opacity: 0;
         z-index: -1;
     }
@@ -220,13 +224,14 @@ function hasModule(name){
         transform: rotate(90deg);
         width: 120vh;
         height: 50vw;
-        top: 5vh;
+        top: -1vh;
         right: -12.5vw;
     }
     .danmu_live.info {
         top: 0px;
         z-index: -2;
         opacity: .6;
+        font-size: .5em;
     }
     .time {
       font-size: 16rem;
@@ -442,12 +447,10 @@ function danmuOnly(){
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
-    danmu_info.style='font-size: '+(parseFloat(danmuFontSizeFullScreen[0])/1.5+danmuFontSizeFullScreen[1]);
     danmu_fr.classList.add('fullscreen');
-    danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
-    document.getElementsByClassName('cleaner')[0].style.display='none';
+    danmu_info.classList.add('fullscreen');
     danmu.classList.add('fullscreen');
-    danmu_live_info.style='font-size: '+(parseFloat(danmuFontSizeFullScreen[0])/2+danmuFontSizeFullScreen[1]);
+    document.getElementsByClassName('cleaner')[0].style.display='none';
     danmu_info.innerHTML='<br><br><br><center><big>Due to browser\'s requirement,<br>fullSceen & video need user-gesture to activate.<br><br><u><b>CLICK</b></u> once to start</big><center>';
     danmuAlter=function danmuAlterScreenOnly(beLess){
         if (!beLess){
@@ -1791,7 +1794,7 @@ function danmuRead(roomId, f){
             danmuWrite(s, false, true);
         }
     }, '', '', f == undefined ? function both(){
-        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 60e4 ? 50 : 500 : 2e3 : 5e3
+        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 60e4 ? 50e1 : 500 : 2e3 : 5e3;//it seems requests gap below 500ms will be QUEUEING by browser
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
             danmuTaskIndexs[0] = setTimeout(danmuRead, t);
@@ -1861,7 +1864,7 @@ function danmuStatusUpdate(s){
 function danmuStatus(){
     var status = ['OFF', streamerTime[danmuRoomIndex] ? streamerTime[danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
-    var extraButton=isDanmuOnly?atag((danmuFlow?danmuFlow:'▲')+'<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 \nLet there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 \nscroll to input number, click once to next, twice to confirm'):'';
+    var extraButton=isDanmuOnly?atag((danmuFlow?'<sup>'+danmuFlow+'</sup>':'▲')+'<small>'+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+'</small> ', false, 'hSwitch(1)', '灯 \nLet there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 \nscroll to input number, click once to next, twice to confirm'):'';
     if (!isOnKindle)
         for (var i=0;i<streamer[0].length;i++)
             if (isDanmuWatch&&streamerTime[i]&&danmuRoomId!=i)
@@ -2059,14 +2062,14 @@ function getliveDefaultVol(i){
 }
 function setLiveWidth(isLager){
     if (danmuPop>1&&isLager==undefined)//(1, 18e3) [2e4, 78e3) [8e4, )
-        if (danmuPop<18e3){
+        if (danmuPop<1.8e4){
             isLager=true;
-            danmu_fr.style.fontSize=(parseFloat(danmuFontSizeFullScreen[0])/1.35+danmuFontSizeFullScreen[1]);
-        } else if (danmuPop>=2e4&&danmuPop<78e3)
+            danmu_fr.style.fontSize=5.5/1.35+'vh';
+        } else if (danmuPop>=2e4&&danmuPop<7.8e4)
             isLager=true;
         else if (danmuPop>=8e4){
             isLager=false;
-            danmu_fr.style.fontSize=danmuFontSizeFullScreen.join('');
+            danmu_fr.style.fontSize='';
         }
     if (isLager){
         danmu_live.classList.add('large');

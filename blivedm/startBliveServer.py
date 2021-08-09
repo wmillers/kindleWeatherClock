@@ -167,7 +167,7 @@ def readFromLive(timeout=5):
                     info['pop']=tmp[1:-1]
             else:
                 res=tmp+('<br>' if res else '')+res
-    info['flow']=round((info['flow']+count)/2, 1)
+    info['flow']=int((info['flow']+count)/2)
     if (len(history)>1000):
         history=history[500:]
     if (status_code.value!=0):
@@ -194,6 +194,12 @@ def aprint(a):
     if (a.strip()):
         que.put_nowait(a)
 
+def supbold(s):
+    return '<span style="font-weight: bold; vertical-align: super; font-size: .8em">'+str(s)+'</span>'
+
+def bigbold(s):
+    return '<span style="font-weight: bold; font-size: 1.2em">'+str(s)+'</span>'
+
 class MyBLiveClient(blivedm.BLiveClient):
     # 演示如何自定义handler
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
@@ -207,20 +213,20 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
-        identity='<sup><b>'+('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else '')+'</b></sup>'
-        level='<sup><b>'+str(int(danmaku.user_level/5))+'</b></sup>' if danmaku.user_level>=15 else ''
-        aprint(f"<small><small>{identity}{level}{danmaku.uname} </small></small><big><b>{danmaku.msg}</b></big>")
+        identity=supbold(('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else ''))
+        level=supbold(int(danmaku.user_level/5)) if danmaku.user_level>=15 else ''
+        aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold(danmaku.msg)}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>=20*100)):
-            identity='<sup><b>'+(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')+'</b></sup>'
+            identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
             aprint(f'<small>{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'<big><b>{message.username}</b> 成为<b>{message.gift_name}</b></big>')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        identity='<sup><b>'+(str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')+'</b></sup>'
-        aprint(f'$${message.price}${identity}{message.uname}: <big><b>{message.message}</b></big>$')
+        identity=supbold((str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else ''))
+        aprint(f'$${message.price}${identity}{message.uname}: {bigbold(message.message)}$')
 
 
 async def initDm(room_id):
