@@ -107,7 +107,7 @@ def controlRoom(path, data=None, method=None):
             new_room_id.value=-3
             info['pop']='1'
             res='[UPGRADE] it depends on network'
-        elif (cmd=='info'):
+        elif (cmd=='info' or cmd=='status'):
             info['que_size']=que.qsize()
             if (status_code.value!=0 and que.qsize()>5):
                 status_code.value=0
