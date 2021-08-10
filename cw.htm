@@ -1794,7 +1794,7 @@ function danmuRead(roomId, f){
             danmuWrite(s, false, true);
         }
     }, '', '', f == undefined ? function both(){
-        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 60e4 ? 50e1 : 500 : 2e3 : 5e3;//it seems requests gap below 500ms will be QUEUEING by browser
+        var t=danmuRetry > 5 || danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 10e4 ? isDanmuOnly && danmuPop > 60e4 ? 50 : 500 : 2e3 : 5e3;
         clearTimeout(danmuTaskIndexs[0]);
         if (isDanmuLive)
             danmuTaskIndexs[0] = setTimeout(danmuRead, t);
@@ -2009,6 +2009,7 @@ function liveFromRoom(description){
             url: url,
             hasVideo: !audioOnly,
         }, {
+            enableWorker: true,// avoid requests cause danmuRead delay
             liveBufferLatencyChasing: true,
             liveBufferLatencyMaxLatency: 30,
             liveBufferLatencyMinRemain: 2,

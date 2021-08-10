@@ -77,7 +77,7 @@ def controlRoom(path, data=None, method=None):
     cmd=ori_cmd.lower()
     if not cmd.find('cors:'):
         print(ori_cmd[:5]+'..'+ori_cmd[-10:]+'|', end='')
-    else:#if len(cmd.strip()):
+    else:
         print('['+ori_cmd+']', end='')
     needExtra=False
     if (cmd==''):
