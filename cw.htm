@@ -1748,6 +1748,7 @@ function danmuShow(s){
     danmuWrite(s);
     if (danmuPop != 1 && s.indexOf('[RECV]') == -1 && s.indexOf('[SLEEP]') != -1)
         setDanmuPop(1);
+
     function parseJS(s){
         var r = decodeURI(s).split(';');
         setTimeout(function run(){
@@ -1852,19 +1853,20 @@ function setDanmuRoomId(s, force){
 function danmuStatusUpdate(s){
     clearTimeout(danmuTaskIndexs[1]);
     if (isDanmuLive){
-        danmuTaskIndexs[1] = setTimeout('danmuReq("status", danmuStatusUpdate)', !s ? 3 * 1000 : danmuPop == 1 ? 3 * 60e3 : 60e3);
-        if (s){
-            var status = JsonParse(s);
-            if (status){
-                var p = parseInt(status.pop);
-                if (danmuRoomId&&status.room_id==0&&p<=1)
-                    danmuOn(danmuRoomId);
-                else {
-                    danmuFlow=status.flow;
-                    setDanmuRoomId(status.room_id);
-                    danmuSC(status.super_chat);
-                    setDanmuPop(parseInt(status.que_size) > 5 && p == 1 ? 2 : p);
-                }
+        danmuTaskIndexs[1] = setTimeout(danmuStatusUpdate, !s ? 3 * 1000 : danmuPop == 1 ? 3.5 * 60e3 : 60e3);
+        danmuReq("status", parseStatus);
+    }
+    function parseStatus(s){
+        var status = JsonParse(s);
+        if (status){
+            var p = parseInt(status.pop);
+            if (danmuRoomId&&status.room_id==0&&p<=1)
+                danmuOn(danmuRoomId);
+            else {
+                danmuFlow=status.flow;
+                setDanmuRoomId(status.room_id);
+                danmuSC(status.super_chat);
+                setDanmuPop(parseInt(status.que_size) > 5 && p == 1 ? 2 : p);
             }
         }
     }
@@ -1886,7 +1888,7 @@ function danmuStatus(){
     }
     var signal=Math.round(streamerTime.filter(function f(s){return s&&s!=''}).length/streamerTime.length*6);
     signal=new Array(signal+1).join('•')+new Array(6-signal+1).join('◦');
-    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + ' ' + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, '', danmuRoomSign) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1) + atag(' [' +dateString('Mdhm') + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>':'') + danmuSuperChat;
+    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + ' ' + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, '', danmuRoomSign) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1):'') + atag(' [' +dateString('Mdhm') + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>' + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
         return (isOnKindle?'<a':'<a style="text-decoration: none;color: inherit;' + (href?'" href="'+href+'" target="_blank"':'cursor: pointer"'))+(onclick?' onclick="'+onclick+'"':'') +(title?' title="'+title+'"':'')+'>' + inner + '</a>';
@@ -1928,6 +1930,7 @@ function danmuRoomInfo(n){//time, title, lastDanmu
         }
         if (forTestUse)
             console.log('time', i, streamer[1][i], streamerTime[i]);
+
         function humanTill(t){
             if (t>0){
                 t=getOffsetTime(0, true) / 1000 - t;
@@ -1997,6 +2000,7 @@ function liveFromRoom(description){
         }
     });
     var lastUrlCache='';
+
     function liveFromUrl(durl, audioOnly){
         if (durl)
             lastUrlCache=durl;
