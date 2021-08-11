@@ -34,7 +34,7 @@ class Resquest(BaseHTTPRequestHandler):
         needExtra, cmd_res=controlRoom(self.path, data, method)
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
-            danmu=readFromLive(10)
+            danmu=readFromLive(15)
             if (danmu and danmu!='<br>'):
                 res=res+danmu
         return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
@@ -140,7 +140,7 @@ def controlRoom(path, data=None, method=None):
             except Exception as e:
                 res=str(e)
             finally:
-                res='<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}</script><pre style="background: #202124" id="ansi">\n'+res.replace('<', '&lt;')+'</pre>'
+                res='<title>'+ori_cmd[5:].replace('<', '&lt;')+'</title><script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}</script><pre style="background: #202124" id="ansi">\n'+res.replace('<', '&lt;')+'</pre>'
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)

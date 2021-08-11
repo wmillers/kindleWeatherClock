@@ -1780,6 +1780,8 @@ function danmuReq(roomId, f){
         return;
     } else if (danmuRetry > 10)
         danmuStatus();
+    else if (danmuRetry<0)
+        danmuRetry=0;
     httpReq("/blive/" + (roomId ? '?' + roomId : ''), function succ(s){
         isDanmuReconfirm=false;
         if (s.indexOf('[EXCEP]') == -1)
@@ -1799,11 +1801,11 @@ function danmuReq(roomId, f){
 function danmuContent(roomId){
     clearTimeout(danmuTaskIndexs[0]);
     if (isDanmuLive){
-        var t=(danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? 2e3 : isDanmuOnly && danmuPop > 10e4 ? 500 : isDanmuOnly && danmuPop > 60e4 ? 150 : 5e3);
-        if (danmuRetry>8&&t<60)
-            t=Math.sqrt(t*60);// cross with y=60x at (60, 60)
+        var t=danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 60e4 ? 100 : 2e3 : 5e3;
+        if (danmuRetry>=8&&t<60e3)
+            t=Math.sqrt(t*60e3);// cross with y=60x at (60, 60) seconds
         danmuTaskIndexs[0] = setTimeout(danmuContent, t);//btw, it takes at least .5s for browser to handle "idle frame"
-        danmuReq(roomId, danmuShow);
+        danmuReq(roomId, danmuShow);// instant call till reach 8, avoid browser's less prior on setTimeout
     }
 }
 function danmuFullScreen(forceFullScreen){
@@ -1868,7 +1870,7 @@ function danmuStatusUpdate(s){
     }
 }
 function danmuStatus(){
-    var status = ['OFF', streamerTime[danmuRoomIndex] ? streamerTime[danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
+    var status = danmuRetry >=10 ? ' ⁉' + danmuRetry : ['OFF', streamerTime[danmuRoomIndex] ? streamerTime[danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
     var extraButton=isDanmuOnly?atag((danmuFlow>=5?'<sup>'+danmuFlow+'</sup>':'▲')+(!isLiveOff()&&livePlayer.volume!=undefined?Math.floor(livePlayer.volume*10):'')+' ', false, 'hSwitch(1)', '灯 \nLet there be light')+atag('▼'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '滚轮输入数字，单击输入下一位，双击确认 \nscroll to input number, click once to next, twice to confirm')+(isDanmuReconfirm?atag(' ⁉ ', '/blive/', '', '点击此处重新确认\nClick here to re-confirm'):''):'';
     if (!isOnKindle)
@@ -1884,8 +1886,6 @@ function danmuStatus(){
     }
     var signal=Math.round(streamerTime.filter(function f(s){return s&&s!=''}).length/streamerTime.length*6);
     signal=new Array(signal+1).join('•')+new Array(6-signal+1).join('◦');
-    if (danmuRetry > 10)
-        status = ' ⁉' + danmuRetry;
     danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', 'FullScreen') + atag(dTrends, false, 'liveRotate()', 'Rotate') + ' ' + extraButton + '<span style="float:right">'+atag(danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, '', danmuRoomSign) + '<b>' + atag(status, false, "f5('', '#danmuOnly')", 'Refresh') + '</b></span><br>' + (liveStatus?'<b><small '+(isDanmuOnly?'style="background: rgba(0, 0, 0, .4)"':'')+'>' +liveStatus.slice(1) + atag(' [' +dateString('Mdhm') + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom)+'</b></small><br>':'') + danmuSuperChat;
 
     function atag(inner, href, onclick, title){
