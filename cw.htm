@@ -1575,6 +1575,8 @@ var danmuTaskIndexs = [0, 0, 0];//read,info,time (& title)
 var danmuMax = 50;
 var danmuRetry = 0;
 var danmuLast = '';
+var danmuBuffer=[];
+var isDanmuBuffer;
 var isDanmuWatch=true;
 var livePlayer;
 var liveRetry=0;
@@ -1712,18 +1714,39 @@ function setDanmuPop(p){
     }
 }
 function danmuWrite(s, isBold, isReverse, isInSameLine, stillShowDuplicate){
-    if (!stillShowDuplicate&&danmuLast == (danmuLast = s)||!s) return;
-    if (isBold) s = '<b>' + s + '</b>';
-    if (isReverse) s = ' <small>' + s + '</small>';
-    if (!Array.isArray(s))
+    if (!s||!s.length||!stillShowDuplicate&&danmuLast == (danmuLast = s)) return;
+    if (!Array.isArray(s)){
+        if (isBold) s = '<b>' + s + '</b>';
+        if (isReverse) s = ' <small>' + s + '</small>';
         danmu.insertAdjacentHTML('afterbegin', s+(isInSameLine ? ' |' : '<br>'));
-    else
-        tasks(function dWrite(e){danmu.insertAdjacentHTML('afterbegin', e+'<br>')}, s, 5e3/Math.min(1, s.length), true);
+    } else
+        smooth(s);
     var len=danmu.childElementCount;
     if (len>danmuMax*(danmuPop<60e4?2:10))
         for (var i=len-1;i>danmuMax;i--)
             danmu.removeChild(danmu.children[i]);
     return s;
+
+    function smooth(l){
+        if (l&&l.length){
+            danmuBuffer=danmuBuffer.concat(l);
+            if (!isDanmuBuffer)
+                setT();
+        } else if (danmuBuffer.length){
+            if (l=danmuBuffer.splice(0, Math.ceil((danmuBuffer.length+20)/40)).join('<br>'))
+                danmu.insertAdjacentHTML('afterbegin', l+'<br>');
+            if (danmuBuffer.length)
+                setT();
+            else
+                isDanmuBuffer=false;
+        } else
+            isDanmuBuffer=false;
+
+        function setT(){
+            isDanmuBuffer=true;
+            setTimeout(smooth, Math.max(400, 8e3/(danmuBuffer.length+3)));//n20==>.4s
+        }
+    }
 }
 function danmuShow(s){
     if (!s) return;
@@ -1748,14 +1771,14 @@ function danmuShow(s){
 
     function parseJS(s){
         var r = decodeURI(s).split(';');
+        var log=isDanmuOnly?liveInfo:comment;
         setTimeout(function run(){
-            comment('', true);
             try {
                 for (var j = 0; j < r.length; j++)
                     if (r[j])
-                        comment(eval(r[j]));
+                        log(r[j]+':'+eval(r[j]));
             } catch (e){
-                comment(e);
+                log(e);
             }
         }, 0);
     }
@@ -1797,11 +1820,12 @@ function danmuReq(roomId, f, fOnBoth){
 function danmuContent(roomId){
     clearTimeout(danmuTaskIndexs[0]);
     if (isDanmuLive){
-        var t=danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? isDanmuOnly && danmuPop > 60e4 ? 100 : 2e3 : 5e3;
+        var t=danmuPop == 1 ? 2 * 60e3 : danmuPop > 5e4 ? 2e3 : 5e3;
         if (danmuRetry>6&&t<60e3)
             t=Math.sqrt(t*60e3);// cross with y=60x at (60, 60) seconds
-        // Instant-call reaches limits of both browser's update layer tree and server's websocket interval,
-        // therefore, go back to the original setTimeout-after-request chain and let danmuWrite to smooth it
+        // Instant-call reaches limits of both browser's update layer tree and server's websocket interval.
+        // Which means 100ms are nearly same as 500ms and 0 the instant call,
+        // therefore, return back to the setTimeout-after-request chain and let danmuWrite to visually smooth it.
         danmuReq(roomId, danmuShow, function loop(){danmuTaskIndexs[0] = setTimeout(danmuContent, t)});
     }
 }
