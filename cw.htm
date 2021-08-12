@@ -1575,7 +1575,6 @@ var danmuTaskIndexs = [0, 0, 0];//read,info,time (& title)
 var danmuMax = 50;
 var danmuRetry = 0;
 var danmuLast = '';
-var danmuTemps=[];
 var isDanmuWatch=true;
 var livePlayer;
 var liveRetry=0;
@@ -1632,9 +1631,9 @@ function danmuOn(roomId, withoutFullScreen){
             isDanmuLive = 1;
             danmuContent(roomId);
     }
-    danmuAlter(false);
     setDanmuRoomId(roomId, true);
     danmuStatus();
+    danmuAlter(false);
 }
 function danmuOff(s){
     if (!isDanmuLive) return;
@@ -1719,21 +1718,12 @@ function danmuWrite(s, isBold, isReverse, isInSameLine, stillShowDuplicate){
     if (!Array.isArray(s))
         danmu.insertAdjacentHTML('afterbegin', s+(isInSameLine ? ' |' : '<br>'));
     else
-        danmuSmooth(s);
+        tasks(function dWrite(e){danmu.insertAdjacentHTML('afterbegin', e+'<br>')}, s, 5e3/Math.min(1, s.length), true);
     var len=danmu.childElementCount;
     if (len>danmuMax*(danmuPop<60e4?2:10))
         for (var i=len-1;i>danmuMax;i--)
             danmu.removeChild(danmu.children[i]);
     return s;
-
-    function danmuSmooth(s){
-        if (s)
-            danmuTemps=danmuTemps.concat(s);
-        if (s=danmuTemps.shift())
-            danmu.insertAdjacentHTML('afterbegin', s+'<br>');
-        if (danmuTemps.length)
-            setTimeout(danmuSmooth, (Math.random()+1)*1414/Math.sqrt(danmuTemps.length));
-    }
 }
 function danmuShow(s){
     if (!s) return;
@@ -1752,9 +1742,7 @@ function danmuShow(s){
             if (sn[i] && sn[i].indexOf('[CAFFEINE]') == -1)
                 s.push(sn[i]);
         }
-    if (!isDanmuOnly)
-        s = s.join("<br>");
-    danmuWrite(s);
+    danmuWrite(isDanmuOnly?s:s.join("<br>"));
     if (danmuPop != 1 && s.indexOf('[RECV]') == -1 && s.indexOf('[SLEEP]') != -1)
         setDanmuPop(1);
 
@@ -1862,7 +1850,7 @@ function danmuStatusUpdate(){
     clearTimeout(danmuTaskIndexs[1]);
     if (isDanmuLive){
         danmuTaskIndexs[1] = setTimeout(danmuStatusUpdate, danmuPop == 1 ? 3.5 * 60e3 : 60e3);
-        danmuReq("status", parseStatus);
+        setTimeout(function lag(){danmuReq("status", parseStatus)}, 500);// gap between danmuOn and room_id update
     }
     function parseStatus(s){
         var status = JsonParse(s);
@@ -1875,8 +1863,7 @@ function danmuStatusUpdate(){
                 danmuSC(status.super_chat);
                 setDanmuPop(parseInt(status.que_size) > 5 && p == 1 ? 2 : p);
             }
-        } else
-            setTimeout(danmuStatusUpdate, 3e3);
+        }
     }
 }
 function danmuStatus(){

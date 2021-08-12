@@ -273,15 +273,13 @@ def main():
     p = Process(target=initServer, args=(que,new_room_id,status_code,last_room_id,))
     p.start()
     c=False
-    room_id=0
     isOn=True
     if (len(sys.argv)>1):
-        room_id=int(sys.argv[1])
-        last_room_id.value=room_id
-        c = Process(target=runDm, args=(que,room_id,))
+        last_room_id.value=int(sys.argv[1])
+        c = Process(target=runDm, args=(que,last_room_id.value,))
         c.start()
-        print('[init] preset room_id: '+str(room_id))
-        que.put_nowait('[INIT] new room: '+str(room_id))
+        print('[init] preset room_id: '+str(last_room_id.value))
+        que.put_nowait('[INIT] new room: '+str(last_room_id.value))
     else:
         print('[wait] No preset room id, wait for client request')
         setSleep(que, status_code, 1)
@@ -289,7 +287,7 @@ def main():
         if (status_code.value==0 and que.qsize()>5000):
             print('[sleep] blive off, request room_id to wake up')
             kill(c)
-            room_id=0
+            last_room_id.value=0
             last_room_id.value=0
             clear_que(que, 100)
             setSleep(que, status_code, 2)
@@ -302,7 +300,7 @@ def main():
                     print('[kick&kill] restart script '+str(sys.argv))
                     setSleep(que, status_code, 3)
                     isOn=False
-                    room_id=0
+                    last_room_id.value=0
                     kill(p)
                     os.execv(sys.executable, ['python3'] + sys.argv)
                 elif (new_room_id.value==-3):
@@ -315,15 +313,14 @@ def main():
                             que.put_nowait(str(e))
                     else:
                         que.put_nowait('[upgrade] failed on file not exist')
-            elif (new_room_id.value!=room_id):
-                if (room_id!=0):
-                    print('[kill] room id: '+str(room_id))
+            elif (new_room_id.value!=last_room_id.value):
+                if (last_room_id.value!=0):
+                    print('[kill] room id: '+str(last_room_id.value))
                     kill(c)
-                room_id=new_room_id.value
-                last_room_id.value=room_id
-                print('[launch] new room id: '+str(room_id))
+                last_room_id.value=new_room_id.value
+                print('[launch] new room id: '+str(last_room_id.value))
                 status_code.value=0
-                c = Process(target=runDm, args=(que,room_id,))
+                c = Process(target=runDm, args=(que,last_room_id.value,))
                 c.start()
             new_room_id.value=0
         sleep(.5)
