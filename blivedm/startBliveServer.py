@@ -140,7 +140,7 @@ def controlRoom(path, data=None, method=None):
             except Exception as e:
                 res=str(e)
             finally:
-                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title><script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js"></script><script>window.onload=function a(){var a=document.getElementById("ansi");a.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}</script><body style="background: #202124"><pre id="ansi">\n'+res.replace('<', '&lt;')+'</pre></body>'
+                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("ansi");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124"><pre id="ansi">\33[2K\r'+res.replace('<', '&lt;')+'</pre></body>\r'
         else:
             res='[err] Invalid: '+cmd
     return needExtra, str(res)
