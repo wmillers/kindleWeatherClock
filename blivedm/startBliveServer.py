@@ -4,7 +4,7 @@
 import asyncio
 import sys, os, subprocess
 import blivedm
-from time import sleep, time, asctime
+from time import sleep, time, ctime
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -19,11 +19,13 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
+clients={}
 class Resquest(BaseHTTPRequestHandler):
     def log_request(code, size):
         pass
 
     def do_GET(self, data=None, method=None):
+        clientCount(self.headers['User-Agent'] if 'User-Agent' in self.headers else 'default')
         if (isEmptyPath(self.path)):
             self.send_response(404)
             self.end_headers()
@@ -37,7 +39,7 @@ class Resquest(BaseHTTPRequestHandler):
             danmu=readFromLive(15)
             if (danmu and danmu!='<br>'):
                 res=res+danmu
-        return self.wfile.write((res if res.strip() else '\n').encode('utf-8'))
+        return self.wfile.write((res+'\n').encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
@@ -52,6 +54,13 @@ def isEmptyPath(path):
     if (parse.urlparse(path).path in block):
         return True
     return False
+
+def clientCount(ua):
+    if (ua in clients):
+        clients[ua]['last']=ctime()
+        clients[ua]['reads']+=1
+    else:
+        clients[ua]={'first': ctime(), 'last': ctime(), 'reads': 0}
 
 def corsAccess(url, data=None, method=None):
     headers = {
@@ -117,6 +126,8 @@ def controlRoom(path, data=None, method=None):
                 info['room_id']=last_room_id.value
                 info['super_chat']=[]
             res=json.dumps(info)
+        elif (cmd=='clients'):
+            res=json.dumps(clients)
         elif (not cmd.find('call:')):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
@@ -265,7 +276,7 @@ def kill(p):
         print('skip Error when kill '+str(p))
 
 def main():
-    print('--- START at '+asctime()+' ---')
+    print('--- START at '+ctime()+' ---')
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
@@ -324,8 +335,12 @@ def main():
                 c.start()
             new_room_id.value=0
         sleep(.5)
-    print('***  END  at '+asctime()+' ***')
+    print('***  END  at '+ctime()+' ***')
     os._exit()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()  
+    except Exception:
+        print(str(sys.exc_info()))
+    sys.stdout.flush()

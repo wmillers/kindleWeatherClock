@@ -1658,7 +1658,7 @@ function danmuOff(s){
         }
     }, 10 * 60e3);
     danmuAlter(true);
-    danmuWrite('<b>[OFF@'+ dateString() +']</b> ' + (s != undefined ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStartTime, 2, true));
+    danmuWrite('<b>[OFF@'+ dateString() +']</b> ' + (s ? s + ' ' : '') + '<b>run</b>' + timeFormat(getOffsetTime() - danmuStartTime, 2, true));
     danmuPop = 0;
     danmuStatus();
 }
