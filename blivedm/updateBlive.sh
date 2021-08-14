@@ -3,7 +3,7 @@ if [[ "$EUID" = 0 ]]; then
     echo "(1) Do NOT run the Python script as ROOT"
     exit 1
 fi
-echo start upgrade >> blive.log
+echo start upgrade >> kindle.log
 cd "$(dirname "$0")"
 for((i=0;i<5;i++));
 do
@@ -18,5 +18,5 @@ do
     fi
 done
 ps ax | grep [s]tartBliveServer.py | awk '{print $1}' | xargs kill -9
-nohup python3 blivedm/startBliveServer.py > blive.log 2>&1 &
+nohup python3 startBliveServer.py > kindle.log 2>&1 &
 ps aux|grep [s]tartBlive

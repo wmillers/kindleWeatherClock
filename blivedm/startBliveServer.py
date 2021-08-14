@@ -11,6 +11,7 @@ import json
 from urllib import parse, request
 import ctypes
 from socketserver import ThreadingMixIn
+import re
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -31,15 +32,19 @@ class Resquest(BaseHTTPRequestHandler):
             self.end_headers()
             return
         self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
         needExtra, cmd_res=controlRoom(self.path, data, method)
+        if isinstance(cmd_res, str):
+            self.send_header('Content-type', 'text/html; charset=utf-8')
+        else:
+            self.send_header('Content-type', 'application/json')
+            cmd_res=json.dumps(cmd_res, indent=2)
+        self.end_headers()
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
             danmu=readFromLive(15)
             if (danmu and danmu!='<br>'):
                 res=res+danmu
-        return self.wfile.write((res+'\n').encode('utf-8'))
+        return self.wfile.write((res if res else '\n').encode('utf-8'))
 
     def do_POST(self):
         data=self.rfile.read(int(self.headers['content-length']))
@@ -56,11 +61,19 @@ def isEmptyPath(path):
     return False
 
 def clientCount(ua):
-    if (ua in clients):
-        clients[ua]['last']=ctime()
+    if ua in clients:
+        clients[ua]['interval']=round(time()-clients[ua]['last'], 3)
+        clients[ua]['last']=time()
         clients[ua]['reads']+=1
     else:
-        clients[ua]={'first': ctime(), 'last': ctime(), 'reads': 0}
+        clients[ua]={'first': ctime(), 'last': time(), 'interval': 0, 'reads': 1}
+        platform=re.findall(r'(?<=\().+?(?=\))', ua)
+        browser=re.findall(r'([Cc]hrome|[Ss]afari)\/[\d\.]+', ua)
+        if len(platform):
+            clients[ua]['platform']=platform[0]
+        if len(browser):
+            clients[ua]['browser']=browser[0]
+
 
 def corsAccess(url, data=None, method=None):
     headers = {
@@ -73,7 +86,7 @@ def corsAccess(url, data=None, method=None):
         with request.urlopen(req) as response:
             status=dict({'code': response.status, 'from': url})
             if (response.status>=400):
-                return json.dumps(status)
+                return status
             else:
                 return response.read().decode("utf-8")
     except Exception:
@@ -104,7 +117,7 @@ def controlRoom(path, data=None, method=None):
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res=cmd+': '+'<br>'.join(history)
+            res='<br>'.join(history)
         elif (cmd=='bye'):
             new_room_id.value=-1
             res='[DEACTIVATE] client request turn off'
@@ -125,9 +138,9 @@ def controlRoom(path, data=None, method=None):
             if (info['room_id']!=last_room_id.value):
                 info['room_id']=last_room_id.value
                 info['super_chat']=[]
-            res=json.dumps(info)
+            res=info
         elif (cmd=='clients'):
-            res=json.dumps(clients)
+            res=clients
         elif (not cmd.find('call:')):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
@@ -154,7 +167,7 @@ def controlRoom(path, data=None, method=None):
                 res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("ansi");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124"><pre id="ansi">\33[2K\r'+res.replace('<', '&lt;')+'</pre></body>\r'
         else:
             res='[err] Invalid: '+cmd
-    return needExtra, str(res)
+    return needExtra, res
 
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
@@ -197,6 +210,7 @@ def initServer(r, c1, c2, c3):
         print('[initServer:8099] '+str(e))
     else:
         print('[initServer:8099] normal exit')
+    sys.stdout.flush()
     new_room_id.value=-1
 
 
@@ -276,7 +290,8 @@ def kill(p):
         print('skip Error when kill '+str(p))
 
 def main():
-    print('--- START at '+ctime()+' ---')
+    print('--- START at '+ctime()+' ---\n--- '+sys.path[0]+' ---')
+    os.chdir(sys.path[0])
     que = Queue()
     new_room_id=Value(ctypes.c_longlong, 0)
     status_code=Value(ctypes.c_int, 0)
@@ -315,15 +330,12 @@ def main():
                     kill(p)
                     os.execv(sys.executable, ['python3'] + sys.argv)
                 elif (new_room_id.value==-3):
-                    if (os.access('replaceBlive.sh', os.X_OK)):
-                        print('[upgrade] it takes a while')
-                        status_code.value=4
-                        try:
-                            subprocess.run('source replaceBlive.sh', shell=True, executable="/bin/bash")
-                        except Exception as e:
-                            que.put_nowait(str(e))
-                    else:
-                        que.put_nowait('[upgrade] failed on file not exist')
+                    print('[upgrade] it takes a while')
+                    status_code.value=4
+                    try:
+                        subprocess.run('/bin/bash updateBlive.sh', shell=True, executable="/bin/bash")
+                    except Exception as e:
+                        que.put_nowait(str(e))
             elif (new_room_id.value!=last_room_id.value):
                 if (last_room_id.value!=0):
                     print('[kill] room id: '+str(last_room_id.value))
@@ -343,4 +355,3 @@ if __name__ == '__main__':
         main()  
     except Exception:
         print(str(sys.exc_info()))
-    sys.stdout.flush()
