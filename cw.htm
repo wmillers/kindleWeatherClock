@@ -1641,6 +1641,7 @@ function danmuOn(roomId, withoutFullScreen){
     }
     setDanmuRoomId(roomId, true);
     danmuStatus();
+    danmuStreamerTuber();
     danmuAlter(false);
 }
 function danmuOff(s){
@@ -1775,12 +1776,26 @@ function danmuSC(l){
             danmuSuperChat += '<b>￥' + l[i][1] + '</b><small>[+' + l[i][0] + '分]</small> ' + l[i][2] + '<br>';
     }
 }
+function danmuStreamerTuber(){
+    danmuReq('cors:https://api.live.bilibili.com/room/v3/area/getRoomList?parent_area_id=9&page_size=1', action);
+
+    function action(s){
+        s=JsonParse(s);
+        if (s.code==0){
+            s=s.data.list;
+            if (streamer[1].indexOf(s[0].roomid)==-1){
+                streamer[0][streamer[0].length-1]=s[0].uname;
+                streamer[1][streamer[0].length-1]=s[0].roomid;
+            }
+        }
+    }
+}
 function getNanoSecond(){
     return (window.performance.now()/1e3%10).toFixed(6);
 }
 function danmuReq(roomId, f, fOnBoth){
     if (++danmuRetry >= 10){
-        danmuOff('<b>(〃>_<;〃) R</b>' + danmuRetry + '>= 10 <b>#</b>' + roomId?roomId:danmuRoomId);
+        danmuOff('<b>(〃>_<;〃) R</b>' + danmuRetry + '>= 10 <b>#</b>' + (roomId?roomId:danmuRoomId));
         return;
     } else if (danmuRetry > 6)
         danmuStatus();
@@ -1788,8 +1803,7 @@ function danmuReq(roomId, f, fOnBoth){
         isDanmuReconfirm=false;
         if (s.indexOf('[EXCEP]') == -1)
             danmuRetry=0;
-        if (typeof f=='function')
-            f(s);
+        (typeof f=='function'&&isDanmuLive?f:console.log)(s);
         danmuReqCount++;
     }, function fail(s, p){
         if (isDanmuLive){
@@ -1919,7 +1933,7 @@ function danmuRoomInfo(n){//time, title, lastDanmu
         var i=n==-1?(danmuRoomId?danmuRoomId:streamer[1][n=0]):streamer[1][n==undefined?n=0:n];
         n=(n+1)%streamer[1].length;
         danmuReq("cors:https://api.live.bilibili.com/room/v1/Room/room_init?id=" + i, parseTime);
-        if (!isSetNewRoom) danmuTaskIndexs[2] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry > 6 ? 5*60e3 : 2e3);
+        if (!isSetNewRoom) danmuTaskIndexs[2] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry > 6 ? 5*60e3 : 1e3);
     }
     function parseTime(s){//'101m'
         var stat = JsonParse(s);
