@@ -68,7 +68,7 @@ def clientCount(ua):
     else:
         clients[ua]={'first': ctime(), 'last': time(), 'interval': 0, 'reads': 1}
         platform=re.findall(r'(?<=\().+?(?=\))', ua)
-        browser=re.findall(r'([Cc]hrome|[Ss]afari)\/[\d\.]+', ua)
+        browser=re.findall(r'(?:[Cc]hrome|[Ss]afari)[\d\.\/]+', ua)
         if len(platform):
             clients[ua]['platform']=platform[0]
         if len(browser):
@@ -221,8 +221,8 @@ def aprint(a):
 def supbold(s):
     return '<span style="font-weight: bold; vertical-align: super; font-size: .8em">'+str(s)+'</span>'
 
-def bigbold(s):
-    return '<span style="font-weight: bold; font-size: 1.2em">'+str(s)+'</span>'
+def bigbold(s, size=1.2):
+    return '<span style="font-weight: bold; font-size: '+str(size)+'em">'+str(s)+'</span>'
 
 class MyBLiveClient(blivedm.BLiveClient):
     # 演示如何自定义handler
@@ -244,7 +244,8 @@ class MyBLiveClient(blivedm.BLiveClient):
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>=20*100)):
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
-            aprint(f'<small>{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}</small>')
+            price=round(gift.total_coin/1e6, 4)
+            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price).strip("0")}'), .8+price*10)
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'<big><b>{message.username}</b> 成为<b>{message.gift_name}</b></big>')
 
