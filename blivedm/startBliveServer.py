@@ -11,7 +11,7 @@ import json
 from urllib import parse, request
 import ctypes
 from socketserver import ThreadingMixIn
-import re
+import re, math
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -65,7 +65,7 @@ def clientCount(ua, path):
         clients[ua]['interval']=round(time()-clients[ua]['last'], 3)
         clients[ua]['reads']+=1
     else:
-        clients[ua]={'first': ctime(), 'interval': 0, 'path':set(), 'reads': 1}
+        clients[ua]={'first': ctime(), 'interval': 0, 'last': 0, 'path':[], 'reads': 1}
         platform=re.findall(r'(?<=\().+?(?=\))', ua)
         browser=re.findall(r'(?:[Cc]hrome|[Ss]afari)[\d\.\/]+', ua)
         if len(platform):
@@ -73,11 +73,8 @@ def clientCount(ua, path):
         if len(browser):
             clients[ua]['browser']=browser[0]
     clients[ua]['last']=time()
-    while len(clients['ua']['path'])>5:
-        clients[ua]['path'].pop()
-    clients[ua]['path'].add(path)
-
-
+    clients[ua]['path']=clients[ua]['path'][-4:]
+    clients[ua]['path'].append(path)
 
 def corsAccess(url, data=None, method=None):
     headers = {
@@ -93,18 +90,19 @@ def corsAccess(url, data=None, method=None):
                 return status
             else:
                 return response.read().decode("utf-8")
-    except Exception:
-        que.put_nowait('[EXCEP] cors: <'+url+'>'+str(sys.exc_info()))
+    except Exception as e:
+        print(repr(e), flush=True)
+        que.put_nowait('[EXCEP:cors] '+repr(e)+'@'+url)
         return ''
 
 def controlRoom(path, data=None, method=None):
     global new_room_id, que, info, status_code, last_room_id, status
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
-    if not cmd.find('cors:'):
-        print(ori_cmd[:5]+'..'+ori_cmd[-10:]+'|', end='', flush=True)
+    if cmd.find('cors:')!=-1:
+        print('|'+ori_cmd[:5]+'~'+ori_cmd[-11:], end='', flush=True)
     else:
-        print('['+ori_cmd+']', end='', flush=True)
+        print('-'+ori_cmd if ori_cmd else '.', end='', flush=True)
     needExtra=False
     if (cmd==''):
         res=''
@@ -164,11 +162,11 @@ def controlRoom(path, data=None, method=None):
             try:
                 res=subprocess.run(parse.unquote(ori_cmd[5:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10, shell=True, executable="/bin/bash").stdout.decode()
             except Exception as e:
-                res=str(e)
+                res=repr(e)
             finally:
                 res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("ansi");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124"><pre id="ansi">\33[2K\r'+res.replace('<', '&lt;')+'</pre></body>\r'
         else:
-            res='[err] Invalid: '+cmd
+            res='[err] Invalid: '+ori_cmd
     return needExtra, res
 
 def readFromLive(timeout=5):
@@ -209,7 +207,7 @@ def initServer(r, c1, c2, c3):
     try:
         server.serve_forever()
     except Exception as e:
-        print('[initServer:8099] '+str(e), flush=True)
+        print('[initServer:8099] '+repr(e), flush=True)
     else:
         print('[initServer:8099] normal exit', flush=True)
     new_room_id.value=-1
@@ -243,10 +241,10 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold(danmaku.msg)}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>=20*100)):
+        if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>=2000)):
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
-            price=round(gift.total_coin/1e6, 4)
-            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price).strip("0")}'), .8+price*10)
+            price=round(gift.total_coin/1e3, 4)
+            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price/1e4).strip("0")}', .64+math.pow(price,1/4)/10))
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'<big><b>{message.username}</b> 成为<b>{message.gift_name}</b></big>')
 
@@ -274,8 +272,9 @@ def runDm(s, room_id):
 
 
 def clear_que(q, n):
-    while (not q.empty() and n):
-        n-=1
+    n-=q.qsize()
+    while (not q.empty() and n<0):
+        n+=1
         q.get_nowait()
 
 def setSleep(q, status_code, status):
@@ -287,8 +286,8 @@ def kill(p):
         if (p):
             p.terminate()
             p.join()
-    except Exception:
-        print('skip Error when kill '+str(p))
+    except Exception as e:
+        print('skip '+repr(e)+' when kill '+str(p))
 
 def main():
     print('--- START at '+ctime()+' ---\n--- '+sys.path[0]+' ---')
@@ -316,7 +315,7 @@ def main():
             kill(c)
             last_room_id.value=0
             last_room_id.value=0
-            clear_que(que, 100)
+            clear_que(que, 500)
             setSleep(que, status_code, 2)
         if (new_room_id.value!=0):
             if (new_room_id.value<0):
@@ -336,7 +335,7 @@ def main():
                     try:
                         subprocess.run('/bin/bash updateBlive.sh', shell=True, executable="/bin/bash")
                     except Exception as e:
-                        que.put_nowait(str(e))
+                        que.put_nowait(repr(e))
             elif (new_room_id.value!=last_room_id.value):
                 if (last_room_id.value!=0):
                     print('[kill] room id: '+str(last_room_id.value))
@@ -354,5 +353,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()  
-    except Exception:
-        print(str(sys.exc_info()), flush=True)
+    except Exception as e:
+        print(repr(e)+str(sys.exc_info()), flush=True)
