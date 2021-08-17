@@ -19,4 +19,5 @@ do
 done
 ps ax | grep [s]tartBliveServer.py | awk '{print $1}' | xargs kill -9
 nohup python3 startBliveServer.py > kindle.log 2>&1 &
-ps aux|grep [s]tartBlive
+ps aux|grep [s]tartBlive  >> kindle.log
+curl http://localhost:8099/?status  >> kindle.log

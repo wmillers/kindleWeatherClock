@@ -26,7 +26,7 @@ class Resquest(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self, data=None, method=None):
-        clientCount(self.headers['User-Agent'] if 'User-Agent' in self.headers else 'default')
+        clientCount(self.headers['User-Agent'] if 'User-Agent' in self.headers else 'default', self.path)
         if (isEmptyPath(self.path)):
             self.send_response(404)
             self.end_headers()
@@ -60,19 +60,23 @@ def isEmptyPath(path):
         return True
     return False
 
-def clientCount(ua):
+def clientCount(ua, path):
     if ua in clients:
         clients[ua]['interval']=round(time()-clients[ua]['last'], 3)
-        clients[ua]['last']=time()
         clients[ua]['reads']+=1
     else:
-        clients[ua]={'first': ctime(), 'last': time(), 'interval': 0, 'reads': 1}
+        clients[ua]={'first': ctime(), 'interval': 0, 'path':set(), 'reads': 1}
         platform=re.findall(r'(?<=\().+?(?=\))', ua)
         browser=re.findall(r'(?:[Cc]hrome|[Ss]afari)[\d\.\/]+', ua)
         if len(platform):
             clients[ua]['platform']=platform[0]
         if len(browser):
             clients[ua]['browser']=browser[0]
+    clients[ua]['last']=time()
+    while len(clients['ua']['path'])>5:
+        clients[ua]['path'].pop()
+    clients[ua]['path'].add(path)
+
 
 
 def corsAccess(url, data=None, method=None):
@@ -98,9 +102,9 @@ def controlRoom(path, data=None, method=None):
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
     if not cmd.find('cors:'):
-        print(ori_cmd[:5]+'..'+ori_cmd[-10:]+'|', end='')
+        print(ori_cmd[:5]+'..'+ori_cmd[-10:]+'|', end='', flush=True)
     else:
-        print('['+ori_cmd+']', end='')
+        print('['+ori_cmd+']', end='', flush=True)
     needExtra=False
     if (cmd==''):
         res=''
@@ -144,7 +148,6 @@ def controlRoom(path, data=None, method=None):
         elif (not cmd.find('call:')):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
-            print('[call] '+cmd[5:])
             res='[CALLING]'
         elif (not cmd.find('js:')):
             cmd=parse.unquote(ori_cmd)
@@ -152,7 +155,6 @@ def controlRoom(path, data=None, method=None):
                 info['pop']='9999'
             que.put_nowait('[CAFFEINE] keep awake')
             que.put_nowait('[JS]'+cmd[3:])
-            print('[js] '+cmd[3:])
             res='[JS-Executing]'+cmd[3:]
         elif (not cmd.find('cors:')):
             res=corsAccess(parse.unquote(ori_cmd[5:]), data, method)
@@ -202,15 +204,14 @@ def initServer(r, c1, c2, c3):
     global que, new_room_id, status_code, last_room_id
     que, new_room_id, status_code, last_room_id=r, c1, c2, c3
     host = ('localhost', 8099)
-    print("Starting server, listen at: %s:%s" % host)
+    print("Starting server, listen at: %s:%s" % host, flush=True)
     server = ThreadedHTTPServer(host, Resquest)
     try:
         server.serve_forever()
     except Exception as e:
-        print('[initServer:8099] '+str(e))
+        print('[initServer:8099] '+str(e), flush=True)
     else:
-        print('[initServer:8099] normal exit')
-    sys.stdout.flush()
+        print('[initServer:8099] normal exit', flush=True)
     new_room_id.value=-1
 
 
@@ -269,7 +270,6 @@ async def initDm(room_id):
 def runDm(s, room_id):
     global que
     que=s
-    sys.stdout.flush()
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
 
@@ -305,10 +305,10 @@ def main():
         last_room_id.value=int(sys.argv[1])
         c = Process(target=runDm, args=(que,last_room_id.value,))
         c.start()
-        print('[init] preset room_id: '+str(last_room_id.value))
+        print('[init] preset room_id: '+str(last_room_id.value), flush=True)
         que.put_nowait('[INIT] new room: '+str(last_room_id.value))
     else:
-        print('[wait] No preset room id, wait for client request')
+        print('[wait] No preset room id, wait for client request', flush=True)
         setSleep(que, status_code, 1)
     while isOn:
         if (status_code.value==0 and que.qsize()>5000):
@@ -348,11 +348,11 @@ def main():
                 c.start()
             new_room_id.value=0
         sleep(.5)
-    print('***  END  at '+ctime()+' ***')
+    print('***  END  at '+ctime()+' ***', flush=True)
     os._exit()
 
 if __name__ == '__main__':
     try:
         main()  
     except Exception:
-        print(str(sys.exc_info()))
+        print(str(sys.exc_info()), flush=True)
