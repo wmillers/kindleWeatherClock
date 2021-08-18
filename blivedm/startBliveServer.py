@@ -241,12 +241,12 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold(danmaku.msg)}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        if (gift.coin_type!='silver' and (gift.num>=5 or gift.total_coin>=2000)):
+        price=round(gift.total_coin/1e3)
+        if (gift.coin_type!='silver' and price>=5):# gift.num
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
-            price=round(gift.total_coin/1e3, 4)
-            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price/1e4).strip("0")}', .64+math.pow(price,1/4)/10))
+            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price/1e4).rstrip("0")}', .64+math.pow(price, 1/3)/20))
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
-        aprint(f'<big><b>{message.username}</b> 成为<b>{message.gift_name}</b></big>')
+        aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
         identity=supbold((str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else ''))
