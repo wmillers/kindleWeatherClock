@@ -244,7 +244,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         price=round(gift.total_coin/1e3)
         if (gift.coin_type!='silver' and price>=5):# gift.num
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
-            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price/1e4).rstrip("0")}', .64+math.pow(price, 1/3)/20))
+            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price/1e4).lstrip("0")}', .64+math.pow(price, 1/3)/20))
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}')
 
@@ -313,7 +313,6 @@ def main():
         if (status_code.value==0 and que.qsize()>5000):
             print('[sleep] blive off, request room_id to wake up')
             kill(c)
-            last_room_id.value=0
             last_room_id.value=0
             clear_que(que, 500)
             setSleep(que, status_code, 2)

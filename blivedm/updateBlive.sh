@@ -10,11 +10,12 @@ ret=0
 for((i=0;i<5;i++));
 do
     curl http://localhost:8099/?call:\<b\>[UPGRADE]%20git%20pull%20$i:$ret\</b\>
-    echo start git pull: $i
-    git pull
+    echo start git fetch: $i
+    git fetch origin master
     ret=$?
     if [ $ret = "0" ] ;then
-        echo success $ret
+        echo success on fetch $ret
+        git reset --hard FETCH_HEAD
         break
     else
         echo retry[$ret]: $i \< 3
