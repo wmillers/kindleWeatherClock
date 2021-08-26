@@ -191,10 +191,10 @@ function hasModule(name){
     .danmu_fr a {
         text-decoration: none;
         color: rgba(255, 255, 255, .25);
-        background: rgba(0, 0, 0, .35);
+        background: rgba(0, 0, 0, .3);
     }
     .danmu_fr a:hover {
-        color: rgba(255, 255, 255, .5);
+        color: rgba(255, 255, 255, .6);
         cursor: pointer;
     }
     .danmu_info {
@@ -484,6 +484,8 @@ function danmuOnly(){
                 danmuContent();
                 danmuStatusUpdate();
             }
+            var d=getOffsetDate();
+            danmuDark(d.getHours()>=22||d.getHours()<=10);
         }
     };
     danmu_live.onpaused=function liveCheckStuck(){
@@ -1767,16 +1769,20 @@ function danmuShow(s){
         setDanmuPop(1);
 
     function parseJS(s){
-        var r = decodeURI(s).split(';');
-        setTimeout(function run(){
-            try {
-                for (var j = 0; j < r.length; j++)
-                    if (r[j])
-                        comment(r[j]+':'+eval(r[j]));
-            } catch (e){
-                comment(r[j]+':'+e);
-            }
-        }, 0);
+        try {
+            var r = decodeURI(s).split(';');
+            setTimeout(function run(){
+                try {
+                    for (var j = 0; j < r.length; j++)
+                        if (r[j])
+                            comment(r[j]+':'+eval(r[j]));
+                } catch (e){
+                    comment(r[j]+':'+e);
+                }
+            }, 0);
+        } catch (e){
+            comment(e);
+        }
     }
 }
 function danmuSC(l){
@@ -1923,10 +1929,17 @@ function danmuStatusUpdate(){
         }
     }
 }
+function danmuClean(){
+    return danmuWrite('<div style="height: 75vh; width: 0;"></div>');
+}
+function danmuDark(on){
+    danmu.style.background=on?'rgba(0, 0, 0, .6)':'';
+    danmu_info.style.background=on?'rgba(0, 0, 0, .6)':'';
+}
 function danmuStatus(){
     var status = danmuRetry > 6 ? ' ⁉' + danmuRetry : ['OFF', streamerTime[danmuRoomIndex] ? streamerTime[danmuRoomIndex] : 'oи' + (danmuPop == 9999 ? '☕' : ''), 'ᗯατcᏥ'][isDanmuLive];//watch is not used now
     var liveStatus='';
-    var extraButton=isDanmuOnly?atag((danmuFlow>3?'<sup>'+Math.round(danmuFlow)+'</sup>':'<b>☾</b>')+(!isLiveOff()&&livePlayer.volume!=undefined?Math.round(livePlayer.volume*10):'')+' ', false, 'hSwitch(1)', '[灯]\nLet there be light', 'liveFromRoom()')+atag('<b>♾</b>'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '[滚轮输入数字，单击输入下一位，双击确认]\nscroll to input number, click once to next, twice to confirm', "danmuScrollInput(false)"):'';
+    var extraButton=isDanmuOnly?atag((danmuFlow>3?'<sup>'+Math.round(danmuFlow)+'</sup>':'<b>☾</b>')+(!isLiveOff()&&livePlayer.volume!=undefined?Math.round(livePlayer.volume*10):'')+' ', false, 'hSwitch(1)', '[灯]\nLet there be light', 'livePlayer.volume=1')+atag('<b>♾</b>'+(isDanmuScrollInput?danmuScrollNum+(danmuScrollCurrentNum!=undefined?danmuScrollCurrentNum:'N'):' '), false, 'danmuScrollInput()', '[滚轮输入数字，单击输入下一位，双击确认]\nscroll to input number, click once to next, twice to confirm', "danmuScrollInput(false)"):'';
     if (!isOnKindle)
         for (var i=0;i<streamer[1].length;i++)
             if (isDanmuWatch&&streamerTime[i]&&danmuRoomId!=i)
@@ -1940,10 +1953,12 @@ function danmuStatus(){
     }
     var signal=Math.round(Math.min(1, streamerTime.filter(function f(s){return s&&s!=''}).length/streamer[0].length)*6);
     signal=new Array(signal+1).join('•')+new Array(6-signal+1).join('◦');
-    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', '[FullScreen]', 'danmuWrite(decodeURI(\''+encodeURI('<div style="height: 75vh;width: 1px"></div>')+'\'))') + atag(dTrends, false, 'liveRotate()', '[Rotate]', "danmu_fr.classList.toggle('wide')") + ' ' + extraButton + '<span style="float:right">'+(isDanmuReconfirm?atag('点击此处重新确认 Click here to re-confirm', '/blive/?status'):atag(danmuArea+danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, ''))+atag(isDanmuOnly?(isDanmuBird?'├⊏⊐■=─ ':'├■■■=─ '):'', false, "danmuTuber(true)", '[候鸟]\nMigratory Tuber', 'danmuTuber(false)')+ '<b>' + atag(status, false, "f5('', '#danmuOnly')", '[Refresh]', 'danmuStatus()') + '</b></span><br>' + boldSize((liveStatus?liveStatus.slice(1):'') + atag(' [' +dateString('Mdhm') + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom), .8)+'<br>' + danmuSuperChat;
+    danmu_info.innerHTML = atag(!isDanmuLive ? '热度' : isDanmuLive == 2 || !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'danmuFullScreen()', '[FullScreen]', "danmuDark(true)") + atag(dTrends, false, 'liveRotate()', '[Rotate]', "danmu_fr.classList.toggle('wide')") + ' ' + extraButton + '<span style="float:right">'+(isDanmuReconfirm?atag('点击此处重新确认 Click here to re-confirm', '/blive/?status'):atag(danmuArea+danmuTitle(), 'https://live.bilibili.com/blanc/'+danmuRoomId, '', '['+danmuRoomId+']', 'liveFromRoom()'))+atag(isDanmuOnly?(isDanmuBird?'├⊏⊐■=─ ':'├■■■=─ '):'', false, "danmuTuber(true)", '[候鸟]\nMigratory Tuber', 'danmuTuber(false)')+ '<b>' + atag(status, false, "f5('', '#danmuOnly')", '[Refresh]', 'danmuClean()') + '</b></span><br>' + boldSize((liveStatus?liveStatus.slice(1):'') + atag(' [' +dateString('Mdhm') + ']', false, "danmuOn("+danmuFirstRoom+")", danmuFirstRoom), .8)+'<br>' + danmuSuperChat;
+
+    danmu.style.height=Math.round((danmu_fr.clientHeight-danmu_info.offsetHeight)/5)*5+'px';
 
     function atag(inner, href, onclick, title, oncontext){
-        return (isOnKindle?'<a':'<a' + (href?' href="'+href+'" target="_blank"':''))+(onclick?' onclick="'+onclick+'"':'')+(title?' title="'+title+'"':'')+(oncontext?' oncontextmenu="'+oncontext+';stopBubble();"':'')+' >' + inner + '</a>';
+        return (isOnKindle?'<a':'<a' + (href?' href="'+href+'" target="_blank"':''))+(onclick?' onclick="'+onclick+'"':'')+(title?' title="'+title+'"':'')+(oncontext?' oncontextmenu="'+oncontext+';danmuStatus();stopBubble();"':'')+' >' + inner + '</a>';
     }
 }
 function danmuScrollInput(off){
@@ -1972,8 +1987,6 @@ function danmuRoomInfo(n){//time, title, lastDanmu
             clearTimeout(danmuTaskIndexs[2]);
             danmuTaskIndexs[2] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry > 6 ? 5*60e3 : 1e3);
         }
-        if (!streamer[1].length||i==streamer[1].length-1)
-            danmu.style.height=danmu_fr.clientHeight-danmu_info.offsetHeight+'px';
     }
     function parseTime(s){//'101m'
         var stat = JsonParse(s);
