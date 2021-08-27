@@ -244,7 +244,7 @@ class MyBLiveClient(blivedm.BLiveClient):
         price=round(gift.total_coin/1e3)
         if (gift.coin_type!='silver' and price>=5):# gift.num
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
-            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{str(price/1e4).lstrip("0")}', .64+math.pow(price, 1/3)/20))
+            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{price}', .64+math.pow(price, 1/3)/20))
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}')
 
@@ -271,15 +271,18 @@ def runDm(s, room_id):
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
 
-def clear_que(q, n):
-    n-=q.qsize()
-    while (not q.empty() and n<0):
-        n+=1
-        q.get_nowait()
+def clear_que(que, n=0):
+    try:
+        n-=que.qsize()
+        while (not que.empty() and n<0):
+            n+=1
+            que.get_nowait()
+    except Exception as e:
+        print('skipClear_que:'+repr(e), flush=True)
 
-def setSleep(q, status_code, status):
+def setSleep(que, status_code, status):
     status_code.value=status
-    q.put_nowait("$1$")
+    que.put_nowait("$1$")
 
 def kill(p):
     try:
@@ -339,13 +342,14 @@ def main():
                 if (last_room_id.value!=0):
                     print('[kill] room id: '+str(last_room_id.value))
                     kill(c)
+                    clear_que(que)
                 last_room_id.value=new_room_id.value
                 print('[launch] new room id: '+str(last_room_id.value))
                 status_code.value=0
                 c = Process(target=runDm, args=(que,last_room_id.value,))
                 c.start()
             new_room_id.value=0
-        sleep(.5)
+        sleep(.1)
     print('***  END  at '+ctime()+' ***', flush=True)
     os._exit()
 
