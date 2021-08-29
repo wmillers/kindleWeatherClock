@@ -100,7 +100,7 @@ def controlRoom(path, data=None, method=None):
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
     if cmd.find('cors:')!=-1:
-        print('|'+ori_cmd[:5]+'~'+ori_cmd[-11:], end='', flush=True)
+        print('~'+ori_cmd[-11:], end='', flush=True)
     else:
         print('-'+ori_cmd if ori_cmd else '.', end='', flush=True)
     needExtra=False
@@ -112,7 +112,7 @@ def controlRoom(path, data=None, method=None):
             if (room_id>0 and room_id<999999999999):
                 res='[RECV] Room<b>'+cmd+'</b>'
                 new_room_id.value=room_id
-                info['pop']='1'
+                info['pop']=1
             elif room_id==0:
                 res='[RECV] Room keeps'
             else:
@@ -125,11 +125,11 @@ def controlRoom(path, data=None, method=None):
             res='[DEACTIVATE] client request turn off'
         elif (cmd=='kick'):
             new_room_id.value=-2
-            info['pop']='1'
+            info['pop']=1
             res='[SLEEP] & [KCIK] restart OK'
         elif (cmd=='upgrade'):
             new_room_id.value=-3
-            info['pop']='1'
+            info['pop']=1
             res='[UPGRADE] it depends on network'
         elif (cmd=='status'):
             info['que_size']=que.qsize()
@@ -140,6 +140,7 @@ def controlRoom(path, data=None, method=None):
             if (info['room_id']!=last_room_id.value):
                 info['room_id']=last_room_id.value
                 info['super_chat']=[]
+                info['pop']=0
             res=info
         elif (cmd=='clients'):
             res=clients
@@ -149,8 +150,8 @@ def controlRoom(path, data=None, method=None):
             res='[CALLING]'
         elif (not cmd.find('js:')):
             cmd=parse.unquote(ori_cmd)
-            if info['pop']=='1':
-                info['pop']='9999'
+            if info['pop']==1:
+                info['pop']=9999
             que.put_nowait('[CAFFEINE] keep awake')
             que.put_nowait('[JS]'+cmd[3:])
             res='[JS-Executing]'+cmd[3:]
@@ -164,7 +165,7 @@ def controlRoom(path, data=None, method=None):
             except Exception as e:
                 res=repr(e)
             finally:
-                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("ansi");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124"><pre id="ansi">\33[2K\r'+res.replace('<', '&lt;')+'</pre></body>\r'
+                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("ansi");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124">\r<code id="ansi" style="white-space: pre-wrap">\33[2K\r'+res.replace('<', '&lt;')+'</code></body>\r'
         else:
             res='[err] Invalid: '+ori_cmd
     return needExtra, res
@@ -187,8 +188,11 @@ def readFromLive(timeout=5):
                     info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
                     if (len(info['super_chat'])>9):
                         info['super_chat']=info['super_chat'][3:]
-                elif (tmp[1:-1]=="1" and info['pop']!='9999' or tmp[1:-1]!="1"):
-                    info['pop']=tmp[1:-1]
+                elif (tmp[1:-1]=="1" and info['pop']!=9999) or tmp[1:-1]!="1":
+                    try:
+                        info['pop']=int(tmp[1:-1])
+                    except Exception as e:
+                        pass
             else:
                 res=tmp+('<br>' if res else '')+res
     if (len(history)>1000):
@@ -246,7 +250,7 @@ class MyBLiveClient(blivedm.BLiveClient):
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
             aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{price}', .64+math.pow(price, 1/3)/20))
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
-        aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}')
+        aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}#{round(message.price/1e3)}')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
         identity=supbold((str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else ''))
