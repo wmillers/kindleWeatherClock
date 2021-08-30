@@ -19,7 +19,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 history=[]
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
-status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [KICK] pong<-', '[UPGRADE] it depends on network']
+status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
 clients={}
 class Resquest(BaseHTTPRequestHandler):
     def log_request(code, size):
@@ -126,13 +126,10 @@ def controlRoom(path, data=None, method=None):
     else:
         if (cmd=='history'):
             res='<br>'.join(history)
-        elif (cmd=='bye'):
-            control_code.value=-1
-            res='[DEACTIVATE] client request turn off'
-        elif (cmd=='kick'):
+        elif (cmd=='restart'):
             control_code.value=-2
             info['pop']=1
-            res='[SLEEP] & [KCIK] restart OK'
+            res='[RESTART] recv OK'
         elif (cmd=='upgrade'):
             control_code.value=-3
             info['pop']=1
@@ -196,6 +193,8 @@ def readFromLive(timeout=5):
                 elif (tmp[1:-1]=="1" and info['pop']!=9999) or tmp[1:-1]!="1":
                     try:
                         info['pop']=int(tmp[1:-1])
+                        tmp={'pop': info['pop'], 'room_id': info['room_id']}
+                        res='<!--'+json.dumps(tmp)+'-->'+('<br>' if res else '')+res
                     except Exception as e:
                         pass
             else:
@@ -207,7 +206,7 @@ def readFromLive(timeout=5):
     return res
 
 
-def initServer(q, r, c, s):
+def initServer(q, c, s, r):
     global que, control_code, status_code, info
     que, control_code, status_code=q, c, s
     info['room_id']=r
@@ -332,9 +331,9 @@ def main():
             if (control_code.value<0):
                 if (control_code.value==-1):
                     print('[deactivate] goodbye')
-                    isOn=False
+                    # disabled:bye:end
                 elif (control_code.value==-2):
-                    print('[kick&kill] restart script '+str(sys.argv))
+                    print('[restart] run self: '+str(sys.argv))
                     setSleep(que, status_code, 3)
                     isOn=False
                     kill(p)
