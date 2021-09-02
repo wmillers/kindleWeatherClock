@@ -189,14 +189,14 @@ def readFromLive(timeout=5):
                     money, content=tmp[2:-1].split('$')
                     info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
                     if (len(info['super_chat'])>9):
-                        info['super_chat']=info['super_chat'][3:]
+                        info['super_chat']=list(filter(lambda x: x[0]>time()*1000, info['super_chat']))
                 elif (tmp[1:-1]=="1" and info['pop']!=9999) or tmp[1:-1]!="1":
                     try:
                         info['pop']=int(tmp[1:-1])
                         tmp={'pop': info['pop'], 'room_id': info['room_id']}
-                        res='<!--'+json.dumps(tmp)+'-->'+('<br>' if res else '')+res
                     except Exception as e:
                         pass
+                res='<!--'+json.dumps(info)+'-->'+('<br>' if res else '')+res
             else:
                 res=tmp+('<br>' if res else '')+res
     if (len(history)>1000):
