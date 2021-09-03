@@ -1613,8 +1613,6 @@ var livePlayer;
 var liveBlock=[0xe53cd, 0x1610b66, 0x14b11b6, 0x1455367, 0x14e7659, 0x1467c9c, 0x491146, 0x15ac9d1, 0x1593147, 0x1586bb6];
 var liveRetry=0;
 var liveRetryTimer=0;
-var liveFrameTimer=0;
-var liveLastLag=0;
 function space(n, s){
     s = s != undefined ? String(s) : '';
     for (n -= s.length * 1.8; n-- > 0;)
@@ -2038,8 +2036,6 @@ function danmuRoomInfo(n){//time, title, lastDanmu
             clearTimeout(danmuTaskIndexs[1]);
             danmuTaskIndexs[1] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry > 6 ? 5*60e3 : 1e3);
         }
-        if (i==streamer[1].length-1)
-            liveChase();
     }
     function parseTime(s){//'101m'
         var stat = JsonParse(s);
@@ -2111,20 +2107,6 @@ function liveInfo(title, detail, forceLog, bgColor){
 function isLiveOff(){
     return livePlayer==undefined;
 }
-function liveChase(dry){
-    try {// 10 ~ 58
-        var lag=livePlayer.buffered.end(0)-livePlayer.currentTime;
-        if (!dry&&danmu_live.playbackRate>=1){
-            if (lag>10&&lag<58){
-                danmu_live.playbackRate=1+(lag+liveLastLag-1)/(60*5);
-                liveInfo('softChase:'+danmu_live.playbackRate.toFixed(2), Math.floor(lag));
-            } else
-                danmu_live.playbackRate=1;
-        }
-        liveLastLag=lag;
-        return lag;
-    } catch (e){}
-}
 function liveFromRoom(description, url){
     if (!mpegts.isSupported()||!isDanmuOn)
         return comment('mpegtsJsNotSupported');
@@ -2168,7 +2150,7 @@ function liveFromRoom(description, url){
         }, {
             enableWorker: true,// avoid requests cause danmuContent delay
             liveBufferLatencyChasing: true,
-            liveBufferLatencyMaxLatency: 60,
+            liveBufferLatencyMaxLatency: 20,
             liveBufferLatencyMinRemain: .5,
         });
         livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
@@ -2194,25 +2176,6 @@ function liveFromRoom(description, url){
         danmu_live.playbackRate=1;
         livePlayer.play();
         danmu_live.style.opacity='1';
-        clearTimeout(liveFrameTimer);
-        liveFrameTimer=setTimeout(function lowLoadWatcher(){
-            if (livePlayer&&livePlayer.mediaInfo&&livePlayer.mediaInfo.hasVideo){
-                var drop=livePlayer.statisticsInfo.droppedFrames;
-                var ratio=(livePlayer.statisticsInfo.decodedFrames/drop).toFixed(2);
-                if (drop>1000)
-                    if (ratio<1){
-                        liveFromUrl('', true);
-                        return liveInfo('reduceDrop'+drop+':audio', ratio+' < 1', true);
-                    } else if (ratio<1.6){
-                        danmu_live.playbackRate=.85;
-                        return liveInfo('reduceDrop'+drop+':slow.85', ratio+' < 1.6', true);
-                    } else if (ratio<1.8){
-                        danmu_live.playbackRate=.95;
-                        return liveInfo('reduceDrop'+drop+':slow.95', ratio+' < 1.8', true);
-                    }
-                return liveInfo('frameInfo', 'D'+drop+':R'+ratio);
-            }
-        }, 120e3);
     }
 }
 function setLiveWidth(isLager){
