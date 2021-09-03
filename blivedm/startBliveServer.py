@@ -247,7 +247,7 @@ class MyBLiveClient(blivedm.BLiveClient):
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity=supbold(('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else ''))
         level=supbold(int(danmaku.user_level/5)) if danmaku.user_level>=15 else ''
-        aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold(danmaku.msg)}')
+        aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold("<!---->"+danmaku.msg)}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         price=round(gift.total_coin/1e3)

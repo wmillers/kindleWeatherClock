@@ -190,8 +190,8 @@ function hasModule(name){
     }
     .danmu_fr a {
         text-decoration: none;
-        color: rgba(255, 255, 255, .25);
         background: rgba(0, 0, 0, .3);
+        color: inherit;
     }
     .danmu_fr a:hover {
         color: rgba(255, 255, 255, .6);
@@ -205,6 +205,7 @@ function hasModule(name){
         font-size: .67em;
         overflow: hidden;
         padding-bottom: .5rem;
+        color: rgba(255, 255, 255, .25);
     }
     .danmu_info.fullscreen>.superchat {
         background: rgba(0, 0, 0, .3);
@@ -1781,6 +1782,7 @@ function danmuShow(s){
     if (!s) return;
     var sn = s.split('<br>');
     var s = [];
+    var dup=[];
     danmuFlow=sn.length>danmuFlow?danmuFlow*.9+sn.length*.1:danmuFlow*.99+sn.length*.01;
     if (danmuPop == 1 && sn.length > 5)
         setDanmuPop(2);
@@ -1789,17 +1791,19 @@ function danmuShow(s){
             if (!sn[i].indexOf('<!--')&&sn[i].slice(-3)=='-->'){
                 danmuParseStatus(sn[i].slice(4, -3));
                 continue;
-            }
+            } else if (isDanmuOnly&&dedup(sn[i], s))
+                continue;
             if (sn[i].slice(0, 4) == '[JS]')
                 parseJS(sn[i].slice(4));
             if (sn[i][0] == '[' && sn[i].indexOf(']') != -1)
                 sn[i] = ' > '+sn[i];
-            else if (danmuPop <= 1)
+            else if (danmuPop == 1)
                 sn[i] = '<small>' + dateString() + ' </small>' + sn[i];
-            if (s.length<15 && sn[i] && sn[i].indexOf('[CAFFEINE]') == -1)
+            if (sn[i] && sn[i].indexOf('[CAFFEINE]') == -1)
                 s.push(sn[i]);
         }
-    danmuWrite(s.join("<br>"));
+    applyDup();
+    danmuWrite(s.slice(-15).join("<br>"));
     if (isDanmuOnly&&danmu_fr.classList.contains('rotate'))
         danmuClean();//fix text-orientation: sideways
     if (danmuPop != 1 && s.indexOf('[RECV]') == -1 && s.indexOf('[SLEEP]') != -1)
@@ -1814,6 +1818,79 @@ function danmuShow(s){
             }
         }, 0);
     }
+    function dedup(s, l){
+        s=extract(s);
+        if (s){
+            var tmp='';
+            for (var j=0;j<l.length;j++){
+                tmp=extract(l[j]);
+                if (tmp&&similarity(s, tmp)>=(danmuFlow<15?.3:.1)){
+                    if (dup[j])
+                        dup[j]++;
+                    else
+                        dup[j]=1;
+                    return true;
+                }
+            }
+        }
+        return false;
+
+        function extract(s){
+            var start=s.indexOf('<!---->');
+            if (start>0)
+                return s.slice(start+7, s.indexOf('</span>', start));
+            return false;
+        }
+    }
+    function applyDup(){
+        var k=Object.keys(dup);
+        var tmp=[];
+	    for (var i=k.length-1;i>=0;i--){//ordered array
+            tmp.push((dup[k[i]]>1?'<span style="font-size: .64em;'+(dup[k[i]]>5?' font-weight: bold':'')+'">('+dup[k[i]]+')':'')+'</span>'+s[k[i]]);
+            s.splice(k[i], 1);
+        }
+        if (tmp.length)
+            s=s.concat(tmp);
+    }
+}
+function similarity(s1, s2) {
+      var longer = s1;
+      var shorter = s2;
+      if (s1.length < s2.length) {
+        longer = s2;
+        shorter = s1;
+      }
+      var longerLength = longer.length;
+      if (longerLength == 0) {
+        return 1.0;
+      }
+      return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+    }
+
+    function editDistance(s1, s2) {
+      s1 = s1.toLowerCase();
+      s2 = s2.toLowerCase();
+      var costs = new Array();
+      for (var i = 0; i <= s1.length; i++) {
+        var lastValue = i;
+        for (var j = 0; j <= s2.length; j++) {
+          if (i == 0)
+            costs[j] = j;
+          else {
+            if (j > 0) {
+              var newValue = costs[j - 1];
+              if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                newValue = Math.min(Math.min(newValue, lastValue),
+                  costs[j]) + 1;
+              costs[j - 1] = lastValue;
+              lastValue = newValue;
+            }
+          }
+        }
+        if (i > 0)
+          costs[s2.length] = lastValue;
+      }
+      return costs[s2.length];
 }
 function danmuSC(l){
     if (!l)
@@ -2150,7 +2227,7 @@ function liveFromRoom(description, url){
         }, {
             enableWorker: true,// avoid requests cause danmuContent delay
             liveBufferLatencyChasing: true,
-            liveBufferLatencyMaxLatency: 20,
+            liveBufferLatencyMaxLatency: 10,
             liveBufferLatencyMinRemain: .5,
         });
         livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
