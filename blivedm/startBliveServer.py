@@ -283,7 +283,7 @@ def runDm(s, room_id):
 def clear_que(que, n=0):
     try:
         n-=que.qsize()
-        while (not que.empty() and n<0):
+        while n<0:
             n+=1
             que.get_nowait()
     except Exception as e:
