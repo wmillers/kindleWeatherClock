@@ -4,7 +4,7 @@
 import asyncio
 import sys, os, subprocess
 import blivedm
-from time import sleep, time, ctime
+from time import sleep, time, strftime, strptime, mktime
 from multiprocessing import Process, Queue, Value
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -32,7 +32,7 @@ class Resquest(BaseHTTPRequestHandler):
             self.end_headers()
             return
         self.send_response(200)
-        needExtra, cmd_res=controlRoom(self.path, data, method)
+        needExtra, cmd_res=controlRoom(self.path, data, method, self.headers['User-Agent'])
         if isinstance(cmd_res, str):
             self.send_header('Content-type', 'text/html; charset=utf-8')
         else:
@@ -41,9 +41,12 @@ class Resquest(BaseHTTPRequestHandler):
         self.end_headers()
         res=cmd_res+('<br>' if cmd_res and needExtra else '')
         if needExtra:
-            danmu=readFromLive(15)
-            if (danmu and danmu!='<br>'):
-                res=res+danmu
+            if checkKick(self.headers['User-Agent']):
+                res+="[JS]danmuOff('KICKed')"
+            else:
+                danmu=readFromLive(15)
+                if (danmu and danmu!='<br>'):
+                    res+=danmu
         return self.wfile.write((res if res else '\n').encode('utf-8'))
 
     def do_POST(self):
@@ -54,25 +57,50 @@ class Resquest(BaseHTTPRequestHandler):
         data=self.rfile.read(int(self.headers['content-length']))
         self.do_GET(data, method="PUT")
 
+def setKick(ua):
+    if ua:
+        for k in dict.keys(clients):
+            if k!=ua:
+                clients[k]['kick']=handle_time()
+
+def checkKick(ua):
+    if ua in clients and clients[ua]['kick']:
+        expire=handle_time(clients[ua]['kick'])+120
+        clients[ua]['kick']=0
+        if expire>time():
+            return True
+    return False
+
 def isEmptyPath(path):
     block=['/favicon.ico']
     if (parse.urlparse(path).path in block):
         return True
     return False
 
+def handle_time(time_string=""):
+    fmt="%Y-%m-%dT%H:%M:%S"
+    if time_string:
+        try:
+            return mktime(strptime(time_string, fmt))
+        except Exception as e:
+            print(repr(e), flush=True)
+            return time()
+    else:
+        return strftime(fmt)
+
 def clientCount(ua, path):
     if ua in clients:
-        clients[ua]['interval']=round(time()-clients[ua]['last'], 3)
+        clients[ua]['interval']=int(time())-handle_time(clients[ua]['last'])
         clients[ua]['reads']+=1
     else:
-        clients[ua]={'first': ctime(), 'interval': 0, 'last': 0, 'path':[], 'reads': 1}
+        clients[ua]={'first': handle_time(), 'interval': 0, 'last': 0, 'path':[], 'reads': 1, 'kick': 0}
         platform=re.findall(r'(?<=\().+?(?=\))', ua)
         browser=re.findall(r'(?:[Cc]hrome|[Ss]afari)[\d\.\/]+', ua)
         if len(platform):
             clients[ua]['platform']=platform[0]
         if len(browser):
             clients[ua]['browser']=browser[0]
-    clients[ua]['last']=time()
+    clients[ua]['last']=handle_time()
     clients[ua]['path']=clients[ua]['path'][-4:]
     clients[ua]['path'].append(path)
 
@@ -85,17 +113,16 @@ def corsAccess(url, data=None, method=None):
     req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
         with request.urlopen(req) as response:
-            status=dict({'code': response.status, 'from': url})
             if (response.status>=400):
-                return status
+                return {'code': response.status, 'from': url}
             else:
                 return response.read().decode("utf-8")
     except Exception as e:
         print(repr(e), flush=True)
-        que.put_nowait('[EXCEP:cors] '+repr(e)+'@'+url)
+        que.put_nowait('[EXCEP:cors] '+parse.quote((repr(e)))+'@'+url)
         return ''
 
-def controlRoom(path, data=None, method=None):
+def controlRoom(path, data=None, method=None, ua=''):
     global control_code, que, info, status_code, status
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
@@ -104,8 +131,8 @@ def controlRoom(path, data=None, method=None):
     else:
         print('-'+ori_cmd if ori_cmd else '.', end='', flush=True)
     needExtra=False
+    res=''
     if (cmd==''):
-        res=''
         needExtra=True
     elif (str(cmd).isdigit()):
             room_id=int(cmd)
@@ -146,6 +173,9 @@ def controlRoom(path, data=None, method=None):
             res=info
         elif (cmd=='clients'):
             res=clients
+        elif (cmd=='kick'):
+            setKick(ua)
+            needExtra=True
         elif (not cmd.find('call:')):
             cmd=ori_cmd
             que.put_nowait(parse.unquote(cmd[5:]))
@@ -299,10 +329,10 @@ def kill(p):
             p.terminate()
             p.join()
     except Exception as e:
-        print('skip '+repr(e)+' when kill '+str(p))
+        print('skip '+repr(e)+' when kill '+str(p), flush=True)
 
 def main():
-    print('--- START at '+ctime()+' ---\n--- '+sys.path[0]+' ---')
+    print('--- START at '+handle_time()+' ---\n--- '+sys.path[0]+' ---')
     os.chdir(sys.path[0])
     que = Queue()
     control_code=Value(ctypes.c_longlong, 0)
@@ -355,7 +385,7 @@ def main():
                 c.start()
             control_code.value=0
         sleep(.1)
-    print('***  END  at '+ctime()+' ***', flush=True)
+    print('***  END  at '+handle_time()+' ***', flush=True)
     os._exit()
 
 if __name__ == '__main__':
