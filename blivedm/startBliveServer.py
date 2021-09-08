@@ -60,13 +60,12 @@ class Resquest(BaseHTTPRequestHandler):
 def setKick(ua):
     if ua:
         for k in dict.keys(clients):
-            if k!=ua:
-                clients[k]['kick']=handle_time()
+            clients[k]['kick']='' if k==ua else handle_time()
 
 def checkKick(ua):
     if ua in clients and clients[ua]['kick']:
         expire=handle_time(clients[ua]['kick'])+120
-        clients[ua]['kick']=0
+        clients[ua]['kick']=''
         if expire>time():
             return True
     return False
@@ -93,7 +92,7 @@ def clientCount(ua, path):
         clients[ua]['interval']=int(time())-handle_time(clients[ua]['last'])
         clients[ua]['reads']+=1
     else:
-        clients[ua]={'first': handle_time(), 'interval': 0, 'last': 0, 'path':[], 'reads': 1, 'kick': 0}
+        clients[ua]={'first': handle_time(), 'interval': 0, 'last': 0, 'path':[], 'reads': 1, 'kick': ''}
         platform=re.findall(r'(?<=\().+?(?=\))', ua)
         browser=re.findall(r'(?:[Cc]hrome|[Ss]afari)[\d\.\/]+', ua)
         if len(platform):
@@ -205,14 +204,12 @@ def controlRoom(path, data=None, method=None, ua=''):
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
     res, tmp='', ''
-    count=0
     while True:
         try:
             tmp=que.get(timeout=timeout if not tmp else .01)
         except Exception as e:
             break
         else:
-            count+=1
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
@@ -257,10 +254,10 @@ def aprint(a):
         que.put_nowait(a)
 
 def supbold(s):
-    return '<span style="font-weight: bold; vertical-align: super; font-size: .8em">'+str(s)+'</span>'
+    return f'<span style="font-weight: bold; vertical-align: super; font-size: .8em">{s}</span>'
 
 def bigbold(s, size=1.2):
-    return '<span style="font-weight: bold; font-size: '+str(size)+'em">'+str(s)+'</span>'
+    return f'<span style="font-weight: bold; font-size: {size}em">{s}</span>'
 
 class MyBLiveClient(blivedm.BLiveClient):
     # 演示如何自定义handler
@@ -284,12 +281,14 @@ class MyBLiveClient(blivedm.BLiveClient):
         if (gift.coin_type!='silver' and price>=5):# gift.num
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
             aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{price}', .64+max(math.pow(price, 1/3)/40, 1/(1+math.pow(math.e, -.002*price+3))))) # (936, .24)
+
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}#{round(message.price/1e3)}')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
-        identity=supbold((str(message.user_level) if message.user_level>=20 else '')+(' ᴀʙᴄ'[message.guard_level] if message.guard_level else ''))
-        aprint(f'$${message.price}${identity}{message.uname}: {bigbold(message.message)}$')
+        identity=supbold(' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')
+        level=message.user_level if message.user_level>=20 else ''
+        aprint(f'$${message.price}${identity}{level}{message.uname}: {bigbold(message.message)}$')
 
 
 async def initDm(room_id):
