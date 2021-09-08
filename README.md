@@ -18,6 +18,7 @@ Kindle Weather & Tomato Clock & Ticktick Reminder & Bilibili Live Danmu & Home S
 |番茄时钟|Tomato Clock|√|05: run/relax, 40: pause, 同步时间: quit|05：工作/休息模式切换， 40：暂停，同步时间：退出|
 |滴答清单|Ticktick Reminder|×|tickList (top left tomato icon)|左上角番茄图标|
 |B站直播弹幕|Bilibili Live Danmu|×|danmu (the blank area left to the 5月26日)|5月26日左侧的空白处|
+|B站直播播放（其他系统专属）|Bilibili Danmu Live Video (except kindle)|×|add `#danmuonly` to the url|在网址后添加 `#danmuonly`|
 |智能家居Hue|Home Smart for Philips-Hue|√×|home (top right blank corner)|右上角的空白区域|
 |额外（1.校准时间 2.获取运行时长 3.运行命令/手动调时 4.禁用模块）|Extra (1.get time from server 2.uptime 3.run Cmd/calibrate time manually 4.disable modules)|√|1.TOMA 2.MATO 3.5月26日 星期一 4.在cw.htm文件第14行Line14~起注释Comment模块以禁用Disable|-|
 
@@ -43,6 +44,9 @@ Copy the `location /ics/ {..}` code to your Nginx config and edit `https://xxx/b
 Also, change the `DTSTART;TZID=` timezone with your Ticktick Reminder used. You can find it with the comment `//TIMEZONE-NOTE`.
 
 ### B站直播弹幕(Bilibili Live Danmu)
+额外信息：全屏功能可用于替代B站原生直播间，优点是即使在低功耗设备上也可以流畅运行。
+PS: the full screen mode is alternative to the Bilibili's native live page, which is a faster version that can be smoothly loaded on the low-power device.
+
 备注：弹幕全屏功能（不是全窗口功能）为其他系统的浏览器中所属功能，开启方法为在网址后添加`#danmuOnly()`或者点击星期栏输入`danmuOnly()`。  
 Note: the fullscreen mode (not the fullwindow mode) of danmu is adapted to other platform (Win 10, ios, Android). To use it add the `#danmuOnly()` behind the url link ,or click the week on the page and input `danmuOnly()` in the prompt window.
 

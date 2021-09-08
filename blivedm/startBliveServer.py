@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-
 import asyncio
 import sys, os, subprocess
 import blivedm
@@ -18,7 +17,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
 history=[]
-info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'super_chat':[]})
+info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'purse':0, 'super_chat':[]})
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
 clients={}
 class Resquest(BaseHTTPRequestHandler):
@@ -142,6 +141,7 @@ def controlRoom(path, data=None, method=None, ua=''):
                     info['room_id']=room_id
                     info['super_chat']=[]
                     info['pop']=0
+                    info['purse']=0
                     control_code.value=room_id
                 else:
                     print('[recv] but same')
@@ -184,8 +184,8 @@ def controlRoom(path, data=None, method=None, ua=''):
             if info['pop']==1:
                 info['pop']=9999
             que.put_nowait('[CAFFEINE] keep awake')
-            que.put_nowait('[JS]'+cmd[3:])
-            res='[JS-Executing]'+cmd[3:]
+            que.put_nowait('[JS] '+cmd[3:])
+            res='[JS-Executing] '+cmd[3:]
         elif (not cmd.find('cors:')):
             res=corsAccess(parse.unquote(ori_cmd[5:]), data, method)
         elif (cmd=='time'):
@@ -201,6 +201,9 @@ def controlRoom(path, data=None, method=None, ua=''):
             res='[err] Invalid: '+ori_cmd
     return needExtra, res
 
+def insertInfo(s):
+    return '<!--'+json.dumps(info)+'-->'+('<br>' if s else '')+s
+
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
     res, tmp='', ''
@@ -213,17 +216,21 @@ def readFromLive(timeout=5):
             history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
-                    money, content=tmp[2:-1].split('$')
-                    info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
-                    if (len(info['super_chat'])>9):
-                        info['super_chat']=list(filter(lambda x: x[0]>time()*1000, info['super_chat']))
+                    if (tmp[2]=='$'):
+                        info['purse']+=int(tmp[3:-1])
+                    else:
+                        money, content=tmp[2:-1].split('$')
+                        info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])
+                        if (len(info['super_chat'])>9):
+                            info['super_chat']=list(filter(lambda x: x[0]>time()*1000, info['super_chat']))
+                        res=insertInfo(res)
                 elif (tmp[1:-1]=="1" and info['pop']!=9999) or tmp[1:-1]!="1":
                     try:
                         info['pop']=int(tmp[1:-1])
                         tmp={'pop': info['pop'], 'room_id': info['room_id']}
                     except Exception as e:
                         pass
-                res='<!--'+json.dumps(info)+'-->'+('<br>' if res else '')+res
+                    res=insertInfo(res)
             else:
                 res=tmp+('<br>' if res else '')+res
     if (len(history)>1000):
@@ -262,13 +269,12 @@ def bigbold(s, size=1.2):
 class MyBLiveClient(blivedm.BLiveClient):
     # 演示如何自定义handler
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
-
-    #async def __on_vip_enter(self, command):
-        #print(command)
-    #_COMMAND_HANDLERS['WELCOME'] = __on_vip_enter  # 老爷入场
+    def collect_rice(self, p):
+        price=round(p/1e3)
+        aprint(f'$$${price}$')
+        return price
 
     async def _on_receive_popularity(self, popularity: int):
-        #aprint(f'当前人气值：{popularity}')
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
@@ -277,18 +283,20 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold("<!---->"+danmaku.msg)}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        price=round(gift.total_coin/1e3)
+        price=self.collect_rice(gift.total_coin)
         if (gift.coin_type!='silver' and price>=5):# gift.num
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
             aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{price}', .64+max(math.pow(price, 1/3)/40, 1/(1+math.pow(math.e, -.002*price+3))))) # (936, .24)
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
-        aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}#{round(message.price/1e3)}')
+        price=self.collect_rice(message.price)
+        aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}#{price}')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
+        price=self.collect_rice(message.price*1e3)
         identity=supbold(' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')
         level=message.user_level if message.user_level>=20 else ''
-        aprint(f'$${message.price}${identity}{level}{message.uname}: {bigbold(message.message)}$')
+        aprint(f'$${price}${identity}{level}{message.uname}: {bigbold(message.message)}$')
 
 
 async def initDm(room_id):
