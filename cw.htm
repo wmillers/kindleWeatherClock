@@ -2206,8 +2206,11 @@ function danmuRoomInfo(n){//time, title, lastDanmu
             var data = stat.data;
             if (streamerTime[i] != (streamerTime[i] = humanTill(data.live_time))&&streamerTime[i])
                 parseTitle(data);
-            if (isRoomChange)
+            if (isRoomChange){
                 parseLastDanmu(data);
+                if (isDanmuOnly)
+                    parseOnlineUser(data);
+            }
         }
         if (forTestUse)
             console.log('time', i, streamer[1][i], streamerTime[i]);
@@ -2226,7 +2229,7 @@ function danmuRoomInfo(n){//time, title, lastDanmu
     function parseTitle(data){
         danmuReq("cors:https://api.bilibili.com/x/space/acc/info?mid=" + data.uid, function a(s){
             var stat = JsonParse(s);
-            if (stat.code == 0){
+            if (stat.code == 0&&stat.data.live_room){
                 if (isDanmuOnly&&isRoomChange&&!danmu_live_cover.src)
                     danmu_live_cover.src=(stat.data.live_room.cover?stat.data.live_room.cover:stat.data.face).replace('http:', 'https:');
                 s = [stat.data.name, stat.data.live_room.title];
@@ -2238,7 +2241,7 @@ function danmuRoomInfo(n){//time, title, lastDanmu
     function parseLastDanmu(data){
         danmuReq("cors:https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=" + data.room_id, function history(s){
             var stat = JsonParse(s);
-            if (stat.code == 0){
+            if (stat.code == 0&&stat.data.room){
                 s=stat.data.room;
                 var l=[];
                 if (isOnKindle)
@@ -2249,6 +2252,16 @@ function danmuRoomInfo(n){//time, title, lastDanmu
                     danmuWrite(l.join('<br>'));
                 else
                     tasks(function act(e){danmuWrite(e)}, l, !isOnKindle?100:1e3);//render speed limit
+            }
+        });
+    }
+    function parseOnlineUser(data){
+        danmuReq("cors:https://api.live.bilibili.com/xlive/general-interface/v1/rank/getOnlineGoldRank?ruid="+data.uid+"&roomId="+data.room_id+"&page=1&pageSize=50", function a(s){
+            var stat = JsonParse(s);
+            if (stat.code == 0&&stat.data.OnlineRankItem){
+                var l=stat.data.OnlineRankItem;
+                for (var i=0;i<l.length&&i<5;i++)
+                    danmuArea='<img style="vertical-align: text-top; height: 2.5ex; border: 0.2ex solid; border-radius: 2ex;" src="'+l[i].face.replace('http:', 'https:')+'" title="'+l[i].name+'"> '+danmuArea;
             }
         });
     }
@@ -2285,13 +2298,13 @@ function liveFromRoom(description, url, audioOnly){
         liveFromRoom('InjectUrl', url);
         return true;
     }
-    liveInfo('Load:'+room+(description?':'+description:''), 'get url', true, 'SeaGreen');//10000 400 250 150 80 != [4, 0]
+    liveInfo('Load:'+(audioOnly?'A':'')+room+(description?':'+description:''), 'get url', true, 'SeaGreen');//10000 400 250 150 80 != [4, 0]
     danmuReq('cors:https://api.live.bilibili.com/room/v1/Room/playUrl?cid='+room+'&platform=web&otype=json&quality=3', function parse(s){
         s=JsonParse(s);
         if (typeof s.data!="undefined"&&s.data.durl){
             rnd=Math.floor(Math.random()*s.data.durl.length);
             liveFromUrl(s.data.durl);
-            danmuWrite(liveInfo('Live:qn'+s.data.current_qn, 'Start'), true, true, true);//4,10000 3,400 2,250 1,150 0,80
+            danmuWrite(liveInfo('Live:'+(audioOnly?'A:':'')+'qn'+s.data.current_qn, 'Start'), true, true, true);//4,10000 3,400 2,250 1,150 0,80
         }
     });
     var lastUrlCache='';
