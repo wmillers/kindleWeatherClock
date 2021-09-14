@@ -17,6 +17,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
 history=[]
+temp_purse={}
 info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'purse':0, 'super_chat':[]})
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
 clients={}
@@ -68,6 +69,17 @@ def checkKick(ua):
         if expire>time():
             return True
     return False
+
+def addPurse(n=0):
+    limit=3
+    current=(info['room_id'], int(n))
+    if current[0] in temp_purse:
+        current[1]=temp_purse.pop(current[0])+n if n>0 else 0
+    temp_purse[current[0]]=current[1]
+    info['purse']=current[1]
+    if len(temp_purse)>3:
+        for i in temp_purse.keys()[:-3]:
+            del temp_purse[i]
 
 def isEmptyPath(path):
     block=['/favicon.ico']
@@ -125,7 +137,7 @@ def controlRoom(path, data=None, method=None, ua=''):
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
     if cmd.find('cors:')!=-1:
-        print('~'+ori_cmd[-11:], end='', flush=True)
+        print('~'+ori_cmd[-11:-3], end='', flush=True)
     else:
         print('-'+ori_cmd if ori_cmd else '.', end='', flush=True)
     needExtra=False
@@ -141,7 +153,7 @@ def controlRoom(path, data=None, method=None, ua=''):
                     info['room_id']=room_id
                     info['super_chat']=[]
                     info['pop']=0
-                    info['purse']=0
+                    addPurse()
                     control_code.value=room_id
                 else:
                     print('[recv] but same')
@@ -217,7 +229,7 @@ def readFromLive(timeout=5):
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
                     if (tmp[2]=='$'):
-                        info['purse']+=int(tmp[3:-1])
+                        addPurse(int(tmp[3:-1]))
                     else:
                         money, content=tmp[2:-1].split('$')
                         info['super_chat'].append([int((int(money)/25*60+time())*1000), int(money), content])

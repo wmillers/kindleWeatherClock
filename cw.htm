@@ -328,6 +328,7 @@ function hasModule(name){
         padding-bottom: 50vh;
         z-index: -2;
         font-size: 0;
+        cursor: none;
     }
     .danmu_live.cover {
         top: 0px;
@@ -1754,7 +1755,6 @@ function danmuOff(s){
     liveOff(false, 'maually');
     clearTimeout(danmuTaskIndexs[0]);
     clearTimeout(danmuTaskIndexs[1]);
-    streamerTime=Array(streamer[1].length);
     setTimeout(function danmuClear(){
         if (!isDanmuOn&&!isDanmuOnly){
             danmu_fr.style.opacity = 0;
@@ -2165,7 +2165,7 @@ function danmuStatus(){
     if (isDanmuOnly){
         for (var i=0;i<streamer[1].length;i++)
             if (isDanmuWatch&&streamerTime[i]&&danmuRoomId!=i)
-                roomStatus+=atag(streamerTime[i]+' '+(streamerTitle[i]?streamerTitle[i].slice(0, 15):''), false, streamer[0][i], 'room', "danmuOn("+streamer[1][i]+")", ';')+' | ';
+                roomStatus+=atag(streamerTime[i]+' '+(streamerTitle[i]?streamerTitle[i].slice(0, 15):''), false, streamer[0][i], 'room', "danmuOn("+streamer[1][i]+")", "danmuOn("+streamer[1][i]+");setTimeout('dTool.audio', 2e3)")+' | ';
         roomStatus=boldSize(roomStatus.slice(0, -2) + atag(' [' +dateString('Mdhm') + ']', false, 'Update\nLoud'), .8)+'<br>';
     }
     var dTrends = danmuPop < 1e4 ? (danmuPop < 1e3 ? String(danmuPop):(danmuPop / 1e3).toFixed(1) + 'K'):(danmuPop / 1e4).toFixed(1) + '万';
@@ -2223,7 +2223,7 @@ function danmuRoomInfo(n){//time, title, lastDanmu
         n=(n+1)%streamer[1].length;
         if (!isRoomChange){
             clearTimeout(danmuTaskIndexs[1]);
-            danmuTaskIndexs[1] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry > 6 ? 5*60e3 : 1e3);
+            danmuTaskIndexs[1] = setTimeout('danmuRoomInfo(' + n + ')', danmuPop == 1 || !n || danmuRetry > 6 ? 5*60e3 : 1e3+n*100);
         }
     }
 
