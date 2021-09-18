@@ -657,7 +657,6 @@ class BLiveClient:
             if handler is not None:
                 await handler(self, command)
         else:
-            logger.warning('room %d 未知命令：cmd=%s', self.room_id, cmd)
             #logger.warning('room %d 未知命令：cmd=%s %s', self.room_id, cmd, command)
             # 只有第一次遇到未知命令时log
             self._COMMAND_HANDLERS[cmd] = None

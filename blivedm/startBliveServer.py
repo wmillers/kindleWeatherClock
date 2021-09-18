@@ -18,7 +18,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 history=[]
 temp_purse={}
-info=dict({'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'purse':0, 'super_chat':[]})
+info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'purse':0, 'super_chat':[]}
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
 clients={}
 class Resquest(BaseHTTPRequestHandler):
@@ -71,14 +71,16 @@ def checkKick(ua):
     return False
 
 def addPurse(n=0):
-    limit=3
-    current=(info['room_id'], int(n))
-    if current[0] in temp_purse:
-        current[1]=temp_purse.pop(current[0])+n if n>0 else 0
-    temp_purse[current[0]]=current[1]
-    info['purse']=current[1]
-    if len(temp_purse)>3:
-        for i in temp_purse.keys()[:-3]:
+    limit=5
+    n=int(n)
+    if n<0:
+        return False
+    if info['room_id'] in temp_purse:
+        n+=temp_purse.pop(info['room_id'])
+    temp_purse[info['room_id']]=n
+    info['purse']=n
+    if len(temp_purse)>limit:
+        for i in list(temp_purse.keys())[:-limit]:
             del temp_purse[i]
 
 def isEmptyPath(path):
@@ -137,7 +139,7 @@ def controlRoom(path, data=None, method=None, ua=''):
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
     if cmd.find('cors:')!=-1:
-        print('~'+ori_cmd[-11:-3], end='', flush=True)
+        print('~'+re.sub(r'(\d\d)\d+', r'\1', ori_cmd)[-9:], end='', flush=True)
     else:
         print('-'+ori_cmd if ori_cmd else '.', end='', flush=True)
     needExtra=False
@@ -208,7 +210,7 @@ def controlRoom(path, data=None, method=None, ua=''):
             except Exception as e:
                 res=repr(e)
             finally:
-                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("ansi");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124">\r<code id="ansi" style="white-space: pre-wrap">\33[2K\r'+res.replace('<', '&lt;')+'</code></body>\r'
+                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("as");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124">\r<code id="as" style="white-space:pre-wrap;word-break:break-word">\33[2K\r'+res.replace('<', '&lt;')+'</code></body>\r'
         else:
             res='[err] Invalid: '+ori_cmd
     return needExtra, res
@@ -371,44 +373,44 @@ def main():
     p.start()
     isOn=True
     while isOn:
-        if (status_code.value==0 and que.qsize()>5000):
-            print('[sleep] blive off, request room_id to wake up')
-            kill(c)
-            clear_que(que, 500)
-            setSleep(que, status_code, 2)
-        if (control_code.value!=0):
-            if (control_code.value<0):
-                if (control_code.value==-1):
-                    print('[deactivate] goodbye')
-                    # disabled:bye:end
-                elif (control_code.value==-2):
-                    print('[restart] run self: '+str(sys.argv))
-                    setSleep(que, status_code, 3)
-                    isOn=False
-                    kill(p)
-                    os.execv(sys.executable, ['python3'] + sys.argv)
-                elif (control_code.value==-3):
-                    print('[upgrade] it takes a while')
-                    status_code.value=4
-                    try:
-                        subprocess.run('/bin/bash updateBlive.sh', shell=True, executable="/bin/bash")
-                    except Exception as e:
-                        que.put_nowait(repr(e))
-            else:
+        try:
+            if (status_code.value==0 and que.qsize()>5000):
+                print('[sleep] blive off, request room_id to wake up')
                 kill(c)
-                clear_que(que)
-                room_id=control_code.value
-                print('[launch] new room id: '+str(room_id))
-                status_code.value=0
-                c = Process(target=runDm, args=(que,room_id,))
-                c.start()
-            control_code.value=0
+                clear_que(que)#, 500)# silly queue without clear, not knowing the reason of the bug here
+                setSleep(que, status_code, 2)
+            if (control_code.value!=0):
+                if (control_code.value<0):
+                    if (control_code.value==-1):
+                        print('[deactivate] goodbye')
+                        # disabled:bye:end
+                    elif (control_code.value==-2):
+                        print('[restart] run self: '+str(sys.argv))
+                        setSleep(que, status_code, 3)
+                        isOn=False
+                        kill(p)
+                        os.execv(sys.executable, ['python3'] + sys.argv)
+                    elif (control_code.value==-3):
+                        print('[upgrade] it takes a while')
+                        status_code.value=4
+                        try:
+                            subprocess.run('/bin/bash updateBlive.sh', shell=True, executable="/bin/bash")
+                        except Exception as e:
+                            que.put_nowait(repr(e))
+                else:
+                    kill(c)
+                    clear_que(que)
+                    room_id=control_code.value
+                    print('[launch] new room id: '+str(room_id))
+                    status_code.value=0
+                    c = Process(target=runDm, args=(que,room_id,))
+                    c.start()
+                control_code.value=0
+        except Exception as e:
+            print(repr(e)+str(sys.exc_info()), flush=True)
         sleep(.1)
     print('***  END  at '+handle_time()+' ***', flush=True)
     os._exit()
 
 if __name__ == '__main__':
-    try:
-        main()  
-    except Exception as e:
-        print(repr(e)+str(sys.exc_info()), flush=True)
+    main()
