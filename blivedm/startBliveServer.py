@@ -122,6 +122,8 @@ def corsAccess(url, data=None, method=None):
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
         'accept-language': 'en-GB,en;q=0.9'
     }
+    if method=='POST':
+        headers["Content-Type"]="application/json"
     req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
         with request.urlopen(req) as response:
@@ -141,7 +143,7 @@ def controlRoom(path, data=None, method=None, ua=''):
     if cmd.find('cors:')!=-1:
         print('~'+re.sub(r'(\d\d)\d+', r'\1', ori_cmd)[-9:], end='', flush=True)
     else:
-        print('-'+ori_cmd if ori_cmd else '.', end='', flush=True)
+        print('-'+ori_cmd[:25] if ori_cmd else '.', end='', flush=True)
     needExtra=False
     res=''
     if (cmd==''):
@@ -191,7 +193,7 @@ def controlRoom(path, data=None, method=None, ua=''):
             needExtra=True
         elif (not cmd.find('call:')):
             cmd=ori_cmd
-            que.put_nowait(parse.unquote(cmd[5:]))
+            que.put_nowait('<b>['+parse.unquote(cmd[5:])+']</b>')
             res='[CALLING]'
         elif (not cmd.find('js:')):
             cmd=parse.unquote(ori_cmd)
@@ -217,6 +219,7 @@ def controlRoom(path, data=None, method=None, ua=''):
 
 def insertInfo(s):
     return '<!--'+json.dumps(info)+'-->'+('<br>' if s else '')+s
+
 
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
@@ -253,7 +256,6 @@ def readFromLive(timeout=5):
         res=status[status_code.value]+'<br>'+res
     return res
 
-
 def initServer(q, c, s, r):
     global que, control_code, status_code, info
     que, control_code, status_code=q, c, s
@@ -281,7 +283,7 @@ def bigbold(s, size=1.2):
     return f'<span style="font-weight: bold; font-size: {size}em">{s}</span>'
 
 class MyBLiveClient(blivedm.BLiveClient):
-    # 演示如何自定义handler
+    # 自定义handler
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
     def collect_rice(self, p):
         price=round(p/1e3)
@@ -354,26 +356,26 @@ def kill(p):
 
 def main():
     print('--- START at '+handle_time()+' ---\n--- '+sys.path[0]+' ---')
-    os.chdir(sys.path[0])
-    que = Queue()
-    control_code=Value(ctypes.c_longlong, 0)
-    status_code=Value(ctypes.c_int, 0)
-    room_id=0
-    c=False
-    if (len(sys.argv)>1):
-        room_id=int(sys.argv[1])
-        c = Process(target=runDm, args=(que,room_id,))
-        c.start()
-        print('[init] preset room_id: '+str(room_id), flush=True)
-        que.put_nowait('[INIT] new room: '+str(room_id))
-    else:
-        print('[wait] No preset room id, wait for client request', flush=True)
-        setSleep(que, status_code, 1)
-    p = Process(target=initServer, args=(que,control_code,status_code,room_id,))
-    p.start()
-    isOn=True
-    while isOn:
-        try:
+    try:
+        os.chdir(sys.path[0])
+        que = Queue()
+        control_code=Value(ctypes.c_longlong, 0)
+        status_code=Value(ctypes.c_int, 0)
+        room_id=0
+        c=False
+        if (len(sys.argv)>1):
+            room_id=int(sys.argv[1])
+            c = Process(target=runDm, args=(que,room_id,))
+            c.start()
+            print('[init] preset room_id: '+str(room_id), flush=True)
+            que.put_nowait('[INIT] new room: '+str(room_id))
+        else:
+            print('[wait] No preset room id, wait for client request', flush=True)
+            setSleep(que, status_code, 1)
+        p = Process(target=initServer, args=(que,control_code,status_code,room_id,))
+        p.start()
+        isOn=True
+        while isOn:
             if (status_code.value==0 and que.qsize()>5000):
                 print('[sleep] blive off, request room_id to wake up')
                 kill(c)
@@ -406,10 +408,9 @@ def main():
                     c = Process(target=runDm, args=(que,room_id,))
                     c.start()
                 control_code.value=0
-        except Exception as e:
-            print(repr(e)+str(sys.exc_info()), flush=True)
-        sleep(.1)
-    print('***  END  at '+handle_time()+' ***', flush=True)
+    except Exception as e:
+        print(repr(e)+str(sys.exc_info()), flush=True)
+    print('===  END  at '+handle_time()+' ===', flush=True)
     os._exit()
 
 if __name__ == '__main__':

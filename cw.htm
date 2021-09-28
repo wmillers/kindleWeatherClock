@@ -32,8 +32,8 @@ var isOnKindle=!/windows|chrome/i.test(navigator.userAgent);//most affect autost
 var autostart=isOnKindle?[//COMMENT unwanted auto-start modules
     'ticklist',
     //'danmu',
-    'home']
-    :[];
+    'home',
+    ]:[];
 var isDanmuFullWindow=true;   // danmu start in fullwindow mode (not fullscreen)
 var liveOption={
     enable: true,     // play live on roomId changed, only in fullscreen (not fullwindow) mode #danmuonly
@@ -265,18 +265,18 @@ function hasModule(name){
         background: rgba(0, 0, 0, .3);
     }
     .fullscreen .danmu {
-        /* 1.danmu 2.dark.danmu_live.info 3.danmu_live 4.danmu_live.info 5.danmu_live.cover */
-        position: absolute;/* for better performance */
+        /* z-index: 1.danmu 2.dark.danmu_live.info 3.danmu_live 4.danmu_live.info 5.danmu_live.cover */
+        position: absolute;/* better performance */
         bottom: 0;
         z-index: -1;
         cursor: none;
         height: 90vh;
         overflow: hidden;
-        scroll-behavior: smooth;
     }
-    .color_opacity {
-        -webkit-mask-image: linear-gradient(90deg, #fff, #fff 30%, rgba(0, 0, 0, .6) 70%);
-        mask-image: linear-gradient(90deg, #fff, #fff 30%, rgba(0, 0, 0, .6) 70%);
+    .better_view {
+        scroll-behavior: smooth;
+        -webkit-mask-image: linear-gradient(90deg, #fff, #fff 35%, rgba(0, 0, 0, .5) 70%);
+        mask-image: linear-gradient(90deg, #fff, #fff 35%, rgba(0, 0, 0, .5) 70%);
     }
     .fullscreen .danmu>* {
         background: rgba(0, 0, 0, .15);
@@ -479,7 +479,7 @@ function httpReq(path, f, fOnfailed, post, method, fOnBoth){
     }
     xmlhttp.open(method ? method : post ? 'POST' : 'GET', path);
     if (post)
-        xmlhttp.setRequestHeader("Content-type", "application/json");
+        xmlhttp.setRequestHeader("Content-Type", "application/json");
     xmlhttp.send(post);
     return xmlhttp;
 }
@@ -577,8 +577,6 @@ function danmuOnly(){
         liveFromRoom=function (){
             console.log('mpegtsJsNotSupported:'+danmuRoomId);
         };
-    if (danmu_fr.clientHeight<danmu_fr.clientWidth&&mpegts.isSupported()) 
-        danmu.classList.add('color_opacity');
     danmu_live.onended=function end(){
         setTimeout(function act(){
             if (danmu_live.ended)
@@ -1824,8 +1822,13 @@ function setDanmuPop(p){
             danmuTuber();
         } else if (old == 9999 || (old == 1 && p > 1))
             danmuAlter(false);
-        if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&liveOption.enable&&isLiveOff())
+        if (old<=1&&p>1&&p!=9999&&danmuRoomId&&isDanmuOnly&&liveOption.enable&&isLiveOff()){
             liveFromRoom();
+            if (danmu_fr.clientHeight<danmu_fr.clientWidth&&mpegts.isSupported()&&p<19e4)
+                danmu.classList.add('better_view');
+            else if (p>20e4)
+                danmu.classList.remove('better_view');
+        }
         if (forTestUse)
             console.log('Pop', p);
         danmuStatus();
@@ -2063,8 +2066,8 @@ function danmuContent(roomId){
     clearTimeout(danmuTaskIndexs[0]);
     if (isDanmuOn){
         // T(total, >1s)=[server wait, .1~15s]+[client js, ~.2s]+[css render, .6~5s]+[sleep till next, y=2x+2, .1~30s]
-        var t=(danmuPop==1?30e3:danmuRetry>6?15e3:(danmuPop>5e4?100:5e3))*(!isDanmuOnly?2:1)+(!isDanmuOnly?2:0);
-        danmuXmlReq=danmuReq(roomId, danmuShow, function loop(){danmuTaskIndexs[0] = setTimeout(danmuContent, t)});
+        var t=(danmuPop==1?30e3:danmuRetry>6?15e3:200)*(!isDanmuOnly?2:1)+(!isDanmuOnly?2:0);
+        danmuXmlReq=danmuReq(roomId, danmuShow, function next(){danmuTaskIndexs[0] = setTimeout(danmuContent, t)});
     }
 }
 function danmuFullScreen(forceFullScreen){

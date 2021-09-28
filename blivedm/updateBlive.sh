@@ -7,18 +7,18 @@ echo upgrade@$0 2>&1 | tee -a kindle.log
 curl http://localhost:8099/?call:\<b\>[UPGRADE]%20script%20STARTED\</b\>
 cd "$(dirname "$0")"
 ret=0
-for((i=0;i<5;i++));
+for((i=0;i<4;i++));
 do
     curl http://localhost:8099/?call:\<b\>[UPGRADE]%20git%20pull%20$i:$ret\</b\>
     echo start git fetch: $i
-    git fetch origin master
+    timeout 15 git fetch origin master
     ret=$?
     if [ $ret = "0" ] ;then
         echo success on fetch $ret
         git reset --hard FETCH_HEAD
         break
     else
-        echo retry[$ret]: $i \< 3
+        echo retry[$ret]: $i \< 4
     fi
 done
 ps ax | grep [s]tartBliveServer.py | awk '{print $1}' | xargs kill -9
