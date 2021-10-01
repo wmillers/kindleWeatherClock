@@ -7,7 +7,7 @@ echo upgrade@$0 2>&1 | tee -a kindle.log
 curl http://localhost:8099/?call:\<b\>[UPGRADE]%20script%20STARTED\</b\>
 cd "$(dirname "$0")"
 ret=0
-for((i=0;i<4;i++));
+for((i=0;i<5;i++));
 do
     curl http://localhost:8099/?call:\<b\>[UPGRADE]%20git%20pull%20$i:$ret\</b\>
     echo start git fetch: $i
@@ -16,16 +16,20 @@ do
     if [ $ret = "0" ] ;then
         echo success on fetch $ret
         git reset --hard FETCH_HEAD
+        ps ax | grep [s]tartBliveServer.py | awk '{print $1}' | xargs kill -9
+        nohup python3 startBliveServer.py > kindle.log 2>&1 &
+        ps ax|grep [s]tartBlive
+        sleep .5
+        curl -sS "http://localhost:8099/?call:<b>\[FILE%40$(date -r startBliveServer.py +%m-%d/%H:%M:%S/%a%Z)\]%20TEST%20CONNECTION</b>" 2>&1 | tee -a kindle.log
         break
     else
-        echo retry[$ret]: $i \< 4
+        if [ $i < 5 ] ;then
+            echo retry[$ret]: $i \< 5
+        else
+            curl -sS "http://localhost:8099/?call:<b>\[UPDATE]%20failed</b>" 2>&1 | tee -a kindle.log
+        fi
     fi
 done
-ps ax | grep [s]tartBliveServer.py | awk '{print $1}' | xargs kill -9
-nohup python3 startBliveServer.py > kindle.log 2>&1 &
-ps ax|grep [s]tartBlive
-sleep .5
-curl -sS "http://localhost:8099/?call:<b>\[FILE%40$(date -r startBliveServer.py +%m-%d/%H:%M:%S/%a%Z)\]%20TEST%20CONNECTION</b>" 2>&1 | tee -a kindle.log
 if [[ "$?" != 0 ]]; then
     echo "(2) It seems update FAILED($?), try to reroll back in 5s" 2>&1 | tee -a kindle.log
     sleep 5

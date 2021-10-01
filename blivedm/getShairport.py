@@ -8,8 +8,8 @@ DEBUG=False
 last_lyric=''
 
 def handle(e):
-    if DEBUG and e:
-        print(repr(e), flush=True)
+    if e:
+        print(repr(e)[:100]+'at'+str(sys.exc_info()[-1].tb_lineno), end='|', flush=True)
 
 def hex2str(s): # 3.5+
     return bytes.fromhex(s).decode()
@@ -27,11 +27,12 @@ def parse_data(line, length):
     line = line[:int(math.ceil(length/3)*4)]
     try:
         data = base64.b64decode(line).decode()
-    except TypeError:
+    except (TypeError, UnicodeDecodeError):
         data = ""
     except Exception as e:
         data = ""
-        print('['+str(length)+']', line[:50], '...' if len(line)>50 else ''[:50])
+        if DEBUG:
+            print('['+str(length)+']', line[:50], '...' if len(line)>50 else ''[:50], flush=True)
         handle(e)
     return data
 
@@ -41,14 +42,14 @@ def get(f, method=print):
     while True:
         line=f.readline()
         if DEBUG:
-            print('[raw]', line.replace('\n', '\\n')[:200], '...' if len(line)>200 else '')
+            print('[raw]', line.replace('\n', '\\n')[:200], '...' if len(line)>200 else '', flush=True)
         if not line:
             break
         elif not line.startswith("<item>"):
             continue
         typ, code, length = parse_item(line)
         if DEBUG:
-            print('[item]', typ, code, length)
+            print('[item]', typ, code, length, flush=True)
 
         data = ""
         if (length > 0):
@@ -76,22 +77,22 @@ def get(f, method=print):
         if 'Title' in metadata and metadata['Title']:
             method(metadata['Title'])
         elif DEBUG:
-            print('[meta]', metadata if metadata else data)
+            print('[meta]', metadata if metadata else data, flush=True)
     if DEBUG:
-        print('[EOF]')
+        print('[EOF]', flush=True)
 
 def redirect(url='https://debian10', is_dedup=True):
     def func(s):
         global last_lyric
         if DEBUG:
-            print('[lyrc]', s)
+            print('[lyrc]', s, flush=True)
         if last_lyric==s:
             return False
         else:
             last_lyric=s
         try:
             ssl._create_default_https_context = ssl._create_unverified_context
-            request.urlopen(url+'/blive/?call:'+parse.quote(s))
+            request.urlopen(url+'/blive/?call:'+parse.quote('[LYRC] '+s))
         except Exception as e:
             handle(e)
     return func
@@ -101,15 +102,18 @@ def main(path='/tmp/shairport-sync-metadata', method=redirect()):
     if len(sys.argv)>1:
         if sys.argv[1].lower()=='debug':
             DEBUG=True
-    print('--- '+('Start' if not DEBUG else 'Debug')+' at '+ctime()+' ---')
+    print('--- '+('Start' if not DEBUG else 'Debug')+' at '+ctime()+' ---', flush=True)
     while True:
         try:
             with open(path) as f:
                 get(f, method)
         except OSError as e:
-            print('+60 '+repr(e), flush=True)
-        sleep(60)
-    print('=  End  at '+ctime()+' =')
+            print('+30 '+repr(e), flush=True)
+            sleep(30)
+        except Exception as e:
+            handle(e)
+            break
+    print('=  End  at '+ctime()+' =', flush=True)
 
 if __name__ == '__main__':
     main()

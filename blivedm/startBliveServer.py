@@ -32,7 +32,7 @@ class Resquest(BaseHTTPRequestHandler):
             self.end_headers()
             return
         self.send_response(200)
-        needExtra, cmd_res=controlRoom(self.path, data, method, self.headers['User-Agent'])
+        needExtra, cmd_res=controlRoom(self.path, data, method, self.headers['User-Agent'], self.headers)
         if isinstance(cmd_res, str):
             self.send_header('Content-type', 'text/html; charset=utf-8')
         else:
@@ -116,14 +116,13 @@ def clientCount(ua, path):
     clients[ua]['path']=clients[ua]['path'][-4:]
     clients[ua]['path'].append(path)
 
-def corsAccess(url, data=None, method=None):
-    headers = {
+def corsAccess(url, data=None, method=None, ori_headers={}):
+    headers={
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-        'accept-language': 'en-GB,en;q=0.9'
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     }
-    if method=='POST':
-        headers["Content-Type"]="application/json"
+    if 'Content-Type' in ori_headers:
+        headers['Content-Type']=ori_headers['Content-Type']
     req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
         with request.urlopen(req) as response:
@@ -133,17 +132,17 @@ def corsAccess(url, data=None, method=None):
                 return response.read().decode("utf-8")
     except Exception as e:
         print(repr(e), flush=True)
-        que.put_nowait('[EXCEP:cors] '+parse.quote((repr(e)))+'@'+url)
+        que.put_nowait('[EXCEP:cors] '+repr(e).replace('<', '')+'@'+url)
         return ''
 
-def controlRoom(path, data=None, method=None, ua=''):
+def controlRoom(path, data=None, method=None, ua='', headers={}):
     global control_code, que, info, status_code, status
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
-    if cmd.find('cors:')!=-1:
+    if cmd.startswith('cors:'): # ~cors: +call: -other .empty
         print('~'+re.sub(r'(\d\d)\d+', r'\1', ori_cmd)[-9:], end='', flush=True)
     else:
-        print('-'+ori_cmd[:25] if ori_cmd else '.', end='', flush=True)
+        print(('+'+ori_cmd[5:] if cmd.startswith('call:') else '-'+ori_cmd)[:20] if ori_cmd else '.', end='', flush=True)
     needExtra=False
     res=''
     if (cmd==''):
@@ -191,22 +190,21 @@ def controlRoom(path, data=None, method=None, ua=''):
         elif (cmd=='kick'):
             setKick(ua)
             needExtra=True
-        elif (not cmd.find('call:')):
+        elif (cmd.startswith('call:')):
             cmd=ori_cmd
-            que.put_nowait('<b>['+parse.unquote(cmd[5:])+']</b>')
+            que.put_nowait(parse.unquote(cmd[5:]))
             res='[CALLING]'
-        elif (not cmd.find('js:')):
+        elif (cmd.startswith('js:')):
             cmd=parse.unquote(ori_cmd)
             if info['pop']==1:
                 info['pop']=9999
-            que.put_nowait('[CAFFEINE] keep awake')
             que.put_nowait('[JS] '+cmd[3:])
             res='[JS-Executing] '+cmd[3:]
-        elif (not cmd.find('cors:')):
-            res=corsAccess(parse.unquote(ori_cmd[5:]), data, method)
+        elif (cmd.startswith('cors:')):
+            res=corsAccess(parse.unquote(ori_cmd[5:]), data, method, headers)
         elif (cmd=='time'):
             res=int(time()*1000+100)
-        elif (not cmd.find('s4f_:')):
+        elif (cmd.startswith('s4f_:')):
             try:
                 res=subprocess.run(parse.unquote(ori_cmd[5:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10, shell=True, executable="/bin/bash").stdout.decode()
             except Exception as e:
@@ -290,12 +288,15 @@ class MyBLiveClient(blivedm.BLiveClient):
         aprint(f'$$${price}$')
         return price
 
+    def parse_level(self, n):
+        return str(int(n/5)) if n>=15 else ''
+
     async def _on_receive_popularity(self, popularity: int):
         aprint(f'${popularity}$')
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity=supbold(('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else ''))
-        level=supbold(int(danmaku.user_level/5)) if danmaku.user_level>=15 else ''
+        level=supbold(self.parse_level(danmaku.user_level/5))
         aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold("<!---->"+danmaku.msg)}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
@@ -310,9 +311,8 @@ class MyBLiveClient(blivedm.BLiveClient):
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
         price=self.collect_rice(message.price*1e3)
-        identity=supbold(' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')
-        level=message.user_level if message.user_level>=20 else ''
-        aprint(f'$${price}${identity}{level}{message.uname}: {bigbold(message.message)}$')
+        identity=supbold((' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')+self.parse_level(message.user_level))
+        aprint(f'$${price}${identity}{message.uname}: {bigbold(message.message)}$')
 
 
 async def initDm(room_id):
