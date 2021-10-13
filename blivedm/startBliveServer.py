@@ -123,8 +123,8 @@ def corsAccess(url, data=None, method=None, ori_headers={}):
     }
     if 'Content-Type' in ori_headers:
         headers['Content-Type']=ori_headers['Content-Type']
-    req = request.Request(url, headers=headers, data=data, method=method if method else None)
     try:
+        req = request.Request(url, headers=headers, data=data, method=method if method else None)
         with request.urlopen(req) as response:
             if (response.status>=400):
                 return {'code': response.status, 'from': url}
@@ -133,7 +133,7 @@ def corsAccess(url, data=None, method=None, ori_headers={}):
     except Exception as e:
         print(repr(e), flush=True)
         que.put_nowait('[EXCEP:cors] '+repr(e).replace('<', '')+'@'+url)
-        return ''
+        return {'code': -502, 'from': url, 'excep': repr(e)}
 
 def controlRoom(path, data=None, method=None, ua='', headers={}):
     global control_code, que, info, status_code, status

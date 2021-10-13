@@ -26,7 +26,7 @@ do
         if [ $i < 5 ] ;then
             echo retry[$ret]: $i \< 5
         else
-            curl -sS "http://localhost:8099/?call:<b>\[UPDATE]%20failed</b>" 2>&1 | tee -a kindle.log
+            curl -sS "http://localhost:8099/?call:<b>\[UPDATE\]%20failed</b>" 2>&1 | tee -a kindle.log
         fi
     fi
 done
