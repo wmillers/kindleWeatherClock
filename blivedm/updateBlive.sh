@@ -18,16 +18,9 @@ do
         git reset --hard FETCH_HEAD
         ps ax | grep [s]tartBliveServer.py | awk '{print $1}' | xargs kill -9
         nohup python3 startBliveServer.py > kindle.log 2>&1 &
-        ps ax|grep [s]tartBlive
         sleep .5
         curl -sS "http://localhost:8099/?call:<b>\[FILE%40$(date -r startBliveServer.py +%m-%d/%H:%M:%S/%a%Z)\]%20TEST%20CONNECTION</b>" 2>&1 | tee -a kindle.log
         break
-    else
-        if [ $i < 5 ] ;then
-            echo retry[$ret]: $i \< 5
-        else
-            curl -sS "http://localhost:8099/?call:<b>\[UPDATE\]%20failed</b>" 2>&1 | tee -a kindle.log
-        fi
     fi
 done
 if [[ "$?" != 0 ]]; then

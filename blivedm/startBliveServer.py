@@ -4,13 +4,14 @@ import asyncio
 import sys, os, subprocess
 import blivedm
 from time import sleep, time, strftime, strptime, mktime
-from multiprocessing import Process, Queue, Value
+from multiprocessing import Process, Queue, Value, Array
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from urllib import parse, request
 import ctypes
 from socketserver import ThreadingMixIn
 import re, math
+import danmaku
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -18,9 +19,10 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 history=[]
 temp_purse={}
-info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'purse':0, 'super_chat':[]}
+info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'other_room':'', 'purse':0, 'super_chat':[]}
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
 clients={}
+storage=''
 class Resquest(BaseHTTPRequestHandler):
     def log_request(code, size):
         pass
@@ -136,7 +138,7 @@ def corsAccess(url, data=None, method=None, ori_headers={}):
         return {'code': -502, 'from': url, 'excep': repr(e)}
 
 def controlRoom(path, data=None, method=None, ua='', headers={}):
-    global control_code, que, info, status_code, status
+    global control_code, que, info, status_code, status, other_room, storage
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
     if cmd.startswith('cors:'): # ~cors: +call: -other .empty
@@ -151,11 +153,12 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
             room_id=int(cmd)
             if (room_id>0 and room_id<1e15):
                 res='[RECV] Room<b>'+cmd+'</b>'
-                if (info['room_id']!=room_id):
+                if (other_room.value or info['room_id']!=room_id):
                     print('[kill] room id: '+str(info['room_id']))
                     info['room_id']=room_id
                     info['super_chat']=[]
                     info['pop']=0
+                    info['other_room']=''
                     addPurse()
                     control_code.value=room_id
                 else:
@@ -211,13 +214,31 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                 res=repr(e)
             finally:
                 res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("as");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124">\r<code id="as" style="white-space:pre-wrap;word-break:break-word">\33[2K\r'+res.replace('<', '&lt;')+'</code></body>\r'
+        elif (cmd.startswith('store:') and len(cmd)>6):
+            storage=parse.unquote(cmd[6:])
+            res='[STORE] '+str(len(cmd[6:]))
+        elif (cmd=='store'):
+            res=storage
+        elif any(k in cmd for k in valid_other):
+            try:
+                assert len(cmd)<=50
+                other_room.raw=b'\x00'*50
+                other_room.raw=cmd.encode('ascii')
+            except Exception as e:
+                res='[notRECV] '+repr(e)
+            else:
+                control_code.value=-1000
+                res='[RECV] OtherRoom <b>'+cmd+'</b>'
+                print('[hide] room id: '+str(info['room_id']))
+                info['super_chat']=[]
+                info['other_room']=cmd
+                info['pop']=0
         else:
             res='[err] Invalid: '+ori_cmd
     return needExtra, res
 
 def insertInfo(s):
     return '<!--'+json.dumps(info)+'-->'+('<br>' if s else '')+s
-
 
 def readFromLive(timeout=5):
     global history, que, status_code, info, status
@@ -254,10 +275,9 @@ def readFromLive(timeout=5):
         res=status[status_code.value]+'<br>'+res
     return res
 
-def initServer(q, c, s, r):
-    global que, control_code, status_code, info
-    que, control_code, status_code=q, c, s
-    info['room_id']=r
+def initServer(q, c, s, r, o):
+    global que, control_code, status_code, info, other_room
+    que, control_code, status_code, info['room_id'], other_room=q, c, s, r, o
     host = ('localhost', 8099)
     print("Starting server, listen at: %s:%s" % host, flush=True)
     server = ThreadedHTTPServer(host, Resquest)
@@ -269,6 +289,7 @@ def initServer(q, c, s, r):
         print('[initServer:8099] normal exit', flush=True)
     control_code.value=-1
 
+# --- handle clients & route danmu ---
 
 def aprint(a):
     if (a.strip()):
@@ -285,7 +306,8 @@ class MyBLiveClient(blivedm.BLiveClient):
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
     def collect_rice(self, p):
         price=round(p/1e3)
-        aprint(f'$$${price}$')
+        if price:
+            aprint(f'$$${price}$')
         return price
 
     def parse_level(self, n):
@@ -332,6 +354,36 @@ def runDm(s, room_id):
     que=s
     asyncio.get_event_loop().run_until_complete(initDm(room_id))
 
+# --- Blivedm ---
+
+dedup_last=''
+valid_other=['douyu.com', 'huya.com', 'huomao.com', 'kuaishou.com', 'egame.qq.com', 'huajiao.com', 'inke.cn', 'cc.163.com', 'fanxing.kugou.com', 'zhanqi.tv', 'longzhu.com', 'pps.tv', 'qf.56.com', 'laifeng.com', 'look.163.com', 'acfun.cn', '173.com'] # only support danmu, exclude bilibili, yy
+async def printer(q, main_queue):
+    global dedup_last
+    while True:
+        m = await q.get()
+        if m['msg_type'] == 'danmaku':
+            if main_queue and dedup_last!=m["name"]+m["content"]:
+                dedup_last=m["name"]+m["content"]
+                main_queue.put_nowait(f'<span style="font-size: .64em">{m["name"]} </span>{bigbold("<!---->"+m["content"])}')
+            else:
+                print(f'{m["name"]}：{m["content"]}')
+
+async def listen(url, main_queue):
+    q = asyncio.Queue()
+    dmc = danmaku.DanmakuClient(url, q)
+    main_queue.put_nowait('$123456$')
+    asyncio.create_task(printer(q, main_queue))
+    await dmc.start()
+
+def runOther(url, main_queue): # (minimal) huya.com/12345 
+    if url:
+        main_queue.put_nowait('[LAUNCH] '+url)
+        asyncio.run(listen(url, main_queue))
+    else:
+        print('[runOther] empty', flush=True)
+
+# --- Other platform danmu (only support raw danmu) ---
 
 def clear_que(que, n=0):
     try:
@@ -361,6 +413,7 @@ def main():
         que = Queue()
         control_code=Value(ctypes.c_longlong, 0)
         status_code=Value(ctypes.c_int, 0)
+        other_room=Array(ctypes.c_char, 50)
         room_id=0
         c=False
         if (len(sys.argv)>1):
@@ -372,12 +425,14 @@ def main():
         else:
             print('[wait] No preset room id, wait for client request', flush=True)
             setSleep(que, status_code, 1)
-        p = Process(target=initServer, args=(que,control_code,status_code,room_id,))
+        p = Process(target=initServer, args=(que, control_code, status_code, room_id, other_room))
         p.start()
+        d = None
         isOn=True
         while isOn:
             if (status_code.value==0 and que.qsize()>5000):
                 print('[sleep] blive off, request room_id to wake up')
+                kill(d)
                 kill(c)
                 clear_que(que)#, 500)# silly queue without clear, not knowing the reason of the bug here
                 setSleep(que, status_code, 2)
@@ -399,7 +454,17 @@ def main():
                             subprocess.run('/bin/bash updateBlive.sh', shell=True, executable="/bin/bash")
                         except Exception as e:
                             que.put_nowait(repr(e))
+                    elif (control_code.value==-1000):
+                        kill(d)
+                        kill(c)
+                        clear_que(que)
+                        print('[launch] other room<'+other_room.value.decode()+'>')
+                        status_code.value=0
+                        d = Process(target=runOther, args=(other_room.value.decode(), que,))
+                        d.start()
                 else:
+                    other_room.raw=b'\x00'*50
+                    kill(d)
                     kill(c)
                     clear_que(que)
                     room_id=control_code.value
@@ -408,10 +473,11 @@ def main():
                     c = Process(target=runDm, args=(que,room_id,))
                     c.start()
                 control_code.value=0
+            sleep(.1)
     except Exception as e:
         print(repr(e)+str(sys.exc_info()), flush=True)
     print('===  END  at '+handle_time()+' ===', flush=True)
-    os._exit()
+    os._exit(1)
 
 if __name__ == '__main__':
     main()
