@@ -214,11 +214,15 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                 res=repr(e)
             finally:
                 res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("as");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124">\r<code id="as" style="white-space:pre-wrap;word-break:break-word">\33[2K\r'+res.replace('<', '&lt;')+'</code></body>\r'
-        elif (cmd.startswith('store:') and len(cmd)>6):
-            storage=parse.unquote(cmd[6:])
-            res='[STORE] '+str(len(cmd[6:]))
         elif (cmd=='store'):
-            res=storage
+            if method=='POST' and data:
+                try:
+                    storage=data.decode()
+                    res='[STORE] '+str(len(data))
+                except Exception as e:
+                    res='[STORE:FAIL] '+repr(e)
+            else:
+                res=storage
         elif any(k in cmd for k in valid_other):
             try:
                 assert len(cmd)<=50
@@ -233,6 +237,7 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                 info['super_chat']=[]
                 info['other_room']=cmd
                 info['pop']=0
+                addPurse()
         else:
             res='[err] Invalid: '+ori_cmd
     return needExtra, res
@@ -372,13 +377,12 @@ async def printer(q, main_queue):
 async def listen(url, main_queue):
     q = asyncio.Queue()
     dmc = danmaku.DanmakuClient(url, q)
-    main_queue.put_nowait('$123456$')
+    main_queue.put_nowait('[LAUNCH] '+url)
     asyncio.create_task(printer(q, main_queue))
     await dmc.start()
 
 def runOther(url, main_queue): # (minimal) huya.com/12345 
     if url:
-        main_queue.put_nowait('[LAUNCH] '+url)
         asyncio.run(listen(url, main_queue))
     else:
         print('[runOther] empty', flush=True)
