@@ -432,7 +432,8 @@ function hasModule(name){
     <div class="inform" onclick="fridgeTomato();weatherInterval();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步</span></div>
     <div class="reminder" onclick="clearReminder()"></div>
   </div></div>
-  <script src="mpegts.js"></script>
+  <script src="mpegts.min.js" defer></script>
+  <script src="crypto-js.min.js" defer></script>
   <script>
 "use strict";
 if (!String.prototype.startsWith) {
@@ -1396,19 +1397,19 @@ var reminder = document.getElementsByClassName('reminder')[0];
 function dDay(t){return dHour(t, 24);}
 function dHour(t, h){return parseInt(dMs(t, (!h ? 1 : h) * 3600 * 1000));}
 function dMs(t, ms){return (t - getOffsetTime()) / (!ms ? 1 : ms);}
-function dateString(timeStamp, format){
+function dateString(timeStamp, YMdhms){
     var s = '';
     var all = 'YMdhms';
     var date = getOffsetDate();
     if (timeStamp)
         if (String(timeStamp).match(/\d/))
             date = new Date(timeStamp);
-        else if (!format)
-            format = timeStamp;
-    if (!format) format = 'hm';
+        else if (!YMdhms)
+            YMdhms = timeStamp;
+    if (!YMdhms) YMdhms = 'hm';
     var res = [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
     for (var i = 0; i < all.length; i++)
-        if (format.indexOf(all[i]) != -1)
+        if (YMdhms.indexOf(all[i]) != -1)
             s += frontZero([res[i], '-- :: '[i]]);
     return s.slice(0, -1);
 }
@@ -2573,8 +2574,47 @@ function liveFromOther(url){
                     comment(platform+'LoadFailed');
             });
         },
+        douyu: function(room, platform){
+            danmuReq('cors:https://www.douyu.com/'+room, function parseStreamInfo(s){
+                s=s.replaceAll('\n', '');
+                var ori=s;
+                var m;
+                while (m=s.match(/<script(?: type="text\/javascript")>(.*?function ub98484234.*)/))
+                    s=m[1];
+                s=s.match(/(.*?)(?:<\/script>)/)[1];
+                if (s){
+                    try {
+                        var data={
+                            //v: 2501+dateString('YMd').replaceAll('-', ''),
+                            did: '10000000000000000000000000001501',
+                            tt: parseInt(getOffsetTime()/1000),
+                            ver: '219032101',
+                            rid: ori.match(/\$ROOM\.room_id\s*=\s*(\d+)/)[1],
+                            rate: '-1',
+                        };
+                        data.sign=eval(s+';ub98484234('+data.rid+',"'+data.did+'",'+data.tt+')');
+                        danmuReq('cors:https://m.douyu.com/api/room/ratestream', function parse(s){
+                            debugger//http://tx2play1.douyucdn.cn/live/290935rl8pFB4Chu.flv?uuid=
+                        }, '', data.sign+'&ver='+data.ver+'&rid='+data.rid+'&rate='+data.rate);
+                    } catch (e){
+                        return comment(e);
+                    }
+                    /*
+                    liveFromRoom(url);
+                    danmuArea=platform.toUpperCase()+' ';
+                    if (m=s.match(/"host-name".*?>(.*)</i)) danmuArea+=m[1];
+                    if (m=s.match(/"host-title".*?>(.*)</i)) danmuArea+=m[1];
+                    liveOther['huya.com/'+room]=danmuArea;
+                    if (m=s.match(/"startTime"\s*:\s*(\d+),/i)) danmuArea+=' <small>'+timeHuman(parseInt(m[1]))+'</small>';
+                    if (m=s.match(/"live-count".*?>(.*)</i)) dInfo.pop=parseInt(m[1].replaceAll(',', ''))/2;
+                    danmuArea=' | '+danmuArea;
+                    danmuStatus();*/
+                } else
+                    comment(platform+'LoadFailed');
+            });
+        },
     };
-    var m=url.toLowerCase().match(/(huya|cc).*?\.com\/(\d+)/);
+    var m=url.toLowerCase().match(/(huya|cc|douyu).*?\.com\/(\d+)/);
     if (m){
         var platform=m[1];
         var room=m[2];
