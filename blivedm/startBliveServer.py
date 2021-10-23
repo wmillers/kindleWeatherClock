@@ -23,10 +23,8 @@ info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'other_r
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
 clients={}
 storage=''
+urls=[]
 class Resquest(BaseHTTPRequestHandler):
-    def log_request(code, size):
-        pass
-
     def do_GET(self, data=None, method=None):
         clientCount(self.headers['User-Agent'] if 'User-Agent' in self.headers else 'default', self.path)
         if (isEmptyPath(self.path)):
@@ -138,11 +136,16 @@ def corsAccess(url, data=None, method=None, ori_headers={}):
         return {'code': -502, 'from': url, 'excep': repr(e)}
 
 def controlRoom(path, data=None, method=None, ua='', headers={}):
-    global control_code, que, info, status_code, status, other_room, storage
+    global control_code, que, info, status_code, status, other_room, storage, urls
     ori_cmd='?'.join(path.split('?')[1:])
     cmd=ori_cmd.lower()
-    if cmd.startswith('cors:'): # ~cors: +call: -other .empty
-        print('~'+re.sub(r'(\d\d)\d+', r'\1', ori_cmd)[-9:], end='', flush=True)
+    if cmd.startswith('cors:'): # [cors:] +call: -other .empty
+        url=ori_cmd[5:100]
+        if url in urls:
+            print('['+str(urls.index(url))+']', end='', flush=True)
+        else:
+            print('['+str(len(urls))+':'+url+']', end='', flush=True)
+            urls.append(url)
     else:
         print(('+'+ori_cmd[5:] if cmd.startswith('call:') else '-'+ori_cmd)[:20] if ori_cmd else '.', end='', flush=True)
     needExtra=False
@@ -154,7 +157,7 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
             if (room_id>0 and room_id<1e15):
                 res='[RECV] Room<b>'+cmd+'</b>'
                 if (other_room.value or info['room_id']!=room_id):
-                    print('[kill] room id: '+str(info['room_id']))
+                    print('[kill:'+str(info['room_id'])+']', end='', flush=True)
                     info['room_id']=room_id
                     info['super_chat']=[]
                     info['pop']=0
@@ -162,14 +165,14 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                     addPurse()
                     control_code.value=room_id
                 else:
-                    print('[recv] but same')
+                    print('[recv:butSame]', end='', flush=True)
             elif room_id==0:
                 res='[RECV] Room keeps'
             else:
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res='<br>'.join(history)
+            res='<br>'.join(reversed(history)) # faster than [::-1]
         elif (cmd=='restart'):
             control_code.value=-2
             info['pop']=1
@@ -213,7 +216,7 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
             except Exception as e:
                 res=repr(e)
             finally:
-                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function a(){\rvar a=document.getElementById("as");\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background: #202124">\r<code id="as" style="white-space:pre-wrap;word-break:break-word">\33[2K\r'+res.replace('<', '&lt;')+'</code></body>\r'
+                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function(){\rvar a=document.body;\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background:#222;\rwhite-space:pre-wrap;word-break:break-word;\rfont-family:monospace;color:#fff">\r\33[2K\r'+res.replace('<', '&lt;')+'</body>\r'
         elif (cmd=='store'):
             if method=='POST' and data:
                 try:
@@ -232,10 +235,11 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                 res='[notRECV] '+repr(e)
             else:
                 control_code.value=-1000
-                res='[RECV] OtherRoom <b>'+cmd+'</b>'
-                print('[hide] room id: '+str(info['room_id']))
+                print('[hide:'+str(info['room_id'])+']', end='', flush=True)
                 info['super_chat']=[]
                 info['other_room']=cmd
+                if not info['room_id']:
+                    info['room_id']=2
                 info['pop']=0
                 addPurse()
         else:
@@ -309,7 +313,9 @@ def bigbold(s, size=1.2):
 class MyBLiveClient(blivedm.BLiveClient):
     # 自定义handler
     _COMMAND_HANDLERS = blivedm.BLiveClient._COMMAND_HANDLERS.copy()
-    def collect_rice(self, p):
+
+    @staticmethod
+    def collect_rice(p):
         price=round(p/1e3)
         if price:
             aprint(f'$$${price}$')
@@ -368,11 +374,10 @@ async def printer(q, main_queue):
     while True:
         m = await q.get()
         if m['msg_type'] == 'danmaku':
-            if main_queue and dedup_last!=m["name"]+m["content"]:
-                dedup_last=m["name"]+m["content"]
+            if main_queue and dedup_last!=m["content"]:# m["name"]+m["content"]:
+                dedup_last=m["content"]# m["name"]+m["content"]
                 main_queue.put_nowait(f'<span style="font-size: .64em">{m["name"]} </span>{bigbold("<!---->"+m["content"])}')
-            else:
-                print(f'{m["name"]}：{m["content"]}')
+            # print(f'{m["name"]}：{m["content"]}')
 
 async def listen(url, main_queue):
     q = asyncio.Queue()
@@ -443,7 +448,7 @@ def main():
             if (control_code.value!=0):
                 if (control_code.value<0):
                     if (control_code.value==-1):
-                        print('[deactivate] goodbye')
+                        print('[deactivate] goodbye', flush=True)
                         # disabled:bye:end
                     elif (control_code.value==-2):
                         print('[restart] run self: '+str(sys.argv))
@@ -452,7 +457,7 @@ def main():
                         kill(p)
                         os.execv(sys.executable, ['python3'] + sys.argv)
                     elif (control_code.value==-3):
-                        print('[upgrade] it takes a while')
+                        print('[upgrade] it takes a while', flush=True)
                         status_code.value=4
                         try:
                             subprocess.run('/bin/bash updateBlive.sh', shell=True, executable="/bin/bash")
@@ -462,7 +467,7 @@ def main():
                         kill(d)
                         kill(c)
                         clear_que(que)
-                        print('[launch] other room<'+other_room.value.decode()+'>')
+                        print('[launch:other:'+other_room.value.decode()+']', flush=True)
                         status_code.value=0
                         d = Process(target=runOther, args=(other_room.value.decode(), que,))
                         d.start()
@@ -472,7 +477,7 @@ def main():
                     kill(c)
                     clear_que(que)
                     room_id=control_code.value
-                    print('[launch] new room id: '+str(room_id))
+                    print('[launch:new:'+str(room_id)+']', flush=True)
                     status_code.value=0
                     c = Process(target=runDm, args=(que,room_id,))
                     c.start()

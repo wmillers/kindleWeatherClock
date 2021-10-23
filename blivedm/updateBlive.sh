@@ -7,8 +7,7 @@ echo upgrade@$0 2>&1 | tee -a kindle.log
 curl http://localhost:8099/?call:\<b\>[UPGRADE]%20script%20STARTED\</b\>
 cd "$(dirname "$0")"
 ret=0
-for((i=0;i<5;i++));
-do
+for((i=0;i<6;i++));do
     curl http://localhost:8099/?call:\<b\>[UPGRADE]%20git%20pull%20$i:$ret\</b\>
     echo start git fetch: $i
     timeout 15 git fetch origin master
@@ -21,6 +20,8 @@ do
         sleep .5
         curl -sS "http://localhost:8099/?call:<b>\[FILE%40$(date -r startBliveServer.py +%m-%d/%H:%M:%S/%a%Z)\]%20TEST%20CONNECTION</b>" 2>&1 | tee -a kindle.log
         break
+    elif [ $i = "5" ] ;then
+        curl -sS "http://localhost:8099/?call:<b>\[UPGRADE\]%20Failed:$i:$ret</b>" 2>&1 | tee -a kindle.log
     fi
 done
 if [[ "$?" != 0 ]]; then
