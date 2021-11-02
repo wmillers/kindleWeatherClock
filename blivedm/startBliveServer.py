@@ -25,6 +25,9 @@ clients={}
 storage=''
 urls=[]
 class Resquest(BaseHTTPRequestHandler):
+    def log_request(self, code): # to disbale logging
+        pass
+
     def do_GET(self, data=None, method=None):
         clientCount(self.headers['User-Agent'] if 'User-Agent' in self.headers else 'default', self.path)
         if (isEmptyPath(self.path)):
@@ -216,7 +219,7 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
             except Exception as e:
                 res=repr(e)
             finally:
-                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function(){\rvar a=document.body;\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background:#222;\rwhite-space:pre-wrap;word-break:break-word;\rfont-family:monospace;color:#fff">\r\33[2K\r'+res.replace('<', '&lt;')+'</body>\r'
+                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function(){\rvar a=document.body;\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background:#222;\rwhite-space:pre-wrap;word-break:break-word;\rfont-family:monospace;color:#ccc">\r\33[2K\r'+res.replace('<', '&lt;')+'</body>\r'
         elif (cmd=='store'):
             if method=='POST' and data:
                 try:
@@ -242,11 +245,12 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                     info['room_id']=2
                 info['pop']=0
                 addPurse()
+                res=insertInfo()
         else:
             res='[err] Invalid: '+ori_cmd
     return needExtra, res
 
-def insertInfo(s):
+def insertInfo(s=''):
     return '<!--'+json.dumps(info)+'-->'+('<br>' if s else '')+s
 
 def readFromLive(timeout=5):
@@ -258,7 +262,8 @@ def readFromLive(timeout=5):
         except Exception as e:
             break
         else:
-            history.append(tmp)
+            if len(history)==0 or tmp!=history[-1]:
+                history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
                     if (tmp[2]=='$'):
@@ -278,8 +283,8 @@ def readFromLive(timeout=5):
                     res=insertInfo(res)
             else:
                 res=tmp+('<br>' if res else '')+res
-    if (len(history)>1000):
-        history=history[500:]
+    if (len(history)>10000):
+        history=history[1000:] # 1000-10000 remain
     if (status_code.value!=0):
         res=status[status_code.value]+'<br>'+res
     return res
@@ -386,7 +391,7 @@ async def listen(url, main_queue):
     asyncio.create_task(printer(q, main_queue))
     await dmc.start()
 
-def runOther(url, main_queue): # (minimal) huya.com/12345 
+def runOther(url, main_queue): # (minimal) huya.com/12345
     if url:
         asyncio.run(listen(url, main_queue))
     else:
