@@ -138,6 +138,9 @@ def corsAccess(url, data=None, method=None, ori_headers={}):
         que.put_nowait('[EXCEP:cors] '+repr(e).replace('<', '')+'@'+url)
         return {'code': -502, 'from': url, 'excep': repr(e)}
 
+def escapeHTML(s=''):
+    return str(s).replace('<', '&lt;')
+
 def controlRoom(path, data=None, method=None, ua='', headers={}):
     global control_code, que, info, status_code, status, other_room, storage, urls
     ori_cmd='?'.join(path.split('?')[1:])
@@ -175,7 +178,11 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
                 res='[err] Not in safe range: '+cmd
     else:
         if (cmd=='history'):
-            res='<br>'.join(reversed(history)) # faster than [::-1]
+            limit=2000
+            if len(history)>limit:
+                res='<br>'.join(reversed(history[len(history)-limit:]))+'<details><summary>'+str(limit)+' shown, '+str(len(history)-limit)+' left</summary>'+'<br>'.join(reversed(history[:len(history)-limit]))+'</details>'
+            else:
+                res='<br>'.join(reversed(history)) # faster than [::-1]
         elif (cmd=='restart'):
             control_code.value=-2
             info['pop']=1
@@ -219,7 +226,7 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
             except Exception as e:
                 res=repr(e)
             finally:
-                res='<title>'+parse.unquote(ori_cmd[5:]).replace('<', '&lt;')+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function(){\rvar a=document.body;\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background:#222;\rwhite-space:pre-wrap;word-break:break-word;\rfont-family:monospace;color:#ccc">\r\33[2K\r'+res.replace('<', '&lt;')+'</body>\r'
+                res='<title>'+escapeHTML(parse.unquote(ori_cmd[5:]))+'</title>\r<script src="https://cdn.jsdelivr.net/gh/drudru/ansi_up/ansi_up.min.js">\r</script><script>window.onload=function(){\rvar a=document.body;\ra.innerHTML=new AnsiUp().ansi_to_html(a.innerText)}\r</script><body style="background:#222;\rwhite-space:pre-wrap;word-break:break-word;\rfont-family:monospace;color:#ccc">\r\33[2K\r'+escapeHTML(res)+'</body>\r'
         elif (cmd=='store'):
             if method=='POST' and data:
                 try:
@@ -335,22 +342,22 @@ class MyBLiveClient(blivedm.BLiveClient):
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         identity=supbold(('⚑' if danmaku.admin else '')+(' ᴀʙᴄ'[danmaku.privilege_type] if danmaku.privilege_type else ''))
         level=supbold(self.parse_level(danmaku.user_level/5))
-        aprint(f'<span style="font-size: .64em">{identity}{level}{danmaku.uname} </span>{bigbold("<!---->"+danmaku.msg)}')
+        aprint(f'<span style="font-size: .64em">{identity}{level}{escapeHTML(danmaku.uname)} </span>{bigbold("<!---->"+escapeHTML(danmaku.msg))}')
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
         price=self.collect_rice(gift.total_coin)
         if (gift.coin_type!='silver' and price>=5):# gift.num
             identity=supbold(' ᴀʙᴄ'[gift.guard_level] if gift.guard_level else '')
-            aprint(bigbold(f'{identity}{gift.uname} 赠送{gift.gift_name}x{gift.num}#{price}', .64+max(math.pow(price, 1/3)/40, 1/(1+math.pow(math.e, -.002*price+3))))) # (936, .24)
+            aprint(bigbold(f'{identity}{escapeHTML(gift.uname)} 赠送{escapeHTML(gift.gift_name)}x{gift.num}#{price}', .64+max(math.pow(price, 1/3)/40, 1/(1+math.pow(math.e, -.002*price+3))))) # (936, .24)
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         price=self.collect_rice(message.price)
-        aprint(f'{bigbold(message.username)} 成为 {bigbold(message.gift_name)}#{price}')
+        aprint(f'{bigbold(escapeHTML(message.username))} 成为 {bigbold(escapeHTML(message.gift_name))}#{price}')
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
         price=self.collect_rice(message.price*1e3)
         identity=supbold((' ᴀʙᴄ'[message.guard_level] if message.guard_level else '')+self.parse_level(message.user_level))
-        aprint(f'$${price}${identity}{message.uname}: {bigbold(message.message)}$')
+        aprint(f'$${price}${identity}{escapeHTML(message.uname)}: {bigbold(escapeHTML(message.message))}$')
 
 
 async def initDm(room_id):
@@ -381,7 +388,7 @@ async def printer(q, main_queue):
         if m['msg_type'] == 'danmaku':
             if main_queue and dedup_last!=m["content"]:# m["name"]+m["content"]:
                 dedup_last=m["content"]# m["name"]+m["content"]
-                main_queue.put_nowait(f'<span style="font-size: .64em">{m["name"]} </span>{bigbold("<!---->"+m["content"])}')
+                main_queue.put_nowait(f'<span style="font-size: .64em">{escapeHTML(m["name"])} </span>{bigbold("<!---->"+escapeHTML(m["content"]))}')
             # print(f'{m["name"]}：{m["content"]}')
 
 async def listen(url, main_queue):
