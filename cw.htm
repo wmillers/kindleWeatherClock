@@ -1977,9 +1977,13 @@ function danmuShow(s){
                 parseLyrc(sn[i]);
             else {
                 if (sn[i].startsWith('[EXCEP')){
-                    console.log({excep: sn[i]});
-                    if (sn[i].startsWith('[EXCEP:cors]')&&sn[i].length>50)
-                        sn[i]=sn[i].slice(0, 50)+'...';
+                    var limit=60;
+                    var excep={summary: sn[i].slice(0, limit)};
+                    if (sn[i].startsWith('[EXCEP:cors]')&&sn[i].length>limit){
+                        sn[i]=sn[i].slice(0, limit)+'...';
+                        excep.rest=sn[i].slice(limit);
+                    }
+                    console.log(excep);
                 }
                 if (sn[i].startsWith('[JS]'))
                     parseJS(sn[i].slice(4));
@@ -2242,6 +2246,7 @@ function danmuSet(isLoad){// input JSON-string to mannually sync to the server
         }));
 
     function parseStore(s){
+        console.log("danmuSet('"+s+"')");
         s=JsonParse(s);
         var msg='setLoad';
         if (streamer[0].indexOf('firstroom')==-1&&Array.isArray(s.extra)&&s.extra.length){
@@ -2255,7 +2260,7 @@ function danmuSet(isLoad){// input JSON-string to mannually sync to the server
             msg+=':live';
         }
         danmuStatus();
-        comment(msg);
+        console.log(msg);
     }
 }
 function danmuParseStatus(s){
@@ -2293,8 +2298,8 @@ function danmuDark(toggle){
     }
 }
 var dTool={
-    get store(){danmuSet()},
     get clean(){danmuWrite('<div style="height: 75vh; width: 0;"></div>')},
+    get store(){danmuSet()},
     get rotate(){danmu_fr.classList.toggle('rotate');setTimeout(scrollAnimation, 3e3)},
     get fade(){danmu.classList.toggle('better_view')},
     get light(){hSwitch(1)},
@@ -2304,8 +2309,8 @@ var dTool={
     get replay(){liveOff();danmuOn('', true)},
     get watch(){dInfo.flag.on=dInfo.flag.on==2?1:2;danmuStatus()},
     get firstbird(){danmuTuber(true)},
-    get off(){(!isLiveOff()?liveOff:danmuOff)()},
     get refresh(){danmuSet();f5('#danmuOnly')},
+    get off(){(!isLiveOff()?liveOff:danmuOff)()},
     get togglelive(){liveOption.enable=!liveOption.enable;this.replay},
     get remove(){if (dInfo.flag.on) dInfo.flag.on=dInfo.flag.on==1?3:1;danmuStatus()},
     get add(){
@@ -2357,7 +2362,7 @@ function danmuStatus(){
     }
     var signal=Math.round(Math.min(1, streamerTime.filter(function f(s){return s&&s!=''}).length/12)*6);
     signal=new Array(signal+1).join('•')+new Array(6-signal+1).join('◦');
-    danmu_info.innerHTML = '<div class="base">'+atag(!dInfo.flag.on ? '热度' : !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'Store\nClean', 'shrink') + atag(dTrends+(isDanmuOnly?'<sup>'+dInfo.popTrend+'</sup>':''), false, 'Rotate\nFade') + ' ' + (isDanmuOnly?extraButton:'') +(dInfo.flag.reconfirm?atag('点击此处重新确认 Click here to re-confirm', '/blive/?status', '', 'title'):atag(danmuTitle()+danmuArea+(isLiveOff()?'⊖':''), 'https://live.bilibili.com/blanc/'+dInfo.roomId, '#'+dInfo.roomId+'\nReplay', 'right title'))+atag(isDanmuOnly?(dInfo.flag.bird?'├⊏⊐■=─ ':'├■■■=─ '):'', false, 'Watch\nFirstBird', 'right shrink')+ '<b>' + atag(status, false, 'Off\nRefresh', 'right') + '</b></div><div class="extra">' + roomStatus + dInfo.sc + '</div>';
+    danmu_info.innerHTML = '<div class="base">'+atag(!dInfo.flag.on ? '热度' : !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'Clean\nStore', 'shrink') + atag(dTrends+(isDanmuOnly?'<sup>'+dInfo.popTrend+'</sup>':''), false, 'Rotate\nFade') + ' ' + (isDanmuOnly?extraButton:'') +(dInfo.flag.reconfirm?atag('点击此处重新确认 Click here to re-confirm', '/blive/?status', '', 'title'):atag(danmuTitle()+danmuArea+(isLiveOff()?'⊖':''), 'https://live.bilibili.com/blanc/'+dInfo.roomId, '#'+dInfo.roomId+'\nReplay', 'right title'))+atag(isDanmuOnly?(dInfo.flag.bird?'├⊏⊐■=─ ':'├■■■=─ '):'', false, 'Watch\nFirstBird', 'right shrink')+ '<b>' + atag(status, false, 'Refresh\nOff', 'right') + '</b></div><div class="extra">' + roomStatus + dInfo.sc + '</div>';
 
     function atag(inner, href, title, className, onclick, oncontext){
         if (href)

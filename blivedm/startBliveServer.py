@@ -6,7 +6,7 @@ import blivedm
 from time import sleep, time, strftime, strptime, mktime
 from multiprocessing import Process, Queue, Value, Array
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json
+import json, gzip
 from urllib import parse, request
 import ctypes
 from socketserver import ThreadingMixIn
@@ -132,7 +132,10 @@ def corsAccess(url, data=None, method=None, ori_headers={}):
             if (response.status>=400):
                 return {'code': response.status, 'from': url}
             else:
-                return response.read().decode("utf-8")
+                res=response.read()
+                if res[:3]==b'\x1f\x8b\x08':
+                    res=gzip.decompress(res)
+                return res.decode("utf-8")
     except Exception as e:
         print(repr(e), flush=True)
         que.put_nowait('[EXCEP:cors] '+repr(e).replace('<', '')+'@'+url)
