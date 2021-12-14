@@ -2787,6 +2787,39 @@ function liveFromUrl(durl, audioOnly){
     danmuDark();
     danmuStatus();
 }
+function videoFromUrl(url, format){
+    // DEBUG use
+    // to get bilibili video url https://bilibili.iiilab.com/
+    // access from /blive/?js:videoFromUrl('url','mp4')
+    liveOff(true, 'getLock', 'DimGray', true);
+    livePlayer = mpegts.createPlayer({
+        type: format?format:'mp4', // mse, mpegts, m2ts, flv, mp4
+        isLive: false,
+        url: url
+    }, {
+        enableWorker: true,// avoid requests cause danmuContent delay
+        lazyLoad: false,
+        reuseRedirectedURL: true,
+    });
+    livePlayer.on(mpegts.Events.ERROR, function c(errType, errDetail){
+        clearTimeout(danmuTask.liveRetry);
+        liveInfo('Quit:'+dInfo.count.live+':'+errType, errDetail);
+        liveOff(false, dInfo.count.live+':'+errDetail);
+    });
+    livePlayer.attachMediaElement(danmu_live);
+    mpegts.LoggingControl.enableAll=false;
+    if (forTestUse){
+        mpegts.LoggingControl.enableError=true;// only on http code error, useless
+        mpegts.LoggingControl.enableWarn=true;// too many audio frame correction warns
+    }
+    livePlayer.load();
+    livePlayer.volume=liveDefaultVol;
+    livePlayer.muted=false;
+    danmu_live.playbackRate=1;
+    livePlayer.play();
+    danmu_live.style.opacity='1';
+    dTool.clean;
+}
 function liveChangeVolume(value){
     if (livePlayer&&typeof livePlayer.volume=='number'){
         value=Math.floor(value*10);
