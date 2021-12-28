@@ -272,7 +272,7 @@ def readFromLive(timeout=5):
         except Exception as e:
             break
         else:
-            if len(history)==0 or tmp!=history[-1]:
+            if len(history)==0 or len(tmp)!=len(history[-1]):
                 history.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
@@ -293,8 +293,8 @@ def readFromLive(timeout=5):
                     res=insertInfo(res)
             else:
                 res=tmp+('<br>' if res else '')+res
-    if (len(history)>10000):
-        history=history[1000:] # 1000-10000 remain
+    if (len(history)>20000):
+        history=history[2000:] # [2000:20000] remain
     if (status_code.value!=0):
         res=status[status_code.value]+'<br>'+res
     return res
@@ -416,7 +416,11 @@ def clear_que(que, n=0):
             n+=1
             que.get_nowait()
     except Exception as e:
-        print('skipClear_que:'+repr(e), flush=True)
+        print('\n-*-*- FATAL: use code ?restart -*-*-\nskipClear_que:'+repr(e), flush=True)
+        try:
+            que.put_nowait("-*-*- FATAL: use code ?restart -*-*-<br>skipClear_que_ERROR")
+        except Exception as e:
+            print('\nqueue_broken_ERROR', flush=True)
 
 def setSleep(que, status_code, status):
     status_code.value=status
