@@ -578,7 +578,7 @@ var danmuScrollNum;
 function danmuOnly(){
     danmuLimit.max=80;
     isDanmuOnly=true;
-    comment=forTestUse?console.log:liveInfo;
+    comment=console.log;
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
     isDanmuFullWindow=true;
@@ -2548,7 +2548,7 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 parseLastDanmu(data.room_info.room_id);
                 if (isDanmuOnly&&data.room_info.live_status&&!dInfo.other_room){
                     parseOnlineGuard(data.room_info.uid, data.room_info.room_id);
-                    parseConn(data[keys[j]].uid, data[keys[j]].room_id);
+                    parseConn(data.room_info.uid, data.room_info.room_id);
                 }
             }
             if (isUpdated){
@@ -2571,7 +2571,7 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 parseLastDanmu(data.room_id);
                 if (isDanmuOnly&&!dInfo.other_room){
                     parseOnlineGuard(data.room_info.uid, data.room_info.room_id);
-                    parseConn(data[keys[j]].uid, data[keys[j]].room_id);
+                    parseConn(data.room_info.uid, data.room_info.room_id);
                 }
             }
         }
@@ -2611,8 +2611,8 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
             if (stat.code==0){
                 var l=stat.data.OnlineRankItem;
                 var s='';
-                for (var i=0;i<5&&i<l.length;i++)
-                    s+=' ['+(l[i].medalInfo?l[i].medalInfo.medalName:'')+':'+l[i].score+']'+l[i].name;
+                for (var i=0;i<3&&i<l.length;i++)
+                    s+=' ('+(l[i].medalInfo?l[i].medalInfo.medalName+':':'')+l[i].score+')'+l[i].name;
                 danmuWrite('[Conn:'+stat.data.onlineNum+']'+s, true, true);
             }
         });
