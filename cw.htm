@@ -2520,8 +2520,10 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 if (isRoomChange&&dInfo.roomIndex==i){
                     setDanmuCover(data[keys[j]].keyframe?data[keys[j]].keyframe:data[keys[j]].cover_from_user?data[keys[j]].cover_from_user:data[keys[j]].face);
                     parseLastDanmu(data[keys[j]].room_id);
-                    if (isDanmuOnly&&data[keys[j]].live_status&&!dInfo.other_room)
+                    if (isDanmuOnly&&data[keys[j]].live_status&&!dInfo.other_room){
                         parseOnlineGuard(data[keys[j]].uid, data[keys[j]].room_id);
+                        parseConn(data[keys[j]].uid, data[keys[j]].room_id);
+                    }
                 }
             }
             if (isUpdated)
@@ -2544,8 +2546,10 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 if (!dInfo.flag.bird)
                     danmuArea='【'+data.room_info.area_name+'】';
                 parseLastDanmu(data.room_info.room_id);
-                if (isDanmuOnly&&data.room_info.live_status&&!dInfo.other_room)
+                if (isDanmuOnly&&data.room_info.live_status&&!dInfo.other_room){
                     parseOnlineGuard(data.room_info.uid, data.room_info.room_id);
+                    parseConn(data[keys[j]].uid, data[keys[j]].room_id);
+                }
             }
             if (isUpdated){
                 danmuStatus();
@@ -2565,8 +2569,10 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 parseTitle(data.uid);
             if (isRoomChange){
                 parseLastDanmu(data.room_id);
-                if (isDanmuOnly&&!dInfo.other_room)
+                if (isDanmuOnly&&!dInfo.other_room){
                     parseOnlineGuard(data.room_info.uid, data.room_info.room_id);
+                    parseConn(data[keys[j]].uid, data[keys[j]].room_id);
+                }
             }
         }
     }
@@ -2596,6 +2602,18 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                     setTimeout(scrollAnimation, 3e3);
                 } else
                     tasks(function act(e){danmuWrite(e)}, l, !isOnKindle?100:1e3);//render speed limit
+            }
+        });
+    }
+    function parseConn(u, r){
+        danmuReq("cors:https://api.live.bilibili.com/xlive/general-interface/v1/rank/getOnlineGoldRank?ruid="+u+"&roomId="+r+"&page=1&pageSize=50", function a(s){
+            var stat = JsonParse(s);
+            if (stat.code==0){
+                var l=stat.data.OnlineRankItem;
+                var s='';
+                for (var i=0;i<5&&i<l.length;i++)
+                    s+=' ['+(l[i].medalInfo?l[i].medalInfo.medalName:'')+':'+l[i].score+']'+l[i].name;
+                danmuWrite('[Conn:'+stat.data.onlineNum+']'+s, true, true);
             }
         });
     }
