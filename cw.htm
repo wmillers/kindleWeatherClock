@@ -354,6 +354,22 @@ function hasModule(name){
     .danmu_live.cover[src=""] {
         display: none;
     }
+    .danmu table {
+        font-size: .7em;
+        text-align: left;
+        font-weight: bold;
+        word-break: keep-all;
+        white-space: nowrap;
+    }
+    .danmu thead {
+        font-size: .8em;
+    }
+    .danmu th {
+        padding: 0 .2em;
+    }
+    .danmu td {
+        padding: 0 .2em;
+    }
     .time {
       font-size: 16rem;
       font-variant-numeric: tabular-nums;
@@ -378,14 +394,14 @@ function hasModule(name){
       -webkit-transform-origin: 0 0;
       transform-origin: 0 0;
     }
-    .basket{
+    .basket {
       margin-top: 6rem;
       font-size: 1rem;
       overflow: hidden;
       word-break: break-all;
       height: 2rem;
     }
-    .tImg{
+    .tImg {
       content: url('data:image/png;base64,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');
       height: 2rem;
       width: auto;
@@ -532,7 +548,7 @@ var isFastLoad = hash != (hash = hash.replace(/#fastload/i, ''))||isDanmuOnly;
 if (isDanmuOnly){
     reduceShadow=function und(){};
     killShadow=reduceShadow;
-    setTimeout(danmuOnly, 200);
+    setTimeout(danmuOnly);
 } else {
     setTimeout(function autoStart(){
         if (!forTestUse)
@@ -542,9 +558,9 @@ if (isDanmuOnly){
 }
 setTimeout(function loadFromHash(){
     //resume task from #a()#b()
-    var run = hash.split('#');
+    var run = decodeURIComponent(hash).split('#');
     for (var i = 0; i < run.length; i++)
-        setTimeout(decodeURI(run[i]));
+        setTimeout(run[i]);
 });
 setTimeout(function isVisible(){
     function notVisible(){
@@ -578,6 +594,7 @@ var danmuScrollNum;
 function danmuOnly(){
     danmuLimit.max=80;
     isDanmuOnly=true;
+    window.onerror=null;
     comment=console.log;
     document.body.appendChild(danmu_fr);
     document.getElementsByClassName('app')[0].style.display='none';
@@ -1668,7 +1685,7 @@ if (!isNaN(parseInt(i))){
 })();
 */
 var streamer = [[   'fu'],
-               [0x1dd4ae, 0x163a23b, 0x160f887, 0x152ef9f, 0x46f479, 0x1596acd]];
+               [0x1dd4ae, 0x163a23b, 0x160f887, 0x46f479, 0x1596acd]];
 var liveVol = [         ,        .3];
 //var streamer={0x1dd4ae: {name: 'fu', vol: .15}}
 var liveDefaultVol=.6;
@@ -1764,6 +1781,7 @@ var dInfo={// danmuInfo // *** setter/getter NOT work well on KINDLE *** // may 
     },
 };
 var danmuArea='';
+var danmuCollectRooms=[];
 var danmuTask={
     content: 0,
     info: 0,
@@ -2252,32 +2270,35 @@ function fMoney(n){
 }
 function danmuSet(isLoad){// input JSON-string to mannually sync to the server
     if (isLoad==true)
-        danmuReq("store", parseStore);
+        danmuReq("store", function parse(s){
+            console.log("danmuSet('"+s+"')");
+            s=JsonParse(s);
+            var msg='setLoad';
+            if (streamer[0].indexOf('firstroom')==-1&&Array.isArray(s.extra)&&s.extra.length){
+                streamer[0][streamer[1].length]='firstroom';
+                streamer[1]=streamer[1].concat(s.extra);
+                msg+=':streamer';
+            }
+            if (Array.isArray(s.liveOther)&&s.liveOther.length){
+                for (var i=0;i<s.liveOther.length;i++)
+                    liveOther[s.liveOther[i]]={};
+                msg+=':live';
+            }
+            if (Array.isArray(s.danmuCollectRooms)&&s.danmuCollectRooms.length){
+                danmuCollectRooms=s.danmuCollectRooms;
+                msg+=':collect';
+            }
+            danmuStatus();
+            console.log(msg);
+        });
     else
-        danmuReq("store", typeof isLoad=='string'?function(){
+        danmuReq("store", typeof isLoad=='string'?function set(){
             danmuReq('js:f5()');// refresh after mannually syncing
         }:'', '', typeof isLoad=='string'?isLoad:JSON.stringify({
             extra: streamer[0].indexOf('firstroom')!=-1?streamer[1].slice(streamer[0].indexOf('firstroom')):[],
             liveOther: Object.keys(liveOther),
+            danmuCollectRooms: danmuCollectRooms,
         }));
-
-    function parseStore(s){
-        console.log("danmuSet('"+s+"')");
-        s=JsonParse(s);
-        var msg='setLoad';
-        if (streamer[0].indexOf('firstroom')==-1&&Array.isArray(s.extra)&&s.extra.length){
-            streamer[0][streamer[1].length]='firstroom';
-            streamer[1]=streamer[1].concat(s.extra);
-            msg+=':streamer';
-        }
-        if (Array.isArray(s.liveOther)&&s.liveOther.length){
-            for (var i=0;i<s.liveOther.length;i++)
-                liveOther[s.liveOther[i]]={};
-            msg+=':live';
-        }
-        danmuStatus();
-        console.log(msg);
-    }
 }
 function danmuParseStatus(s){
     var status = JsonParse(s);
@@ -2358,7 +2379,7 @@ var dTool={
     get watch(){dInfo.flag.on=dInfo.flag.on==2?1:2;danmuStatus()},
     get firstbird(){danmuTuber(true)},
     get refresh(){danmuSet();f5('#danmuOnly')},
-    get off(){(!isLiveOff()?liveOff:danmuOff)()},
+    get collect(){danmuCollects()},
     get showall(){danmuStatus(true)},
     get remove(){
         if (dInfo.flag.on==1){
@@ -2433,7 +2454,7 @@ function danmuStatus(force){
     }
     var signal=Math.round(Math.min(1, streamerTime.filter(function f(s){return s&&s!=''}).length/12)*6);
     signal=new Array(signal+1).join('•')+new Array(6-signal+1).join('◦');
-    danmu_info.innerHTML = '<div class="base">'+atag(!dInfo.flag.on ? '热度' : !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'Clean\nSleep', 'shrink') + atag(dTrends+(isDanmuOnly?'<sup>'+dInfo.popTrend+'</sup>':''), false, 'Rotate\nRotateLeft') + ' ' + (isDanmuOnly?extraButton:'') +(dInfo.flag.reconfirm?atag('点击此处重新确认 Click here to re-confirm', '/blive/?status', '', 'title'):atag(danmuTitle()+danmuArea+(isLiveOff()?'⊖':''), 'https://live.bilibili.com/blanc/'+dInfo.roomId, '#'+dInfo.roomId+'\nStore', 'right title'))+atag(isDanmuOnly?(dInfo.flag.bird?'├⊏⊐■=─ ':'├■■■=─ '):'', false, 'Watch\nFirstBird', 'right shrink')+ '<b>' + atag(status, false, 'Refresh\nOff', 'right') + '</b></div><div class="extra">' + roomStatus + dInfo.sc + '</div>';
+    danmu_info.innerHTML = '<div class="base">'+atag(!dInfo.flag.on ? '热度' : !streamerTime.join('') ? '人气' : '<big>' + signal + '</big> ', false, 'Sleep\nClean', 'shrink') + atag(dTrends+(isDanmuOnly?'<sup>'+dInfo.popTrend+'</sup>':''), false, 'Rotate\nRotateLeft') + ' ' + (isDanmuOnly?extraButton:'') +(dInfo.flag.reconfirm?atag('点击此处重新确认 Click here to re-confirm', '/blive/?status', '', 'title'):atag(danmuTitle()+danmuArea+(isLiveOff()?'⊖':''), 'https://live.bilibili.com/blanc/'+dInfo.roomId, '#'+dInfo.roomId+'\nStore', 'right title'))+atag(isDanmuOnly?(dInfo.flag.bird?'├⊏⊐■=─ ':'├■■■=─ '):'', false, 'Watch\nFirstBird', 'right shrink')+ '<b>' + atag(status, false, 'Refresh\nCollect', 'right') + '</b></div><div class="extra">' + roomStatus + dInfo.sc + '</div>';
 
     function atag(inner, href, title, className, onclick, oncontext){
         if (href)
@@ -2522,7 +2543,7 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                     parseLastDanmu(data[keys[j]].room_id);
                     if (isDanmuOnly&&data[keys[j]].live_status&&!dInfo.other_room){
                         parseOnlineGuard(data[keys[j]].uid, data[keys[j]].room_id);
-                        parseConn(data[keys[j]].uid, data[keys[j]].room_id);
+                        parseRank(data[keys[j]].uid, data[keys[j]].room_id);
                     }
                 }
             }
@@ -2531,7 +2552,7 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
         } else
             streamerUid=[];
     }
-    function parseH5(s){//-> time, title, area, cover (-> lastDanmu -> 5*onlineGuard)
+    function parseH5(s){// -> time, title, area, cover (-> lastDanmu -> 5*onlineGuard)
         var stat = JsonParse(s);
         if (stat.code == 0){
             var data = stat.data;
@@ -2548,7 +2569,7 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 parseLastDanmu(data.room_info.room_id);
                 if (isDanmuOnly&&data.room_info.live_status&&!dInfo.other_room){
                     parseOnlineGuard(data.room_info.uid, data.room_info.room_id);
-                    parseConn(data.room_info.uid, data.room_info.room_id);
+                    parseRank(data.room_info.uid, data.room_info.room_id);
                 }
             }
             if (isUpdated){
@@ -2571,7 +2592,7 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
                 parseLastDanmu(data.room_id);
                 if (isDanmuOnly&&!dInfo.other_room){
                     parseOnlineGuard(data.room_info.uid, data.room_info.room_id);
-                    parseConn(data.room_info.uid, data.room_info.room_id);
+                    parseRank(data.room_info.uid, data.room_info.room_id);
                 }
             }
         }
@@ -2605,15 +2626,15 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
             }
         });
     }
-    function parseConn(u, r){
+    function parseRank(u, r){
         danmuReq("cors:https://api.live.bilibili.com/xlive/general-interface/v1/rank/getOnlineGoldRank?ruid="+u+"&roomId="+r+"&page=1&pageSize=50", function a(s){
             var stat = JsonParse(s);
             if (stat.code==0){
                 var l=stat.data.OnlineRankItem;
                 var s='';
                 for (var i=0;i<3&&i<l.length;i++)
-                    s+=' ('+(l[i].medalInfo?l[i].medalInfo.medalName+':':'')+l[i].score+')'+l[i].name;
-                danmuWrite('[Conn:'+stat.data.onlineNum+']'+s, true, true);
+                    s+=' <small>('+(l[i].medalInfo?l[i].medalInfo.medalName+':':'')+l[i].score+')</small>'+l[i].name;
+                danmuWrite('[Rank:'+stat.data.onlineNum+']'+s, true, true);
             }
         });
     }
@@ -2643,6 +2664,153 @@ function danmuRoomInfo(n){// parseH5 to get all uids (lots of requests) -> use p
             }
         });
     }
+}
+function danmuCollects(l, monitorMinutes, isAnalyze, table){
+    // cw.htm#danmuOnly#danmuCollects([...],true)
+    l=Array.isArray(l)?(l.length?l:danmuCollectRooms):(l?[l]:danmuCollectRooms);
+    if (l.length){
+        if (!table){
+            danmuCollectRooms=l.slice();
+            danmu.insertAdjacentHTML('beforeend', '<div style="font-size: .64em">=='+new Date().toLocaleTimeString()+'==</div>');
+            table=document.createElement('table');
+            if (isAnalyze)
+                table.innerHTML='<thead><th>Name</th><th>Medal</th><th>RMedal</th><th>Guard</th><th>RGuard</th><th>Pay</th><th>Income</th></thead>';
+            else
+                table.innerHTML='<thead><th>Name</th><th>Online</th><th>OtherMedal</th><th>Pay</th><th>Title</th><th>Guard</th><th>Medal</th><th>Other</th><th>Income</th></thead>';
+            danmu.append(table);
+            danmuStatus();
+        }
+        var res={room: l.shift()};
+        danmuReq("cors:https://api.live.bilibili.com/xlive/web-room/v1/index/getH5InfoByRoom?room_id=" + res.room, parseH5);
+        if (l.length)
+            setTimeout(function a(){danmuCollects(l, '', isAnalyze, table)}, 500);
+        if (monitorMinutes)
+            setInterval(function a(){danmuCollects(l)}, monitorMinutes>1?monitorMinutes*60e3:120e3, isAnalyze);
+    } else
+        danmuWrite('[Collect:error] please run cw.htm?js:danmuCollects([room1, room2]) first');
+
+    function parseH5(s){//uid, name, time, online, title -> parseRank -> parseFans -> parseGuard
+        var stat = JsonParse(s);
+        if (stat.code == 0){
+            var data = stat.data;
+            res.uid=data.room_info.uid;
+            res.time=data.room_info.live_status&&data.room_info.live_start_time>0?timeHuman(data.room_info.live_start_time):'';
+            res.name=data.anchor_info.base_info.uname;
+            res.title=data.room_info.title;
+            res.online=data.room_info.online;
+            res.medal=['', 0];
+            res.guard={};
+            parseRank();
+        } else if (stat.code == -502)
+            comment(stat.excep);
+    }
+    function parseRank(){//score, goldNum, medalInfo
+        danmuReq("cors:https://api.live.bilibili.com/xlive/general-interface/v1/rank/getOnlineGoldRank?ruid="+res.uid+"&roomId="+res.room+"&page=1&pageSize=29", function a(s){
+            var stat = JsonParse(s);
+            if (stat.code==0){
+                var l=stat.data.OnlineRankItem;
+                var ingreds={};
+                res.score=0;
+                res.goldNum=stat.data.onlineNum;
+                res.gold={ratio: 0};
+                res.top=l.length&&l[0]&&l[0].score>10?l[0].name.slice(0, 3)+':'+Math.floor(l[0].score/10):'';
+                res.otherMedal=[];
+                for (var i=0;i<l.length;i++){
+                    res.gold[l[i].name]={score: l[i].score};
+                    if (l[i].score>10)
+                        res.score+=l[i].score;
+                    if (l[i].medalInfo){
+                        res.gold[l[i].name].medal=l[i].medalInfo.medalName+' '+l[i].medalInfo.level;
+                        if (l[i].medalInfo.targetId==res.uid)
+                            res.medal=[l[i].medalInfo.medalName, res.medal[1]+1];
+                        else {
+                            if (ingreds[l[i].medalInfo.medalName])
+                                ingreds[l[i].medalInfo.medalName].count++;
+                            else
+                                ingreds[l[i].medalInfo.medalName]={count: 1, fans: []};
+                            if (ingreds[l[i].medalInfo.medalName].fans.length<6)
+                                ingreds[l[i].medalInfo.medalName].fans.push(l[i].medalInfo.level+l[i].name.slice(0, 5)+':'+l[i].score);
+                        }
+                    }
+                }
+                var sorted=Object.keys(ingreds).sort(function(a, b){return ingreds[b].count-ingreds[a].count});
+                for (i=0;i<sorted.length;i++)
+                    res.otherMedal.push({
+                        name: sorted[i],
+                        count: ingreds[sorted[i]].count,
+                        fans: ingreds[sorted[i]].fans
+                    });
+                res.gold.ratio=Math.floor(res.medal[1]/(res.goldNum<29?res.goldNum:29)*10);
+            }
+        }, parseFans);
+    }
+    function parseFans(){//fans_group
+        danmuReq('cors:https://api.live.bilibili.com/xlive/app-ucenter/v2/card/anchor?uid='+res.uid, function a(s){
+            var stat = JsonParse(s);
+            if (stat.code == 0)
+                res.fans_group=stat.data.fans_group;
+        }, parseGuard);
+    }
+    function parseGuard(){//count, cost, online, countReal
+        danmuReq("cors:https://api.live.bilibili.com/xlive/app-room/v2/guardTab/topList?ruid="+res.uid+"&roomid="+res.room+"&page=1&pageSize=29", function a(s){
+            var stat = JsonParse(s);
+            if (stat.code==0){
+                var l=stat.data.top3.concat(stat.data.list);
+                var cost=[138, 200, 250, 300, 750, 1500, 4e3, 9e3, 1.6e4, 2.8e4, 7e4, 12e4, 20e4, 25e4, 30e4];
+                res.guard.count=stat.data.info.num;//26,  27,  28,    29,    30,  31,   32,   33,   34,   35
+                res.guard.oldIncome=0;// 100 guards * 8 months = 5w
+                res.guard.online=[];
+                res.guard.countReal=0;
+                for (var i=0;i<l.length;i++){
+                    if (l[i].is_alive)
+                        res.guard.online.push(l[i].username);
+                    if (l[i].medal_info&&l[i].medal_info.medal_level>20&&l[i].medal_info.medal_level<35)
+                        res.guard.oldIncome+=(cost[l[i].medal_info.medal_level-21]*.7+cost[l[i].medal_info.medal_level-20]*.3)/2;
+                    if (l[i].guard_level<3)
+                        res.guard.count--;
+                    res.guard.countReal+=[0, 100, 10, 0][l[i].guard_level];
+                }
+                res.guard.income=(res.guard.count+res.guard.countReal)*138/2;
+                res.guard.oldIncome+=((stat.data.info.num-l.length)/2*138/2+3e3)*6;
+            }
+        }, printRes);
+    }
+    function printRes(){
+        console.log('('+res.guard.online.length+') '+res.guard.online.join(' '), res.gold);
+        var row = document.createElement("tr");
+        if (isAnalyze)
+            row.innerHTML='<td>'+res.name.slice(0, 2)+'</td><td>'+scienceFormat(res.fans_group)+'</td><td>'+(res.medal[1]/(res.goldNum<29?res.goldNum:29)*5).toFixed()+'</td><td>'+Math.floor((res.guard.count+res.guard.countReal)/10)*10+'</td><td>'+Math.floor((res.guard.count+res.guard.countReal)/res.fans_group*100)+'</td><td>+'+numFormat(res.score/10)+'</td><td>'+numFormat(res.guard.oldIncome)+'</td>';
+        else {
+            if (!res.time)
+                row.style.opacity='.6';
+            row.innerHTML='<td>'+res.name.slice(0, 2)+'</td><td>'+(res.time?res.time+':'+(res.online<9950?(res.online/1e4).toFixed(2).slice(1):(res.online/1e4).toFixed(1)):'-')+'</td><td>'+(res.otherMedal[0]?res.otherMedal[0].name+res.otherMedal[0].count:'')+'('+res.medal[1]+'/'+res.goldNum+')'+'</td><td>'+Math.floor(res.score/10)+(res.top?':'+res.top:'')+'</td><td>'+res.title.slice(0,2)+'</td><td>'+res.guard.online.length+'/'+res.guard.count+'+'+res.guard.countReal+'</td><td>'+scienceFormat(res.fans_group)+'</td><td><span style="font-size:.7em">'+(res.otherMedal[0]?'['+res.otherMedal[0].name.slice(0,2)+']'+res.otherMedal[0].fans.join(' '):'')+(res.otherMedal[1]?'['+res.otherMedal[1].name.slice(0,2)+']'+res.otherMedal[1].fans.join(' '):'')+'</span></td><td>'+numFormat(res.guard.income)+'/'+numFormat(res.guard.oldIncome)+'</td>';
+        }
+        table.append(row);
+        scrollAnimation();
+    }
+}
+function scienceFormat(n){
+    var p=Math.floor(Math.log10(n));
+    return Math.floor(n/Math.pow(10, p-1))*Math.pow(10, p-1);
+}
+function numFormat(n, t){
+    var a='';
+    var unit='';
+    if (n<0){
+        a='-';
+        n=-n;
+    }
+    if (n>1e8){
+        n/=1e8;
+        unit='b';
+    } else if (n>1e4){
+        n/=1e4;
+        unit='w';
+    } else if (n>1e3){
+        n/=1e3;
+        unit='k';
+    }
+    return a+n.toFixed(typeof t=='number'?t:0)+unit;
 }
 function timeHuman(t){
     return timeFormat(getOffsetTime()-t*1000, 1, true);
