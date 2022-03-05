@@ -384,13 +384,13 @@ function hasModule(name){
       font-weight: bold;
     }
     .weath {
-      margin-top: 1rem;
-      margin-left: -2rem;
+      margin-top: .2rem;
+      margin-left: -1.5rem;
       width: 22.5rem;
-      height: 2.8rem;
+      height: 2.85rem;
       display: block;
-      -webkit-transform: scale(2.6);
-      transform: scale(2.6);
+      -webkit-transform: scale(3);
+      transform: scale(3);
       -webkit-transform-origin: 0 0;
       transform-origin: 0 0;
     }
@@ -456,7 +456,7 @@ function hasModule(name){
     <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
     <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="syncDateFromServer()">MATO</span></div>
     <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
-    <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="" sandbox="allow-scripts" style="pointer-events: none;"></iframe>
+    <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="" sandbox="allow-scripts allow-same-origin" style="pointer-events: none;"></iframe>
     <div class="basket"></div>
     <div class="inform" onclick="fridgeTomato();weatherInterval();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步</span></div>
     <div class="reminder" onclick="clearReminder()"></div>
@@ -602,6 +602,7 @@ function danmuOnly(){
     danmu_fr.classList.add('fullscreen');
     document.getElementsByClassName('cleaner')[0].style.display='none';
     danmu.innerHTML='<div style="margin:10vw">Due to browser\'s requirement,<br>fullSceen & video need a user-gesture to activate.<br><u><b>CLICK</b></u> to start.</div>';
+    danmuStatus();
     if (liveOption.lowPower)
         danmu.classList.remove('better_view');
     else
@@ -869,10 +870,10 @@ function initBrowserPage(){
     addTaskOnPageChange("reduceShadow()", 3100 * 1000);//prime number 60*60=3600
 }
 function initClockWeather(){
-    if (hasClockInit) return;//avoid duplicated init clock;
+    if (hasClockInit) return;//avoid duplicated init;
     hasClockInit = true;
     updateInterval();
-    weatherInterval();
+    setTimeout(weatherInterval, 3e3);
     timeAnimation(forTestUse?15:undefined);
 }
 function setIcon(){
@@ -1071,7 +1072,7 @@ function weatherInterval(){
         setTimeout(function onlineWeather(){
             var _doc = document.body;
             var script = document.createElement('img');
-            script.setAttribute('src', '//www.163.com/favicon.ico' + noCache());
+            script.setAttribute('src', '//tianqi.2345.com/favicon.ico' + noCache());
             _doc.appendChild(script);
             script.onload = script.onreadystatechange = function (){
                 weather(!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete');
@@ -1087,10 +1088,10 @@ function weather(connected){
     lastSyncTime = date.getTime();
     if (!forTestUse && isOnKindle){
         var ifrm = document.getElementsByClassName('weath')[0];
-        ifrm.src = "//i.tianqi.com/index.php?c=code&id=2&bdc=%23&icon=5&num=3&site=15";//change iframe
+        ifrm.src = "//tianqi.2345.com/plugin/widget/index.htm?s=1&z=1&t=0&v=0&d=3&bd=0&k=&f=&ltf=009944&htf=cc0000&q=1&e=0&a=1&c=54511&w=385&h=96&align=left";//change iframe
         document.getElementById('net').innerHTML = '完成上一次同步';
     } else {
-        console.warn('[iframeRefresh:disabled] notTestNorWindows');
+        console.warn('[iframeRefresh:disabled] isOnKindle == false');
         document.getElementById('net').innerHTML = '测试模式';
     }
     document.getElementById('sync').innerHTML = date.getFullYear() + '-' + frontZero([date.getMonth() + 1, '-', date.getDate(), ' ', date.getHours(), ':', date.getMinutes(), ':', date.getSeconds()]);
@@ -2359,6 +2360,8 @@ var dTool={
                     danmu_fr.onclick=function a(){dTool.sleep};
                 }
             }, 3e3);
+            if (!dInfo.on)
+                danmuFullScreen(true);
         } else {
             liveOption.enable=true;
             danmu_fr.onclick=danmuSwitch;
@@ -2366,7 +2369,8 @@ var dTool={
             danmu_fr.style.opacity="";
             danmuWrite('[sleep:off]');
             danmu_live.pause();
-            danmuOn('', true);
+            if (dInfo.on)
+                danmuOn('', true);
         }
     },
     get rotate(){danmu_fr.classList.remove('rotate_left');danmu_fr.classList.toggle('rotate');setTimeout(scrollAnimation, 3e3)},
