@@ -3190,7 +3190,7 @@ function hSwitch(n){
                     hCollect();
                 else
                     comment(JSON.stringify(s));
-            }, hFail, JSON.stringify({on: !switchs[n].on, bri: 254, ct: 180}), 'PUT', isFastLoad&&!isDanmuOnly?window.close:undefined);
+            }, hFail, JSON.stringify({on: !switchs[n].on, bri: 254, ct: 180, transitiontime: !switchs[n].on?4:0}), 'PUT', isFastLoad&&!isDanmuOnly?window.close:undefined);
         });
     stopBubble();
 }

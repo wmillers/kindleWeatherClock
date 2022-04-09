@@ -17,7 +17,7 @@ import danmaku
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
-history=[]
+History=[]
 temp_purse={}
 info={'pop':0, 'que_size':0, 'status_code':0, 'status':'', 'room_id':0, 'other_room':'', 'purse':0, 'super_chat':[]}
 status=['', '[SLEEP] no room (CAREFUL with s4f_: cmd)', '[SLEEP] & [STUCK] at que.qsize() > 5000', '[SLEEP] & [RESTART] pong<-', '[UPGRADE] it depends on network']
@@ -180,12 +180,12 @@ def controlRoom(path, data=None, method=None, ua='', headers={}):
             else:
                 res='[err] Not in safe range: '+cmd
     else:
-        if (cmd=='history'):
+        if (cmd=='History'):
             limit=2000
-            if len(history)>limit:
-                res='<br>'.join(reversed(history[len(history)-limit:]))+'<details><summary>'+str(limit)+' shown, '+str(len(history)-limit)+' left</summary>'+'<br>'.join(reversed(history[:len(history)-limit]))+'</details>'
+            if len(History)>limit:
+                res='<br>'.join(reversed(History[len(History)-limit:]))+'<details><summary>'+str(limit)+' shown, '+str(len(History)-limit)+' left</summary>'+'<br>'.join(reversed(History[:len(History)-limit]))+'</details>'
             else:
-                res='<br>'.join(reversed(history)) # faster than [::-1]
+                res='<br>'.join(reversed(History)) # faster than [::-1]
         elif (cmd=='restart'):
             control_code.value=-2
             info['pop']=1
@@ -264,7 +264,7 @@ def insertInfo(s=''):
     return '<!--'+json.dumps(info)+'-->'+('<br>' if s else '')+s
 
 def readFromLive(timeout=5):
-    global history, que, status_code, info, status
+    global History, que, status_code, info, status
     res, tmp='', ''
     while True:
         try:
@@ -272,8 +272,8 @@ def readFromLive(timeout=5):
         except Exception as e:
             break
         else:
-            if len(history)==0 or len(tmp)!=len(history[-1]):
-                history.append(tmp)
+            if len(History)==0 or len(tmp)!=len(History[-1]):
+                History.append(tmp)
             if (len(tmp)>2 and tmp[0]=='$' and tmp[-1]=='$'):
                 if (tmp[1]=='$'):
                     if (tmp[2]=='$'):
@@ -293,8 +293,8 @@ def readFromLive(timeout=5):
                     res=insertInfo(res)
             else:
                 res=tmp+('<br>' if res else '')+res
-    if (len(history)>20000):
-        history=history[2000:] # [2000:20000] remain
+    if (len(History)>20000):
+        History=History[2000:] # [2000:20000] remain
     if (status_code.value!=0):
         res=status[status_code.value]+'<br>'+res
     return res
