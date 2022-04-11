@@ -20,7 +20,7 @@ var info={
     author: 'wmillers@github',
     support: ['time', 'weather',//those two are default modules
         //'TO-DISABLE-EXTRA-MODULES//COMMENT-THE-LINE',
-        'tomato',
+        //'tomato',
         'ticklist',
         'danmu',
         'home',
@@ -114,8 +114,8 @@ function hasModule(name){
     }
     .home.more {
         font-size: 2.5rem;
-        left: 20rem;
-        width: 24rem;
+        left: 16rem;
+        width: 28rem;
     }
     .h_switch {
       height: 20rem;
@@ -125,6 +125,10 @@ function hasModule(name){
       vertical-align: middle;
       background: rgba(0, 0, 0, 0.2);
       color: white;
+    }
+    .more .h_switch {
+      height: 27rem;
+      font-size: 5rem;
     }
     .tickList {
       position: absolute;
@@ -3202,23 +3206,21 @@ function hUpdate(){
         hCollect();
     else {
         home.innerHTML = '';
-        if (l>=3)
+        if (l>=3||!hasModule("tomato"))
             home.classList.add('more');
         else
             home.classList.remove('more');
         for (var i in switchs){
             var hs = document.createElement('div');
-            var sdcolor=(switchs[i].on ? "black" : "white");
             hs.setAttribute('class', 'h_switch hs' + i);
             hs.setAttribute('onclick', 'hSwitch(' + i + ')');
-            hs.appendChild(document.createTextNode(switchs[i].name));
+            hs.innerHTML='<span style="background: '+(switchs[i].on ? "#444" : "white")+'">'+switchs[i].name+"</span>"
             home.appendChild(hs);
             hs.style.cssText = (switchs[i].reachable ? "" : "border-color: gray;")
-                + "width: " + (switchs[i].reachable ? "12rem;" : "8rem;")
+                + "width: " + (switchs[i].reachable ? 12 : 6)*(hasModule("tomato")?1:2) + "rem;"
                 + (isHomeShrink || (toStatus && toStatus != 'stop') ? "height: 8rem;" : "")
                 + (switchs[i].on ? "background: rgba(255,255,255, .2);" : "")
-                + (switchs[i].on ? "" : "color: black;")
-                + "text-shadow: 4px 4px 0 "+sdcolor+", -4px -4px 0 "+sdcolor+", -4px 4px 0 "+sdcolor+", 4px -4px 0 "+sdcolor;
+                + (switchs[i].on ? "" : "color: black;");
         }
         if (!isOnKindle)
             home.innerHTML += "<div class='h_switch' " + (isHomeShrink ? "style='height:8rem'" : "") + " onclick=\"location.hash='#hSwitch(1)#fastload'\">Star</div>";
