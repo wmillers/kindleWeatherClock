@@ -3214,7 +3214,7 @@ function hUpdate(){
             var hs = document.createElement('div');
             hs.setAttribute('class', 'h_switch hs' + i);
             hs.setAttribute('onclick', 'hSwitch(' + i + ')');
-            hs.innerHTML='<span style="background: '+(switchs[i].on ? "#444" : "white")+'">'+switchs[i].name+"</span>"
+            hs.innerHTML='<span style="background: '+(switchs[i].on ? "#444" : "white")+';border-radius: 1rem; padding: 0.5rem;">'+switchs[i].name+"</span>"
             home.appendChild(hs);
             hs.style.cssText = (switchs[i].reachable ? "" : "border-color: gray;")
                 + "width: " + (switchs[i].reachable ? 12 : 6)*(hasModule("tomato")?1:2) + "rem;"
