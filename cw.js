@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0, user-scalable=0">
-  <meta name="referrer" content="no-referrer">
-  <script>
 "use strict";
 /***************Basic settings***************
 Note: Most you need to configure are in the Basic
@@ -62,409 +55,8 @@ if (forTestUse)
 function hasModule(name){
     return info.support.indexOf(name)!=-1;
 }
-  </script>
-  <title>&nbsp;</title><!--tomatoClock-->
-  <link id="ico" href="" rel="icon" type="image/x-icon" />
-  <style>
-    html {
-      height: 100%;
-      overflow-x: hidden;
-      overflow-y: hidden;
-    }
-    table {
-      border-spacing: 0;
-    }
-    .cleaner {
-      background: black;
-      color: white;
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      display: block;
-      z-index: 20;
-      top: 0;
-      left: 0;
-      font-size: 2rem;
-      text-align: center;
-      padding-top: 20vh;
-      cursor: none;
-    }
-    .app {
-      margin-top: 3rem;
-      padding-top: 2rem;
-      margin-left: -1.5rem;
-      height: 46rem;
-      width: 44rem;
-      font-family: Arial,sans-serif;
-      text-align: center;
-      overflow: hidden;
-    }
-    .rotate {
-      transform:rotate(270deg);
-      -webkit-transform:rotate(270deg);
-    }
-    .home {
-      position: absolute;
-      left: 24rem;
-      width: 20rem;
-      z-index: 3;
-      font-size: 3rem;
-      font-weight: bold;
-    }
-    .home.more {
-        font-size: 2.5rem;
-        left: 14rem;
-        width: 29rem;
-    }
-    .h_switch {
-      height: 20rem;
-      width: 4rem;
-      border: black 5px solid;
-      display: table-cell;
-      vertical-align: middle;
-      background: rgba(0, 0, 0, 0.2);
-      color: white;
-    }
-    .more .h_switch {
-      height: 27rem;
-      font-size: 5rem;
-    }
-    .tickList {
-      position: absolute;
-      font-size: .5rem;
-      left: -3rem;
-      text-align: left;
-      z-index: 2;
-      white-space: pre-wrap;
-      overflow: hidden;
-      text-shadow: 2px 2px 0 white, -2px -2px 0 white, -2px 2px 0 white, 2px -2px 0 white;
-    }
-    .tickList .tomato {
-      display:inline;
-      margin-left:-1.6rem;
-      position:absolute;
-      background: white;
-      width: 1.5rem;
-    }
-    .tickList .countdown {
-      text-align:right;
-      font-size:1.5rem;
-    }
-    .tickList .content {
-      display: block;
-      padding: 0;
-      word-break: break-all;
-    }
-    .tickList .summary {
-      font-size: 1.5rem;
-      padding: .16rem 0;
-      float: left;
-    }
-    .danmu_fr {
-      position: absolute;
-      font-size: 1rem;
-      margin-top: 14rem;
-      margin-left: -3.4rem;
-      text-align: left;
-      height: 15rem;
-      width: 17.8rem;
-      overflow: hidden;
-      z-index: 4;
-      word-break: break-all;
-      white-space: pre-wrap;
-    }
-    .danmu_fr.fullscreen {
-        margin-top: 0;
-        position: fixed;
-        top: 0;
-        margin-left: 0;
-        width: 100%;
-        height: 100%;
-        font-size: 4.7vh;
-        background: black;
-        color: rgba(255, 255, 255, .4);
-        left: 0;
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-    }
-    .danmu_fr.more {   
-        background: white;
-        margin-top: 7rem;
-        height: 26.66rem;
-    }
-    .danmu_fr.fullwindow {
-        background: rgba(255, 255, 255, 0.8);
-        margin-top: -6rem;
-        height: 41.6rem;
-        font-size: 5.2rem;
-        width: 47.5rem;
-    }
-    .danmu_fr a {
-        text-decoration: none;
-        display: inline-block;
-        color: inherit;
-    }
-    .danmu_fr a:hover {
-        cursor: pointer;
-        border-bottom: .1em solid;
-    }
-    .danmu_info {
-      display: block;
-      font-size: .6rem;
-    }
-    .fullscreen .danmu_info>.base {
-        display: flex;/* not support in Kindle */
-    }
-    .fullscreen .danmu_info>.base>* {
-        flex-shrink: 0;
-        padding-right: .2em;
-        white-space: nowrap;
-        -webkit-align-self: center;
-        align-self: center;
-        overflow: hidden;
-    }
-    .fullscreen .danmu_info>.base>.title {
-        flex-grow: 1;
-        flex-shrink: 1;
-        text-align: right;
-        max-width: none;/* to override */
-    }
-    .fullscreen .danmu_info>.base>.shrink {
-        flex-shrink: 1;
-    }
-    .fullscreen .danmu_info {
-        opacity: .8;/* 0.4*0.8=0.32 */
-        font-size: .75em;
-        overflow: hidden;
-        height: 10vh;/* constant height avoid render delay */
-    }
-    .danmu_info .right {
-        max-width: 6em;
-        white-space: nowrap;
-        overflow: hidden;
-        vertical-align: text-top;
-        float: right;
-    }
-    .fullwindow .danmu_info {
-        font-size: 1.6rem;
-        font-weight: bold;
-    }
-    .fullwindow .danmu_info .title {
-        max-width: 16em;
-    }
-    .fullscreen .danmu_info .room {
-        max-width:  10em;
-        white-space: nowrap;
-        overflow: hidden;
-        vertical-align: text-top;
-    }
-    .fullscreen .danmu_info>.extra {
-        position: absolute;
-        max-height: 40vh;
-        line-height: 1em;
-        background: rgba(0, 0, 0, .5);
-        overflow: hidden;
-    }
-    .fullscreen .danmu {
-        /* z-index: 1.danmu 2.dark.danmu_live.info 3.danmu_live 4.danmu_live.info 5.danmu_live.cover */
-        position: absolute;/* better performance */
-        bottom: 0;
-        z-index: -1;
-        cursor: none;
-        height: 90vh;
-        overflow: hidden;
-    }
-    .better_view {
-        scroll-behavior: smooth;
-        -webkit-mask-image: linear-gradient(90deg, #fff, #fff 25%, rgba(0, 0, 0, .5) 70%);
-        mask-image: linear-gradient(90deg, #fff, #fff 25%, rgba(0, 0, 0, .5) 70%);
-    }
-    .fullscreen .danmu>* {
-        background: rgba(0, 0, 0, .15);
-        background-size: 120%;
-    }
-    .rotate>.danmu {
-        width: 60.5vw;
-        bottom: -.7em;
-        writing-mode: vertical-rl;
-        text-orientation: sideways;
-    }
-    .rotate_left>.danmu {
-        right: 0;
-        width: 59.5vw;
-    }
-    .dark>.danmu {
-        opacity: .625;;
-    }
-    .dark>.danmu_info {
-        opacity: .625;;
-    }
-    .danmu_live {
-        height: 90vh;
-        width: 75vw;
-        object-fit: contain;
-        object-position: right bottom;
-        font-family: sans-serif;
-        color: #666;
-        position: absolute;
-        top: 10vh;
-        right: 0;
-        opacity: 0;
-        z-index: -3;
-    }
-    .rotate>video.danmu_live {
-        transform: rotate(90deg);
-        width: 125vh;
-        height: 50vw;
-        top: 7.5vh;
-        right: -21vw;
-    }
-    .rotate_left>video.danmu_live {
-        transform: rotate(270deg);
-        width: 125vh;
-        height: 50vw;
-        top: 7.5vh;
-        left: -21vw;
-    }
-    .danmu_live.info {
-        top: 0;
-        z-index: -4;
-        opacity: .35;
-        font-size: .5em;
-        max-height: 50vh;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .dark>.danmu_live.info {
-        height: 100vh;
-        width: 100vw;
-        max-height: none;
-        opacity: 1;
-        background: rgba(0, 0, 0, .6);
-        z-index: -2;
-        font-size: 0;
-        cursor: none;
-    }
-    .danmu_live.cover {
-        top: 6vh;
-        z-index: -5;
-        opacity: .3;
-        max-height: 50vh;
-        display: block;
-    }
-    .danmu_live.cover[src=""] {
-        display: none;
-    }
-    .danmu table {
-        font-size: .7em;
-        text-align: left;
-        font-weight: bold;
-        word-break: keep-all;
-        white-space: nowrap;
-    }
-    .danmu thead {
-        font-size: .8em;
-    }
-    .danmu th {
-        padding: 0 .2em;
-    }
-    .danmu td {
-        padding: 0 .2em;
-    }
-    .time {
-      font-size: 16rem;
-      font-variant-numeric: tabular-nums;
-      font-weight: bold;
-    }
-    .tomato {
-      font-size: 2rem;
-      font-weight: bold;
-    }
-    .date {
-      font-size: 2rem;
-      font-weight: bold;
-    }
-    .weath {
-      margin-top: .2rem;
-      margin-left: -1.5rem;
-      width: 22.5rem;
-      height: 2.85rem;
-      display: block;
-      -webkit-transform: scale(3);
-      transform: scale(3);
-      -webkit-transform-origin: 0 0;
-      transform-origin: 0 0;
-    }
-    .basket {
-      margin-top: 6rem;
-      font-size: 1rem;
-      overflow: hidden;
-      word-break: break-all;
-      height: 2rem;
-    }
-    .tImg {
-      content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOUAAADUAgMAAAAegQyNAAAACVBMVEUAAAD///8AAABzxoNxAAAAAXRSTlMAQObYZgAABZ9JREFUaN7VmsuRnDAQQJnDhEA++OA7rlJzIATywRngKojS1jCtZ02PrEbrT1mH3UWrR//0o6WuXG4iMnRNpf+BhjZUYmki7yKtGvcPdGzUt9HYm5ylzVSMvWzqdKwYe83U5dgx9hp6HAfGXvLS/ANdG4y9R32PY2swtn/oG40dW0yNpcFPMTTHaWyTl6KxLeii6HCt636Opp5+0uLuuooe+lgX3mvLKUcdQZJXdNWK4Byl6uDoJy1uUxeDDnVTQb9lLh6voKsbpf+tZ2wivz/NrqLqnnWKAh8PWlNF1T2x/fagvqq7fKi21uD60IOyfgSVVlQ+hC5t6P7P0BmfNaLbvIkL3aY03GaGuwtdHwToJn40rTcyMexk8KFTQpmdOh+qvybmxOBF54RuTBIVdEnMKl9EmIgHD3rOTbtElNK5UC2fxMUyN+0FNFTn0hQMisNR9wLj8JRUSvAL9YvN1uSfidQvQlEo6ypdN/S6cPxCrEDCsl7+QuxN0BYWdC+L7bVVzlK5FWPLLoCSUN5UchIQMxvoXtC4fxGKklixvtcYoVlRFLHWv5lQuwQgdjCmGqG0nnnRO43pDW/EZi8Kb/TFG7ZT/ey2sr57CiatebQa98mivbDTW0oa8z8lzwpQ4cmYetDQdntCl8KDqVNqR3lnwYqxualrhk6K8mS+t3IJaD2rCYjVj0tMnbIYonJEQ4fY14/Lu+qbNsKIjajuk/nyAY0AW4CIDr2KXSN6srMxNtYnfY8nejZmwcBtmbFUypJQ2DHNIsursTdUmQ7QDpRpJH1JgzI0QW8sF8+n6dVPdzQ5QFmE8Igs+iVN3fNtMygLQnidg6jiC4VRGdGnWESINjQoc8OerMFU5oMoI/fSzminvZ2FMj/dtIIBalAGWKbUPamhhtq5i76Oi3EwOQG8WsgbgKqXFoSOlqMpLk67XoSWFv67osIOjQ84OlARja/HwezaazsV7cWKYupaIlWMdhl9EyjkL9CDMYyXNgx1oRNeWisb0GTWSKw29mSdBw0nOquDWbUr6Hai8kQX1jEHKqCPunq2ss9RwsoKWEbnZ2BTj9j1p3ROdHigOs5ZE2roYVAm52vo7Eka3hM6amdaH6hIcKJrhgqmXkH5XPyjKFmK6DPQzo2GB8oGJ7SjYzs6XEQXtlWdF91f0dGPRjECGrq/jU4xtC1onJk2D9qzo06pk/iiNnT6EHr8cXT5v1ABNcH5m2is2RpR+rAzMQrqHDk3i64fRcd2dGhEnSN9eouGdnRsR7vr6EKO3DHSfyO6OQ8t5WMo83B/DV0a0ZtBGea+fgg6u9G7gIYG1G4IBldYJ4MeDShbrtEd1nbUbi9Hb1gtGq6ibKWDNzYWFfe9AruBH/yxAV2cfcLkPBQdffcKcnSuBZYEEShxdkSnB41e5SO07uIs1xvwWzU6JBvR8a7oUDV1NqjU74+QBzYZgupHGXlgUFIaUr8DlIeVRAoo1g32XACU9A3taC0IxVTCQerKqBjreM2RoQTW+olPH5KtxEbfXsiPJ7G9YCpSSMuZJLeKJbFMbF7vIwUrVCScf6EvbiEFicYINScIBAMXc3yBdWueyAc16Vaq7s/WRuizoUnyktDU1psVioPxUzQ2kAHXkPF35iVQ1fgz5GyOZEBNGh0MQZC5g23y/kUoaWPjJXtkgFBb8BIoKTMTDAqmgjJjGXVNIZ9lDmWqJPksexS0HHvZTiYxsyasyHOZirEI9JjKJOsqNtVINOr6SuFg0aFvsMeZXn3HwiGqQ9/Be3RLYSYxxnrECqZmxs4OJ2FqPnl6hIr3SN4KDa6LAFao1ZfFrOpecV56sDGV4LtqYdWlP1ixpRtk5YMeHAUr7x7HX11m4cySRyat9is0Y9vFncpJT9u9HZxsiytn3aYuLFJ6LwlLUz+Jr0YeCx76DsxC7gxsfZb3AAAAAElFTkSuQmCC');
-      height: 2rem;
-      width: auto;
-    }
-    .inform {
-      margin-top: 0.5rem;
-      font-size: 1.5rem;
-      font-weight: normal;
-    }
-    .reminder {
-      display: none;
-      margin: -25rem 10rem;
-      padding: 1rem;
-      max-height: 21rem;
-      width: 22rem;
-      position: absolute;
-      border: dotted;
-      background-color: rgba(255, 255, 255, .8);
-      font-size: 1.5rem;
-      font-weight: bold;
-      overflow: scroll;
-      z-index: 3;
-    }
-    .loader {
-        display: inline-block;
-        vertical-align: text-top;
-        margin: 0 .5rem;
-    }
-    .bar {
-        background-color: black;
-        height: 10%;
-        width: .4rem;
-        float: left;
-        margin-left: .1rem;
-    }
-    .gua {
-        background-color: black;
-        height: .2rem;
-        width: .6rem;
-        margin-top: .15rem;
-        float: left;
-    }
-  </style>
-</head>
-<body onselectstart="stopBubble()">
-  <div class="cleaner"><noscript>Javascript NOT support.</noscript></div>
-  <div class="app"><div class="rotate">
-    <div class="tickList" onclick="showIcs()"><div></div><img class="tImg" style="padding:1rem"><table></table></div>
-    <div class="home" onclick="hUpdate()"><div style="padding-top: 3rem">HOME</div></div>
-    <div style="height:6rem"></div>
-    <div class="danmu_fr" onclick="danmuSwitch()"><div class="danmu_info" onclick="stopBubble()"></div><div class="danmu"></div><video class="danmu_live">video live Only in #danmuOnly mode</video><img class="danmu_live cover" src=""></img><div class="danmu_live info"></div></div>
-    <div class="time"><span id="hour" onclick="switchTomato()">00:</span><span id="minute" onclick="pauseTomato()">00</span></div>
-    <div class="tomato"><span class="old_date"></span><span class="loader"></span><span id="tom" onclick="runTime()">TOMA</span><span id="ato" onclick="syncDateFromServer()">MATO</span></div>
-    <div class="date" onclick="correctPrompt()">0月0日(零) 正月初一</div>
-    <iframe class="weath" scrolling="no" frameborder="0" allowtransparency="true" src="" sandbox="allow-scripts allow-same-origin" style="pointer-events: none;"></iframe>
-    <div class="basket"></div>
-    <div class="inform" onclick="fridgeTomato();weatherInterval();">同步时间：<span id="sync">0000-00-00 00:00:00</span> <span id="timeoffset">+0s</span> <span id="net">未同步</span></div>
-    <div class="reminder" onclick="clearReminder()"></div>
-  </div></div>
-  <script src="mpegts.min.js"></script>
-  <script>
-"use strict";
+
+//*********************************** */
 if (!String.prototype.startsWith) {
     Object.defineProperty(String.prototype, 'startsWith', {
         value: function(search, rawPos) {
@@ -3224,6 +2816,124 @@ function hUpdate(){
     }
 }
 var loaded = true;
-  </script>
-</body>
-</html>
+                                                                                                          
+                                                                                                          
+/*
+                                                                                                          
+                                                                                                          
+$$\   $$\ $$\                 $$\ $$\                                                                     
+$$ | $$  |\__|                $$ |$$ |                                                                    
+$$ |$$  / $$\ $$$$$$$\   $$$$$$$ |$$ | $$$$$$\                                                            
+$$$$$  /  $$ |$$  __$$\ $$  __$$ |$$ |$$  __$$\                                                           
+$$  $$<   $$ |$$ |  $$ |$$ /  $$ |$$ |$$$$$$$$ |                                                          
+$$ |\$$\  $$ |$$ |  $$ |$$ |  $$ |$$ |$$   ____|                                                          
+$$ | \$$\ $$ |$$ |  $$ |\$$$$$$$ |$$ |\$$$$$$$\                                                           
+\__|  \__|\__|\__|  \__| \_______|\__| \_______|                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+$$\      $$\                      $$\     $$\                                                             
+$$ | $\  $$ |                     $$ |    $$ |                                                            
+$$ |$$$\ $$ | $$$$$$\   $$$$$$\ $$$$$$\   $$$$$$$\   $$$$$$\   $$$$$$\                                    
+$$ $$ $$\$$ |$$  __$$\  \____$$\\_$$  _|  $$  __$$\ $$  __$$\ $$  __$$\                                   
+$$$$  _$$$$ |$$$$$$$$ | $$$$$$$ | $$ |    $$ |  $$ |$$$$$$$$ |$$ |  \__|                                  
+$$$  / \$$$ |$$   ____|$$  __$$ | $$ |$$\ $$ |  $$ |$$   ____|$$ |                                        
+$$  /   \$$ |\$$$$$$$\ \$$$$$$$ | \$$$$  |$$ |  $$ |\$$$$$$$\ $$ |                                        
+\__/     \__| \_______| \_______|  \____/ \__|  \__| \_______|\__|                                        
+                                                                                                          
+                                                                                                          
+                                                                                                          
+ $$$$$$\  $$\                     $$\                                                                     
+$$  __$$\ $$ |                    $$ |                                                                    
+$$ /  \__|$$ | $$$$$$\   $$$$$$$\ $$ |  $$\                                                               
+$$ |      $$ |$$  __$$\ $$  _____|$$ | $$  |                                                              
+$$ |      $$ |$$ /  $$ |$$ /      $$$$$$  /                                                               
+$$ |  $$\ $$ |$$ |  $$ |$$ |      $$  _$$<                                                                
+\$$$$$$  |$$ |\$$$$$$  |\$$$$$$$\ $$ | \$$\                                                               
+ \______/ \__| \______/  \_______|\__|  \__|                                                              
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+$$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\ $$\                                                           
+\__|\__|\__|\__|\__|\__|\__|\__|\__|\__|\__|\__|                                                          
+                                                                                                          
+                                                                                                    
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                                
+                                                                                                          
+$$$$$$$$\ $$\                                           $$\           $$\                                 
+\__$$  __|$$ |                                          \__|          $$ |                                
+   $$ |   $$$$$$$\   $$$$$$\         $$$$$$\  $$\   $$\ $$\  $$$$$$$\ $$ |  $$\                           
+   $$ |   $$  __$$\ $$  __$$\       $$  __$$\ $$ |  $$ |$$ |$$  _____|$$ | $$  |                          
+   $$ |   $$ |  $$ |$$$$$$$$ |      $$ /  $$ |$$ |  $$ |$$ |$$ /      $$$$$$  /                           
+   $$ |   $$ |  $$ |$$   ____|      $$ |  $$ |$$ |  $$ |$$ |$$ |      $$  _$$<                            
+   $$ |   $$ |  $$ |\$$$$$$$\       \$$$$$$$ |\$$$$$$  |$$ |\$$$$$$$\ $$ | \$$\                           
+   \__|   \__|  \__| \_______|       \____$$ | \______/ \__| \_______|\__|  \__|                          
+                                          $$ |                                                            
+                                          $$ |                                                            
+                                          \__|                                                            
+$$\                                                          $$$$$$\                                      
+$$ |                                                        $$  __$$\                                     
+$$$$$$$\   $$$$$$\   $$$$$$\  $$\  $$\  $$\ $$$$$$$\        $$ /  \__|$$$$$$\  $$\   $$\                  
+$$  __$$\ $$  __$$\ $$  __$$\ $$ | $$ | $$ |$$  __$$\       $$$$\    $$  __$$\ \$$\ $$  |                 
+$$ |  $$ |$$ |  \__|$$ /  $$ |$$ | $$ | $$ |$$ |  $$ |      $$  _|   $$ /  $$ | \$$$$  /                  
+$$ |  $$ |$$ |      $$ |  $$ |$$ | $$ | $$ |$$ |  $$ |      $$ |     $$ |  $$ | $$  $$<                   
+$$$$$$$  |$$ |      \$$$$$$  |\$$$$$\$$$$  |$$ |  $$ |      $$ |     \$$$$$$  |$$  /\$$\                  
+\_______/ \__|       \______/  \_____\____/ \__|  \__|      \__|      \______/ \__/  \__|                 
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+      $$\ $$\   $$\ $$$$$$\$$$$\   $$$$$$\   $$$$$$$\        $$$$$$\ $$\    $$\  $$$$$$\   $$$$$$\        
+      \__|$$ |  $$ |$$  _$$  _$$\ $$  __$$\ $$  _____|      $$  __$$\\$$\  $$  |$$  __$$\ $$  __$$\       
+      $$\ $$ |  $$ |$$ / $$ / $$ |$$ /  $$ |\$$$$$$\        $$ /  $$ |\$$\$$  / $$$$$$$$ |$$ |  \__|      
+      $$ |$$ |  $$ |$$ | $$ | $$ |$$ |  $$ | \____$$\       $$ |  $$ | \$$$  /  $$   ____|$$ |            
+      $$ |\$$$$$$  |$$ | $$ | $$ |$$$$$$$  |$$$$$$$  |      \$$$$$$  |  \$  /   \$$$$$$$\ $$ |            
+      $$ | \______/ \__| \__| \__|$$  ____/ \_______/        \______/    \_/     \_______|\__|            
+$$\   $$ |                        $$ |                                                                    
+\$$$$$$  |                        $$ |                                                                    
+ \______/                         \__|                                                                    
+  $$\     $$\                       $$\                                           $$\                     
+  $$ |    $$ |                      $$ |                                          $$ |                    
+$$$$$$\   $$$$$$$\   $$$$$$\        $$ | $$$$$$\  $$$$$$$$\ $$\   $$\        $$$$$$$ | $$$$$$\   $$$$$$\  
+\_$$  _|  $$  __$$\ $$  __$$\       $$ | \____$$\ \____$$  |$$ |  $$ |      $$  __$$ |$$  __$$\ $$  __$$\ 
+  $$ |    $$ |  $$ |$$$$$$$$ |      $$ | $$$$$$$ |  $$$$ _/ $$ |  $$ |      $$ /  $$ |$$ /  $$ |$$ /  $$ |
+  $$ |$$\ $$ |  $$ |$$   ____|      $$ |$$  __$$ | $$  _/   $$ |  $$ |      $$ |  $$ |$$ |  $$ |$$ |  $$ |
+  \$$$$  |$$ |  $$ |\$$$$$$$\       $$ |\$$$$$$$ |$$$$$$$$\ \$$$$$$$ |      \$$$$$$$ |\$$$$$$  |\$$$$$$$ |
+   \____/ \__|  \__| \_______|      \__| \_______|\________| \____$$ |       \_______| \______/  \____$$ |
+                                                            $$\   $$ |                          $$\   $$ |
+                                                            \$$$$$$  |                          \$$$$$$  |
+                                                             \______/                            \______/ 
+                                                                                                          
+                                                                                                          
+*/
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
+                                                                                                          
